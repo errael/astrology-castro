@@ -1,6 +1,9 @@
 a = p;
 q = p[3];
 q = @p;
+@r;
+// TODO: give a good error for the following
+//@55;
 
 x[3+4] = @y + while(a[3] < x) b+=c;
 13 + 11;

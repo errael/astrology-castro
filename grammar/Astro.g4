@@ -56,66 +56,69 @@ program
    ;
 
 statement
-    : expr 
+    : expr_semi
     //| ';'
     ;
 
 // Is a standalone/top-level brace block needed?
 
-// TODO: Only have one "op_block", it takes an arg "trailing_fix".
-//       from statement/expr trailing_fix = 1, from op zero.
+// TODO: Only have one "expr_block", it takes an arg "trailing_fix".
+//       from statement/expr trailing_fix = 1, from expr zero.
 
 optional_semi[int fBlock]
     : {$fBlock==0}? ';'
     |
     ;
-expr
-   : op optional_semi[$op.fBlock]
+
+expr_semi
+   : expr optional_semi[$expr.fBlock]
    | brace_block
    ;
 
 
-trailing_op_block
-    : op
-    | brace_block {$op::fBlock = 1;}
+trailing_expr_block
+    : expr
+    | brace_block {$expr::fBlock = 1;}
     ;
 
-op_block
-    : op ';'
+expr_block
+    : expr ';'
     | brace_block
     ;
 
 brace_block
-    : '{' (bs+=op optional_semi[$op.fBlock])+ '}'
+    : '{' (bs+=expr optional_semi[$expr.fBlock])+ '}'
     ;
 
 paren_expr
-   : '(' op ')'
+   : '(' expr ')'
    ;
 
-op returns [int fBlock = 0]
-    : op ('*'|'/'|'%') op
-    | op ('+'|'-') op
-    | op ('<<'|'>>') op
-    | op ('<'|'<='|'>'|'>=') op
-    | op ('=='|'!=') op
-    | op ('&') op
-    | op ('^') op
-    | op ('|') op
-    | lval ('='|'+='|'-=') op
+expr returns [int fBlock = 0]
+    : expr ('*'|'/'|'%') expr
+    | expr ('+'|'-') expr
+    | expr ('<<'|'>>') expr
+    | expr ('<'|'<='|'>'|'>=') expr
+    | expr ('=='|'!=') expr
+    | expr ('&') expr
+    | expr ('^') expr
+    | expr ('|') expr
+    | lval ('='|'+='|'-=') expr
     | lval
     | term
 
-    | 'if' paren_expr trailing_op_block
-    | 'if' paren_expr op_block 'else' trailing_op_block
-    | 'while' paren_expr trailing_op_block
-    | 'do' op_block 'while' paren_expr
-    | 'for' '(' lval '=' op ';' op ')' trailing_op_block
+    // TODO: brace_block is an expr
+    //| brace_block
+    | 'if' paren_expr trailing_expr_block
+    | 'if' paren_expr expr_block 'else' trailing_expr_block
+    | 'while' paren_expr trailing_expr_block
+    | 'do' expr_block 'while' paren_expr
+    | 'for' '(' lval '=' expr ';' expr ')' trailing_expr_block
     ;
 
 lval
     : '@' Identifier
-    | Identifier '[' op ']'
+    | Identifier '[' expr ']'
     | Identifier
     ;
 

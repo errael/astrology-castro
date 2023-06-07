@@ -16,6 +16,7 @@ clean:
 		$(NAME).interp $(NAME).tokens \
 		$(NAME)Lexer.java $(NAME)Lexer.interp $(NAME)Lexer.tokens \
 		$(NAME)BaseListener.java $(NAME)Listener.java \
+		$(NAME)BaseVisitor.java $(NAME)Visitor.java \
 		*.class
 
 # grun Astro program -gui

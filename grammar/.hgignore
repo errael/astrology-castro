@@ -11,6 +11,8 @@ AstroLexer.interp
 AstroLexer.tokens
 AstroBaseListener.java
 AstroListener.java
+AstroBaseVisitor.java
+AstroVisitor.java
 
 
 syntax: glob
