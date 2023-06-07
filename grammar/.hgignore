@@ -1,0 +1,21 @@
+syntax: glob
+*.class
+
+syntax: rootglob
+Astro
+AstroParser.java
+Astro.interp
+Astro.tokens
+AstroLexer.java
+AstroLexer.interp
+AstroLexer.tokens
+AstroBaseListener.java
+AstroListener.java
+
+
+syntax: glob
+*~
+*.sw[pmno]
+*.orig
+*.orig.*
+*.rej

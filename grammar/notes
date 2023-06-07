@@ -1,0 +1,29 @@
+
+=== https://dmytro-anokhin.medium.com/parsing-and-evaluating-expressions-using-antlr-in-swift-397609b1f7d4
+NUMBER
+    : ('0' .. '9') + ('.' ('0' .. '9') +)? ;
+
+expression
+    | expression ('+' | '-') expression
+    | ('+' | '-')* NUMBER ;
+
+===
+grammar Arithmetic;
+
+root : expression EOF ;
+
+expression
+    : expression (MULT | DIV) expression
+    | expression (PLUS | MINUS) expression
+    | (PLUS | MINUS)* number ;
+
+number : NUMBER ;
+
+NUMBER : ('0' .. '9') + ('.' ('0' .. '9') +)? ;
+
+PLUS  : '+' ;
+MINUS : '-' ;
+MULT  : '×' ;
+DIV   : '÷' ;
+
+WS : [ \r\n\t] + -> skip ;
