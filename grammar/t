@@ -1,38 +1,42 @@
-//a = p;
-//q = p[3];
-//q = @p;
+a = p;
+q = p[3];
+q = @p;
 
-//x[3+4] = @y + while(a[3] < x) b+=c;
-//13 + 11;
+x[3+4] = @y + while(a[3] < x) b+=c;
+13 + 11;
 
 q = while(a[3] < x) b+=c + for(p=3;5)h;
+q = b += c + for(p=3;5)h;
+
+
 // NOTE: while is parenthesized in following
-//q = (while(a[3] < x) b+=c) + for(p=3;5)h;
+q = (while(a[3] < x) b+=c) + for(p=3;5)h;
 
-//q = while(a[3] < x) b+=c; for(p=3;5)h;
+q = while(a[3] < x) b+=c; for(p=3;5)h;
 
-// add ';' before ')' and it parses OK
-//q = (while(a[3] < x) b+=c;);
+q = (while(a[3] < x) b+=c);
+    // TODO: get this to work with ';' inside the ')' ???
+    //q = (while(a[3] < x) b+=c;);
 
 
-//{ a =b; c = d;}
-//{ a1 =b_; c2 = _d; d3 = 345; }
-//x = y;
+{ a =b; c = d;}
+{ a1 =b_; c2 = _d; d3 = 345; }
+x = y;
 
-//if(a) b;
-//if(a) b; else c;
-//if(a) {b;c;}
-//if(a) {b;c;} else {c;d;}
+if(a) b;
+if(a) b; else c;
+if(a) {b;c;}
+if(a) {b;c;} else {c;d;}
 
 // NOTE: error if missing ';'
 //if(a) b else c;
 
-//if(a) b; if(c) d; else e;
-//if(a) if(c) d; else e;
+if(a) b; if(c) d; else e;
+if(a) if(c) d; else e;
 
-//if(a) b; else if(c) d;
-//if(a) {b;} else if(c) {d;}
-//if(a) {b;} else {if(c) {d;}}
+if(a) b; else if(c) d;
+if(a) {b;} else if(c) {d;}
+if(a) {b;} else {if(c) {d;}}
 
-//while(a) b;
-//while(a) {b;c;}
+while(a) b;
+while(a) {b;c;}

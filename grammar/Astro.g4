@@ -60,42 +60,33 @@ statement
     //| ';'
     ;
 
-optional_semi[int fBlock]
-    : {$fBlock==0}? ';'
-    |
-    ;
+// Is a standalone/top-level brace block needed?
 
 // TODO: Only have one "op_block", it takes an arg "trailing_fix".
 //       from statement/expr trailing_fix = 1, from op zero.
 
-// Is a standalone brace block needed?
+optional_semi[int fBlock]
+    : {$fBlock==0}? ';'
+    |
+    ;
 expr
-   : op
+   : op optional_semi[$op.fBlock]
    | brace_block
-
-   //: op optional_semi[$op.fBlock]
-   //| brace_block
-
-
-
-//   | '{' (op ';')* '}'
-//   | id_ '=' expr
    ;
 
 
-//trailing_op_block
-//    : op
-//    | brace_block {$op::fBlock = 1;}
-//    ;
+trailing_op_block
+    : op
+    | brace_block {$op::fBlock = 1;}
+    ;
 
 op_block
     : op ';'
-    //: op
     | brace_block
     ;
 
 brace_block
-    : '{' (bs+=op ';')+ '}'
+    : '{' (bs+=op optional_semi[$op.fBlock])+ '}'
     ;
 
 paren_expr
@@ -115,11 +106,11 @@ op returns [int fBlock = 0]
     | lval
     | term
 
-    | 'if' paren_expr op_block
-    | 'if' paren_expr op_block 'else' op_block
-    | 'while' paren_expr op_block
+    | 'if' paren_expr trailing_op_block
+    | 'if' paren_expr op_block 'else' trailing_op_block
+    | 'while' paren_expr trailing_op_block
     | 'do' op_block 'while' paren_expr
-    | 'for' '(' lval '=' op ';' op ')' op_block
+    | 'for' '(' lval '=' op ';' op ')' trailing_op_block
     ;
 
 lval
@@ -134,13 +125,7 @@ term
    | paren_expr
    ;
 
-//id_
-//   : Identifier
-//   ;
-
 integer
-//    : INT
-//    : constant
     : IntegerConstant
     ;
 
