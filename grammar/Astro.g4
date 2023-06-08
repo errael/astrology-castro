@@ -34,30 +34,14 @@ grammar Astro;
 
 /*
     http://www.iro.umontreal.ca/~felipe/IFT2030-Automne2002/Complements/tinyc.c
-*//*
- *  <program> ::= <statement>
- *  <statement> ::= "if" <paren_expr> <statement> |
- *                  "if" <paren_expr> <statement> "else" <statement> |
- *                  "while" <paren_expr> <statement> |
- *                  "do" <statement> "while" <paren_expr> ";" |
- *                  "{" { <statement> } "}" |
- *                  <expr> ";" |
- *                  ";"
- *  <paren_expr> ::= "(" <expr> ")"
- *  <expr> ::= <test> | <id> "=" <expr>
- *  <test> ::= <sum> | <sum> "<" <sum>
- *  <sum> ::= <term> | <sum> "+" <term> | <sum> "-" <term>
- *  <term> ::= <id> | <int> | <paren_expr>
- *  <id> ::= "a" | "b" | "c" | "d" | ... | "z"
- *  <int> ::= <an_unsigned_decimal_integer>
 */
 program
    : statement + EOF
    ;
 
 statement
-    : expr_semi
-    //| ';'
+   : expr expr_semi[$expr.fBlock]
+   | brace_block
     ;
 
 // Is a standalone/top-level brace block needed?
@@ -65,16 +49,10 @@ statement
 // TODO: Only have one "expr_block", it takes an arg "trailing_fix".
 //       from statement/expr trailing_fix = 1, from expr zero.
 
-optional_semi[int fBlock]
+expr_semi[int fBlock]
     : {$fBlock==0}? ';'
     |
     ;
-
-expr_semi
-   : expr optional_semi[$expr.fBlock]
-   | brace_block
-   ;
-
 
 trailing_expr_block
     : expr
@@ -87,7 +65,7 @@ expr_block
     ;
 
 brace_block
-    : '{' (bs+=expr optional_semi[$expr.fBlock])+ '}'
+    : '{' (bs+=expr expr_semi[$expr.fBlock])+ '}'
     ;
 
 paren_expr

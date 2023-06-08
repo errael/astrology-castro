@@ -3,16 +3,16 @@ syntax: glob
 
 syntax: rootglob
 Astro
-AstroParser.java
-Astro.interp
-Astro.tokens
-AstroLexer.java
-AstroLexer.interp
-AstroLexer.tokens
-AstroBaseListener.java
-AstroListener.java
-AstroBaseVisitor.java
-AstroVisitor.java
+grout/AstroParser.java
+grout/Astro.interp
+grout/Astro.tokens
+grout/AstroLexer.java
+grout/AstroLexer.interp
+grout/AstroLexer.tokens
+grout/AstroBaseListener.java
+grout/AstroListener.java
+grout/AstroBaseVisitor.java
+grout/AstroVisitor.java
 
 
 syntax: glob
