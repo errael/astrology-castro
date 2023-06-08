@@ -36,32 +36,27 @@ grammar Astro;
     http://www.iro.umontreal.ca/~felipe/IFT2030-Automne2002/Complements/tinyc.c
 */
 program
-   : statement + EOF
-   ;
-
-statement
-   : expr expr_semi[$expr.fBlock]
-   | brace_block
+    : statement + EOF
     ;
 
-// Is a standalone/top-level brace block needed?
+statement
+    : expr expr_semi[$expr.fBlock]
+    ;
 
 // TODO: Only have one "expr_block", it takes an arg "trailing_fix".
 //       from statement/expr trailing_fix = 1, from expr zero.
 
 expr_semi[int fBlock]
-    : {$fBlock==0}? ';'
-    |
+    : {$fBlock == 0}? ';'
+    | {$fBlock != 0}?
     ;
 
 trailing_expr_block
-    : expr
-    | brace_block {$expr::fBlock = 1;}
+    : expr {if($expr.fBlock != 0) $expr::fBlock = 1; else $expr::fBlock = 0;}
     ;
 
 expr_block
-    : expr ';'
-    | brace_block
+    : expr expr_semi[$expr.fBlock]
     ;
 
 brace_block
@@ -85,8 +80,8 @@ expr returns [int fBlock = 0]
     | lval
     | term
 
-    // TODO: brace_block is an expr
-    //| brace_block
+    | brace_block {$fBlock = 1;}
+
     | 'if' paren_expr trailing_expr_block
     | 'if' paren_expr expr_block 'else' trailing_expr_block
     | 'while' paren_expr trailing_expr_block
@@ -101,8 +96,7 @@ lval
     ;
 
 term
-   : Identifier
-   | integer
+   : integer
    | paren_expr
    ;
 

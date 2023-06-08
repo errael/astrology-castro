@@ -14,9 +14,7 @@ q = b += c + for(p=3;5)h;
 
 // NOTE: while is parenthesized in following
 q = (while(a[3] < x) b+=c) + for(p=3;5)h;
-
-q = while(a[3] < x) b+=c; for(p=3;5)h;
-
+q = while(a[3] < x) b+=c; for(p=3;5)h += 3;
 q = (while(a[3] < x) b+=c);
     // TODO: get this to work with ';' inside the ')' ???
     //q = (while(a[3] < x) b+=c;);
@@ -29,7 +27,7 @@ x = y;
 if(a) b;
 if(a) b; else c;
 if(a) {b;c;}
-if(a) {b;c;} else {c;d;}
+if(a) {b;c;} else {d;e;}
 
 // NOTE: error if missing ';'
 //if(a) b else c;
@@ -43,3 +41,9 @@ if(a) {b;} else {if(c) {d;}}
 
 while(a) b;
 while(a) {b;c;}
+
+do a; while(b);
+do {a; b;} while(c);
+
+do a; while(b) +33;
+do {a; b;} while(c) + while(a)b;
