@@ -1,0 +1,43 @@
+/*
+ * Set up the compiler.
+ */
+
+allprojects {
+
+    group = 'com.raelity.astrolog'
+    version = "0.1.0"
+
+    afterEvaluate {
+        if(project.hasProperty('java')) {
+            project.ext {
+                frgaal_target = '11'
+                frgaal_source = '19'
+                frgaal_preview = true
+            } 
+
+            project.targetCompatibility = frgaal_target
+            project.sourceCompatibility = frgaal_source
+
+            project.compileJava {
+                setCOpts(project, options.compilerArgs)
+            }
+
+            project.compileTestJava {
+                setCOpts(project, options.compilerArgs)
+            }
+
+            project.tasks.named('test') {
+                // Use JUnit Platform for unit tests.
+                useJUnitPlatform()
+            }
+        }
+    }
+}
+
+public void setCOpts(def project, List<String> opts) {
+    opts << '-source' << project.frgaal_source
+    opts << '-target' << project.frgaal_target
+    opts << '-Xlint:deprecation'
+    if(project.frgaal_preview)
+        opts << '--enable-preview'
+}

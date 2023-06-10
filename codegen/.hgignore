@@ -1,0 +1,9 @@
+syntax: glob
+.gradle
+build
+
+*~
+*.sw[pmno]
+*.orig
+*.orig.*
+*.rej
