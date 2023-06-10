@@ -20,15 +20,12 @@
 package com.raelity.astrolog.castro;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import gnu.getopt.Getopt;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import com.raelity.astrolog.castro.antlr.AstroLexer;
 import com.raelity.astrolog.castro.antlr.AstroParser;
@@ -44,12 +41,13 @@ private static int verbose;
 private static String infileName;
 private static String outfileName;
 
+@SuppressWarnings("UseOfSystemOutOrSystemErr")
 private static void usage()
 {
     String usage = """
         Usage: Castro [-v] [infile [outfile]]
             infile/outfile default to stdin/stdout
-            outfile may be '-' for stdout
+            infile may be '-' for stdout
             
         """;
     System.err.println(usage);
@@ -61,35 +59,32 @@ public static int getVerbose()
     return verbose;
 }
 
+@SuppressWarnings("UseOfSystemOutOrSystemErr")
 public static void main(String[] args)
 {
-    System.err.println(String.format("java:%s vm:%s date:%s os:%s",
-                       System.getProperty("java.version"),
-                       System.getProperty("java.vm.version"),
-                       System.getProperty("java.version.date"),
-                       System.getProperty("os.name")));
     
     // https://www.gnu.org/software/gnuprologjava/api/gnu/getopt/Getopt.html
-    //Getopt g = new Getopt("castro", args, "hvdinrp:s:");
-    Getopt g = new Getopt("castro", args, "hvdinrp:s:");
+    Getopt g = new Getopt("castro", args, "v");
     
     int c;
     while ((c = g.getopt()) != -1) {
         switch (c) {
-        case 'v':
-            verbose++;
-            break;
-        default:
+        case 'v' -> verbose++;
+        default -> {
+            }
         }
     }
+    if(verbose > 0)
+        System.err.println(String.format("java:%s vm:%s date:%s os:%s",
+                           System.getProperty("java.version"),
+                           System.getProperty("java.vm.version"),
+                           System.getProperty("java.version.date"),
+                           System.getProperty("os.name")));
+
     int i = g.getOptind();
     CharStream cs = null;
 
     try {
-        //if(Boolean.FALSE)
-        //    cs = CharStreams.fromFileName("/ref/tools/astrolog.d/castro/grammar/x");
-        //else
-        {
         if (i == args.length)
             cs = CharStreams.fromStream(System.in);
         else {
@@ -99,7 +94,6 @@ public static void main(String[] args)
             }
             infileName = args[i];
             cs = CharStreams.fromFileName(infileName);
-        }
         }
     } catch(IOException ex) {
         System.err.println(ex.getMessage());

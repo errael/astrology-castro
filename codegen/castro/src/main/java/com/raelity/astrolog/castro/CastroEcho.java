@@ -123,10 +123,11 @@ String rn(RuleContext ctx, boolean useBrackets)
     return s;
 }
 
-    class EchoPass1  extends AstroBaseListener
+class EchoPass1  extends AstroBaseListener
     {
     
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public void enterEveryRule(ParserRuleContext ctx)
     {
         if(Castro.getVerbose() >= 2)
@@ -134,6 +135,7 @@ String rn(RuleContext ctx, boolean useBrackets)
     }
     
     @Override
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public void exitEveryRule(ParserRuleContext ctx)
     {
         if(Castro.getVerbose() >= 2)
@@ -284,7 +286,6 @@ String rn(RuleContext ctx, boolean useBrackets)
      */
     class EchoDump  extends AstroBaseListener
     {
-    boolean newLine = true;
     int walkerCount;
     int statementCount;
 

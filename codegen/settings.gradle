@@ -27,8 +27,5 @@ pluginManagement {
     }
 }
 
-//rootProject.name = 'jvi'
-//include('jvi-core', 'jvi-swing', 'jvi-cmd')
-
-rootProject.name = 'castro'
+rootProject.name = 'AstroComp'
 include('castro')
