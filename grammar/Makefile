@@ -4,36 +4,49 @@
 
 NAME = Astro
 
-ANTLR_OUTPUT = grout
+ANTLR_OUTPUT = ../AstroComp/castro/src/main/java/com/raelity/astrolog/castro/antlr
 ANTLR4_OPTS = -visitor \
+	      -package com.raelity.astrolog.castro.antlr \
 	      -o $(ANTLR_OUTPUT)
 
-	      # ../castro/lib/src/com/raelity/astrolog/castro
-	      # -package com.raelity.astrolog.castro
+ANTLR_TEST_OUTPUT = grout
+ANTLR4_TEST_OPTS = -visitor \
+	      -o $(ANTLR_TEST_OUTPUT)
+
+JAVA_FILES = $(NAME)Parser.java \
+	 $(NAME)Lexer.java \
+	$(NAME)BaseListener.java \
+	$(NAME)Listener.java \
+	$(NAME)BaseVisitor.java \
+	$(NAME)Visitor.java \
 
 #.PHONY: Astro
 $(NAME): $(NAME).g4
+	antlr4 $(ANTLR4_TEST_OPTS) $(NAME).g4
 	antlr4 $(ANTLR4_OPTS) $(NAME).g4
-	cd $(ANTLR_OUTPUT); javac -cp $(ANTLR_JAR) $(NAME)*.java
+	for f in $(JAVA_FILES); do \
+	    echo >> $(ANTLR_OUTPUT)/$$f; \
+	    echo '// vim:set ts=4:' >> $(ANTLR_OUTPUT)/$$f; done 
+	cd $(ANTLR_TEST_OUTPUT); javac -cp $(ANTLR_JAR) $(NAME)*.java
 	touch $(NAME)
 
 clean:
 	rm -f Astro
-	cd $(ANTLR_OUTPUT); rm -f \
+	cd $(ANTLR_TEST_OUTPUT); rm -f \
 		$(NAME) \
-		$(NAME)Parser.java \
-		$(NAME).interp $(NAME).tokens \
-		$(NAME)Lexer.java $(NAME)Lexer.interp $(NAME)Lexer.tokens \
-		$(NAME)BaseListener.java $(NAME)Listener.java \
-		$(NAME)BaseVisitor.java $(NAME)Visitor.java \
+		$(JAVA_FILES) \
+		$(NAME).interp \
+		$(NAME).tokens \
+		$(NAME)Lexer.interp \
+		$(NAME)Lexer.tokens \
 		*.class
 
 # grun Astro program -gui
 run: $(NAME)
-	cd $(ANTLR_OUTPUT); grun Astro program -tree
+	cd $(ANTLR_TEST_OUTPUT); grun Astro program -tree
 
 grun: $(NAME)
-	cd $(ANTLR_OUTPUT); grun Astro program -gui
+	cd $(ANTLR_TEST_OUTPUT); grun Astro program -gui
 
 
 AstroParser.java : Astro.g4

@@ -68,48 +68,60 @@ paren_expr
    ;
 
 expr returns [int fBlock = 0]
-    : expr ('*'|'/'|'%') expr
-    | expr ('+'|'-') expr
-    | expr ('<<'|'>>') expr
-    | expr ('<'|'<='|'>'|'>=') expr
-    | expr ('=='|'!=') expr
-    | expr ('&') expr
-    | expr ('^') expr
-    | expr ('|') expr
-    | lval ('='|'+='|'-=') expr
-    | lval
-    | term
+    : expr ('*'|'/'|'%') expr       #exprBinOp
+    | expr ('+'|'-') expr           #exprBinOp
+    | expr ('<<'|'>>') expr         #exprBinOp
+    | expr ('<'|'<='|'>'|'>=') expr #exprBinOp
+    | expr ('=='|'!=') expr         #exprBinOp
+    | expr ('&') expr               #exprBinOp
+    | expr ('^') expr               #exprBinOp
+    | expr ('|') expr               #exprBinOp
+    | lval ('='|'+='|'-=') expr     #exprAssOp
+    | term                          #exprTermOp
 
-    | brace_block {$fBlock = 1;}
+    | brace_block {$fBlock = 1;}    #exprBraceBlockOp
 
-    | 'if' paren_expr trailing_expr_block
-    | 'if' paren_expr expr_block 'else' trailing_expr_block
-    | 'while' paren_expr trailing_expr_block
-    | 'do' expr_block 'while' paren_expr
-    | 'for' '(' lval '=' expr ';' expr ')' trailing_expr_block
-    ;
-
-lval
-    : '@' Identifier
-    | Identifier '[' expr ']'
-    | Identifier
+    | 'if' paren_expr trailing_expr_block                       #exprIfOp
+    | 'if' paren_expr expr_block 'else' trailing_expr_block     #exprIfElseOp
+    | 'while' paren_expr trailing_expr_block                    #exprWhileOp
+    | 'do' expr_block 'while' paren_expr                        #exprDowhileOp
+    | 'for' '(' lval '=' expr ';' expr ')' trailing_expr_block  #exprForOp
     ;
 
 term
-   : integer
-   | paren_expr
+   : integer        #termSingle
+   | paren_expr     #termParen
+   | lval           #termSingle
    ;
 
-integer
-    : IntegerConstant
+lval
+    : Identifier '[' expr ']'   #lvalArray
+    | '@' Identifier            #lvalIndirect
+    | Identifier                #lvalMem
     ;
 
+integer : IntegerConstant ;
+
+/*************************************************************
+constant
+    : integer
+    | real
+    | chars
+    ;
+
+integer : IntegerConstant ;
+real : FloatingConstant ;
+chars : CharacterConstant ;
+**************************************************************/
+
+/*************************************************************
 constant
     :   IntegerConstant
     |   FloatingConstant
-    //|   EnumerationConstant
+    |   EnumerationConstant
     |   CharacterConstant
     ;
+**************************************************************/
 
 Do : 'do';
 Else : 'else';

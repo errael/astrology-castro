@@ -19,7 +19,6 @@ q = (while(a[3] < x) b+=c);
     // TODO: get this to work with ';' inside the ')' ???
     //q = (while(a[3] < x) b+=c;);
 
-
 { a =b; c = d;}
 { a1 =b_; c2 = _d; d3 = 345; }
 x = y;
