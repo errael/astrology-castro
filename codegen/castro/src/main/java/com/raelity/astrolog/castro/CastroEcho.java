@@ -29,7 +29,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-import com.raelity.astrolog.castro.antlr.AstroBaseListener;
+import com.raelity.astrolog.castro.Castro.TrailingBraceParseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 
@@ -98,7 +98,9 @@ String doEcho()
 private void putEcho(ParseTree ctx, String s)
 {
     if(Castro.getVerbose() >= 2)
-        out.printf("Saving: %08x %s\n", System.identityHashCode(ctx), s);
+        out.printf("Saving: %08x %s %s'%s'\n",
+                   System.identityHashCode(ctx), s,
+                   rn(ctx, true), ctx.getText());
     if(s == null)
         Objects.requireNonNull(s, "putEcho");
     echo.put(ctx, s);
@@ -114,29 +116,30 @@ private String removeFromEcho(ParseTree ctx)
     return s;
 }
 
-String rn(RuleContext ctx, boolean useBrackets)
+String rn(ParseTree pt, boolean useBrackets)
 {
     String s;
-    if(useBrackets)
-        s = '[' + parser.getRuleNames()[ctx.getRuleIndex()] + ']';
+    String name;
+    if(pt instanceof RuleContext ctx)
+        name = parser.getRuleNames()[ctx.getRuleIndex()];
     else
-        s = parser.getRuleNames()[ctx.getRuleIndex()];
+        name = "???";
+
+    if(useBrackets)
+        s = '[' + name + ']';
+    else
+        s = name;
     return s;
 }
 
-class EchoPass1  extends AstroBaseListener
+    //class EchoPass1  extends AstroBaseListener
+    class EchoPass1  extends TrailingBraceParseListener
     {
-    
-    @Override
-    public void enterEveryRule(ParserRuleContext ctx)
-    {
-        if(Castro.getVerbose() >= 2)
-            out.println("enter " + rn(ctx, false));
-    }
     
     @Override
     public void exitEveryRule(ParserRuleContext ctx)
     {
+        super.exitEveryRule(ctx);
         if(Castro.getVerbose() >= 2)
             out.println("exit " + rn(ctx, false));
     }
@@ -147,7 +150,7 @@ class EchoPass1  extends AstroBaseListener
         sb.setLength(0);
         sb.append("IF ")
                 .append(removeFromEcho(ctx.paren_expr().expr())).append(' ')
-                .append(removeFromEcho(ctx.trailing_expr_block().expr()));
+                .append(removeFromEcho(ctx.expr()));
         putEcho(ctx, sb.toString());
     }
     
@@ -157,9 +160,9 @@ class EchoPass1  extends AstroBaseListener
         sb.setLength(0);
         sb.append("IF ")
                 .append(removeFromEcho(ctx.paren_expr().expr())).append(' ')
-                .append(removeFromEcho(ctx.expr_block().expr())).append(' ')
+                .append(removeFromEcho(ctx.expr(0))).append(' ')
                 .append("ELSE ")
-                .append(removeFromEcho(ctx.trailing_expr_block().expr()));
+                .append(removeFromEcho(ctx.expr(1)));
         putEcho(ctx, sb.toString());
     }
     
@@ -169,7 +172,7 @@ class EchoPass1  extends AstroBaseListener
         sb.setLength(0);
         sb.append("WHILE ")
                 .append(removeFromEcho(ctx.paren_expr().expr())).append(' ')
-                .append(removeFromEcho(ctx.trailing_expr_block().expr()));
+                .append(removeFromEcho(ctx.expr()));
         putEcho(ctx, sb.toString());
     }
     
@@ -178,7 +181,7 @@ class EchoPass1  extends AstroBaseListener
     {
         sb.setLength(0);
         sb.append("DO_WHILE ")
-                .append(removeFromEcho(ctx.expr_block().expr())).append(' ')
+                .append(removeFromEcho(ctx.expr())).append(' ')
                 .append(removeFromEcho(ctx.paren_expr().expr()));
         putEcho(ctx, sb.toString());
     }
@@ -193,7 +196,7 @@ class EchoPass1  extends AstroBaseListener
                 .append(removeFromEcho(ctx.expr(0))).append(' ')
                 .append("UNTIL ")
                 .append(removeFromEcho(ctx.expr(1))).append(' ')
-                .append(removeFromEcho(ctx.trailing_expr_block().expr()));
+                .append(removeFromEcho(ctx.expr(2)));
         putEcho(ctx, sb.toString());
     }
     
@@ -201,6 +204,7 @@ class EchoPass1  extends AstroBaseListener
     public void exitExprBraceBlockOp(ExprBraceBlockOpContext ctx)
     {
         List<ExprContext> l = ctx.brace_block().bs;
+        //List<ExprContext> l = ctx.bs;
         sb.setLength(0);
         sb.append("BLOCK(").append(l.size()).append(") ");
         for(ExprContext ec : l) {
@@ -309,13 +313,13 @@ class EchoPass1  extends AstroBaseListener
         sb.append('@').append(ctx.Identifier().getText());
         putEcho(ctx, sb.toString());
     }
-
     }
 
     /**
-     * record one line per statement of any collected info
+     * Output one line per statement of any collected info.
      */
-    class EchoDump  extends AstroBaseListener
+    //class EchoDump  extends AstroBaseListener
+    class EchoDump  extends TrailingBraceParseListener
     {
     int walkerCount;
     int statementCount;

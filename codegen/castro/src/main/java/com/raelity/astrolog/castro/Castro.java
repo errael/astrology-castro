@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 
 import gnu.getopt.Getopt;
@@ -33,9 +31,14 @@ import gnu.getopt.LongOpt;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
+import com.raelity.astrolog.castro.antlr.AstroBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroLexer;
 import com.raelity.astrolog.castro.antlr.AstroParser;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -68,11 +71,12 @@ private static void usage(String note)
     if(note != null)
         System.err.printf("%s: %s\n", cmdName, note);
     String usage = """
-        Usage: {cmdName} [--test] [-v] [infile [outfile]]
+        Usage: {cmdName} [-h] [--test] [-v] [infile [outfile]]
             infile/outfile default to stdin/stdout
             infile/outfile may be '-' for stdin/stdout
-            -v      output more info
+            -h      output this message
             --test  output prefix parse data
+            -v      output more info
         """.replace("{cmdName}", cmdName);
     System.err.println(usage);
     System.exit(1);
@@ -93,11 +97,12 @@ public static void main(String[] args)
     LongOpt longOpts[] = new LongOpt[] {
         new LongOpt("test", LongOpt.OPTIONAL_ARGUMENT, null, 2),
     };
-    Getopt g = new Getopt(cmdName, args, "v", longOpts);
+    Getopt g = new Getopt(cmdName, args, "hv", longOpts);
     
     int c;
     while ((c = g.getopt()) != -1) {
         switch (c) {
+        case 'h' -> usage();
         case 'v' -> optVerbose++;
         case 2 -> {
             switch(longOpts[g.getLongind()].getName()) {
@@ -148,9 +153,12 @@ public static void main(String[] args)
     boolean some_error = false;
     PrintWriter outputWriter = null;
     try {
-        Path inPath = new File(inFileName).toPath();
-        if(!Files.exists(inPath))
-            usage(String.format("input file '%s' does not exist", inFileName));
+        Path inPath = null;
+        if(inFileName != null) {
+            inPath = new File(inFileName).toPath();
+            if(!Files.exists(inPath))
+                usage(String.format("input file '%s' does not exist", inFileName));
+        }
 
         outputWriter = outFileName == null
                 ? new PrintWriter(System.out)
@@ -179,6 +187,33 @@ public static void main(String[] args)
         System.exit(1);
 }
 
+    static class TrailingBraceParseListener extends AstroBaseListener
+    {
+    @Override
+    public void visitTerminal(TerminalNode tn)
+    {
+    }
+
+    @Override
+    public void visitErrorNode(ErrorNode en)
+    {
+    }
+
+    @Override
+    public void enterEveryRule(ParserRuleContext prc)
+    {
+    }
+
+    @Override
+    public void exitEveryRule(ParserRuleContext ctx)
+    {
+        if(ctx instanceof ExprContext expr) {
+            expr.fBlock = expr.getText().endsWith("}") ? 1 : 0;
+        }
+    }
+
+    }
+
 Path inPath;
 String outFileName;
 
@@ -196,6 +231,7 @@ throws IOException
     CharStream cs = inPath != null ? fromPath(inPath) : fromStream(System.in);
 
     AstroLexer lexer = new AstroLexer(cs);
+    parser.addParseListener(new TrailingBraceParseListener());
     parser.setTokenStream(new CommonTokenStream(lexer));
 
     ProgramContext program = parser.program();
