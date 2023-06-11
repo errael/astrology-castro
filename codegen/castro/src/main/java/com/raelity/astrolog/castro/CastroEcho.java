@@ -19,6 +19,7 @@
 
 package com.raelity.astrolog.castro;
 
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.Objects;
 
@@ -59,22 +60,25 @@ final TreeProps<String> echo = new TreeProps<>();
 final ParseTreeWalker walker = new ParseTreeWalker();
 final ProgramContext program;
 final AstroParser parser;
-private CastroEcho(AstroParser parser, ProgramContext program) {
+final PrintWriter out;
+
+private CastroEcho(AstroParser parser, ProgramContext program, PrintWriter out) {
     this.parser = parser;
     this.program = program;
+    this.out = out;
 }
 
 StringBuilder sb = new StringBuilder();
 
-static String getPrefixNotation(AstroParser parser, ProgramContext program)
+static void genPrefixNotation(AstroParser parser, ProgramContext program,
+                                PrintWriter out)
 {
-    CastroEcho castroEcho = new CastroEcho(parser, program);
-    return castroEcho.doEcho();
+    CastroEcho castroEcho = new CastroEcho(parser, program, out);
+    castroEcho.doEcho();
 }
 
 record DumpCounts(int walker, int statement){};
 
-@SuppressWarnings("UseOfSystemOutOrSystemErr")
 String doEcho()
 {
     EchoPass1 echoPass1 = new EchoPass1();
@@ -84,30 +88,27 @@ String doEcho()
     EchoDump echoDump = new EchoDump();
     DumpCounts dump = echoDump.dump();
     if(dump.walker() != dump.statement() || echo.size() != 0) {
-        System.out.printf(
-                "PARSE ERROR: statements %d, found %d. echos left %d\n",
-                dump.statement(), dump.walker(), echo.size());
+        out.printf("PARSE ERROR: statements %d, found %d. echos left %d\n",
+                   dump.statement(), dump.walker(), echo.size());
     }
 
     return sb.toString();
 }
 
-@SuppressWarnings("UseOfSystemOutOrSystemErr")
 private void putEcho(ParseTree ctx, String s)
 {
     if(Castro.getVerbose() >= 2)
-        System.out.printf("Saving: %08x %s\n", System.identityHashCode(ctx), s);
+        out.printf("Saving: %08x %s\n", System.identityHashCode(ctx), s);
     if(s == null)
         Objects.requireNonNull(s, "putEcho");
     echo.put(ctx, s);
 }
 
-@SuppressWarnings("UseOfSystemOutOrSystemErr")
 private String removeFromEcho(ParseTree ctx)
 {
     String s = echo.removeFrom(ctx);
     if(Castro.getVerbose() >= 2)
-        System.out.printf("Remove: %08x %s\n", System.identityHashCode(ctx), s);
+        out.printf("Remove: %08x %s\n", System.identityHashCode(ctx), s);
     if(s == null)
         Objects.requireNonNull(s, "putEcho");
     return s;
@@ -127,19 +128,17 @@ class EchoPass1  extends AstroBaseListener
     {
     
     @Override
-    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public void enterEveryRule(ParserRuleContext ctx)
     {
         if(Castro.getVerbose() >= 2)
-            System.out.println("enter " + rn(ctx, false));
+            out.println("enter " + rn(ctx, false));
     }
     
     @Override
-    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     public void exitEveryRule(ParserRuleContext ctx)
     {
         if(Castro.getVerbose() >= 2)
-            System.out.println("exit " + rn(ctx, false));
+            out.println("exit " + rn(ctx, false));
     }
     
     @Override
@@ -299,22 +298,17 @@ class EchoPass1  extends AstroBaseListener
     public void exitEveryRule(ParserRuleContext ctx)
     {
         String s = echo.get(ctx);
-        if(s != null) {
+        if(s != null)
             walkerCount++;
-            //if(newLine)
-            //    sb.append("    ");
-            //sb.append(rn(ctx, true)).append(s).append(' ');
-            //newLine = false;
-        }
     }
     
     @Override
     public void exitStatement(StatementContext ctx)
     {
-        sb.append(rn(ctx, true)).append(' ')
-                .append(removeFromEcho(ctx.expr)).append('\n');
+        //sb.append(rn(ctx, true)).append(' ')
+        //        .append(removeFromEcho(ctx.expr)).append('\n');
+        out.printf("%s %s\n", rn(ctx, true), removeFromEcho(ctx.expr));
         statementCount++;
-        //newLine = true;
     }
     
     }

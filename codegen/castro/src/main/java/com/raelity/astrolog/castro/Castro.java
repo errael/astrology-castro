@@ -19,17 +19,29 @@
 
 package com.raelity.astrolog.castro;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 import gnu.getopt.Getopt;
+import gnu.getopt.LongOpt;
 
 import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
 import com.raelity.astrolog.castro.antlr.AstroLexer;
 import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
+
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.WRITE;
+import static org.antlr.v4.runtime.CharStreams.fromPath;
+import static org.antlr.v4.runtime.CharStreams.fromStream;
 
 /**
  * TODO: remove extraneous nodes from the tree after parsing.
@@ -37,44 +49,67 @@ import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
  */
 public class Castro
 {
-private static int verbose;
-private static String infileName;
-private static String outfileName;
+static final String cmdName = "castro";
+static final String IN_EXT = ".castro";
+static final String OUT_EXT = ".macro.as";
+static final String OUT_TEST_EXT = ".macro.test";
+private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 
+private static int optVerbose;
+private static boolean optTest;
+private static String runOption;
+
+static AstroParser parser = new AstroParser(null);
+
+private static void usage() { usage(null); }
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
-private static void usage()
+private static void usage(String note)
 {
+    if(note != null)
+        System.err.printf("%s: %s\n", cmdName, note);
     String usage = """
-        Usage: Castro [-v] [infile [outfile]]
+        Usage: {cmdName} [--test] [-v] [infile [outfile]]
             infile/outfile default to stdin/stdout
-            infile may be '-' for stdout
-            
-        """;
+            infile/outfile may be '-' for stdin/stdout
+            -v      output more info
+            --test  output prefix parse data
+        """.replace("{cmdName}", cmdName);
     System.err.println(usage);
     System.exit(1);
 }
 
 public static int getVerbose()
 {
-    return verbose;
+    return optVerbose;
 }
 
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 public static void main(String[] args)
 {
+    String inFileName = null;
+    String outFileName = null;
     
     // https://www.gnu.org/software/gnuprologjava/api/gnu/getopt/Getopt.html
-    Getopt g = new Getopt("castro", args, "v");
+    LongOpt longOpts[] = new LongOpt[] {
+        new LongOpt("test", LongOpt.OPTIONAL_ARGUMENT, null, 2),
+    };
+    Getopt g = new Getopt(cmdName, args, "v", longOpts);
     
     int c;
     while ((c = g.getopt()) != -1) {
         switch (c) {
-        case 'v' -> verbose++;
-        default -> {
+        case 'v' -> optVerbose++;
+        case 2 -> {
+            switch(longOpts[g.getLongind()].getName()) {
+            case "test" -> { optTest = true; runOption = "test"; }
             }
         }
+        default -> {
+            usage();
+        }
+        }
     }
-    if(verbose > 0)
+    if(optVerbose > 0)
         System.err.println(String.format("java:%s vm:%s date:%s os:%s",
                            System.getProperty("java.version"),
                            System.getProperty("java.vm.version"),
@@ -82,31 +117,89 @@ public static void main(String[] args)
                            System.getProperty("os.name")));
 
     int i = g.getOptind();
-    CharStream cs = null;
-
-    try {
-        if (i == args.length)
-            cs = CharStreams.fromStream(System.in);
-        else {
-            // There are positional arguemnts. Can only be one.
-            if (i + 1 != args.length) {
-                usage();
-            }
-            infileName = args[i];
-            cs = CharStreams.fromFileName(infileName);
-        }
-    } catch(IOException ex) {
-        System.err.println(ex.getMessage());
-        usage();
+    if (i != args.length) {
+        // There are positional arguemnts.
+        inFileName = args[i++];
+        if (i != args.length)
+            outFileName = args[i++];
+        if("-".equals(inFileName))
+            inFileName = null;
+        if(i != args.length)
+            usage("At most two arguments");
     }
 
-    AstroLexer lexer = new AstroLexer(cs);
-    AstroParser parser = new AstroParser(new CommonTokenStream(lexer));
-    ProgramContext program = parser.program();
-
-    String s = CastroEcho.getPrefixNotation(parser, program);
-    System.out.println(s);
+    if(inFileName != null && inFileName.equals(outFileName))
+        usage("infile and outfile can not be the same file");
     
+    // TODO: check for identical files (not just name)
+    if(inFileName != null && inFileName.equals(outFileName))
+        usage("infile and outfile can not be the same file");
+    
+    if("-".equals(outFileName))
+        outFileName = null;
+    else if(outFileName == null && inFileName != null) {
+        // Pick outFile built from inFile
+        String base = inFileName;
+        if(inFileName.endsWith(IN_EXT))
+            base = inFileName.substring(0, inFileName.lastIndexOf(IN_EXT));
+        outFileName = base + (optTest ? OUT_TEST_EXT : OUT_EXT);
+    }
+
+    boolean some_error = false;
+    PrintWriter outputWriter = null;
+    try {
+        Path inPath = new File(inFileName).toPath();
+        if(!Files.exists(inPath))
+            usage(String.format("input file '%s' does not exist", inFileName));
+
+        outputWriter = outFileName == null
+                ? new PrintWriter(System.out)
+                : new PrintWriter(Files.newBufferedWriter(
+                        new File(outFileName).toPath(), WRITE, CREATE));
+
+        ProgramContext program;
+        Castro castro = new Castro(inPath, outFileName);
+        program = castro.parseProgram();
+        switch(runOption) {
+        case "test" -> CastroEcho.genPrefixNotation(parser, program, outputWriter);
+        case null, default -> usage("compile not supported (YET)");
+        }
+    } catch(IOException ex) {
+        String msg = String.format(
+                "%s: %s\n", ex.getClass().getSimpleName(), ex.getMessage());
+        System.err.print(msg);
+        if(outputWriter != null)
+            outputWriter.print(msg);
+        //LOG.log(Level.SEVERE, null, ex);
+        some_error = true;
+    }
+    if(outputWriter != null)
+        outputWriter.close();
+    if(some_error)
+        System.exit(1);
+}
+
+Path inPath;
+String outFileName;
+
+public Castro(Path inPath, String outFileName)
+{
+    this.inPath = inPath;
+    this.outFileName = outFileName;
+}
+
+ProgramContext parseProgram()
+throws IOException
+{
+    // if in not found, try in.castro
+
+    CharStream cs = inPath != null ? fromPath(inPath) : fromStream(System.in);
+
+    AstroLexer lexer = new AstroLexer(cs);
+    parser.setTokenStream(new CommonTokenStream(lexer));
+
+    ProgramContext program = parser.program();
+    return program;
 }
 
 }
