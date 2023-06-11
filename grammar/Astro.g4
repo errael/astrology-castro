@@ -1,40 +1,6 @@
-/*
-BSD License
-
-Copyright (c) 2013, Tom Everett
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-3. Neither the name of Tom Everett nor the names of its contributors
-   may be used to endorse or promote products derived from this software
-   without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
 
 grammar Astro;
 
-/*
-    http://www.iro.umontreal.ca/~felipe/IFT2030-Automne2002/Complements/tinyc.c
-*/
 program
     : statement + EOF
     ;
@@ -43,20 +9,9 @@ statement
     : expr expr_semi[$expr.fBlock]
     ;
 
-// TODO: Only have one "expr_block", it takes an arg "trailing_fix".
-//       from statement/expr trailing_fix = 1, from expr zero.
-
 expr_semi[int fBlock]
     : {$fBlock == 0}? ';'
     | {$fBlock != 0}?
-    ;
-
-trailing_expr_block
-    : expr {if($expr.fBlock != 0) $expr::fBlock = 1; else $expr::fBlock = 0;}
-    ;
-
-expr_block
-    : expr expr_semi[$expr.fBlock]
     ;
 
 brace_block
@@ -71,31 +26,31 @@ func_call
     : Identifier '(' (args+=expr (',' args+=expr)*)? ')'
     ;
 
-// TODO: Handle the trailing issue in code. ************************
 // TODO: make '*' indirection in expr
 
 expr returns [int fBlock = 0]
-    : func_call                     #exprFunc
-    | ('!'|'~') expr                #exprUnOp
-    | expr ('*'|'/'|'%') expr       #exprBinOp
-    | expr ('+'|'-') expr           #exprBinOp
-    | expr ('<<'|'>>') expr         #exprBinOp
-    | expr ('<'|'<='|'>'|'>=') expr #exprBinOp
-    | expr ('=='|'!=') expr         #exprBinOp
-    | expr ('&') expr               #exprBinOp
-    | expr ('^') expr               #exprBinOp
-    | expr ('|') expr               #exprBinOp
+    : func_call                         #exprFunc
+    | ('!'|'~') expr                    #exprUnOp
+    | expr ('*'|'/'|'%') expr               #exprBinOp
+    | expr ('+'|'-') expr                   #exprBinOp
+    | expr ('<<'|'>>') expr                 #exprBinOp
+    | expr ('<'|'<='|'>'|'>=') expr         #exprBinOp
+    | expr ('=='|'!=') expr                 #exprBinOp
+    | expr ('&') expr                       #exprBinOp
+    | expr ('^') expr                       #exprBinOp
+    | expr ('|') expr                       #exprBinOp
     | <assoc=right> expr '?' expr ':' expr      #exprQuestOp
-    | lval ('='|'+='|'-=') expr     #exprAssOp
-    | term                          #exprTermOp
+    | lval ('='|'+='|'-=') expr             #exprAssOp
+    | term                                  #exprTermOp
 
-    | brace_block {$fBlock = 1;}    #exprBraceBlockOp
+    | brace_block                           #exprBraceBlockOp
 
-    | 'if' paren_expr trailing_expr_block                       #exprIfOp
-    | 'if' paren_expr expr_block 'else' trailing_expr_block     #exprIfElseOp
-    | 'while' paren_expr trailing_expr_block                    #exprWhileOp
-    | 'do' expr_block 'while' paren_expr                        #exprDowhileOp
-    | 'for' '(' lval '=' expr ';' expr ')' trailing_expr_block  #exprForOp
+    | 'if' paren_expr expr                          #exprIfOp
+    | 'if' paren_expr e=expr // expr_semi[$e.fBlock]
+                        'else' expr                 #exprIfElseOp
+    | 'while' paren_expr expr                       #exprWhileOp
+    | 'do' expr 'while' paren_expr                  #exprDowhileOp
+    | 'for' '(' lval '=' expr ';' expr ')' expr     #exprForOp
     ;
 
 term

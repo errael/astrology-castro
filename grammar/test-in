@@ -24,25 +24,25 @@ q = (while(a[3] < x) b+=c);
 x = y;
 
 if(a) b;
-if(a) b; else c;
+if(a) b else c;
 if(a) {b;c;}
 if(a) {b;c;} else {d;e;}
 
 // NOTE: error if missing ';'
 //if(a) b else c;
 
-if(a) b; if(c) d; else e;
-if(a) if(c) d; else e;
+if(a) b; if(c) d else e;
+if(a) if(c) d else e;
 
-if(a) b; else if(c) d;
+if(a) b else if(c) d;
 if(a) {b;} else if(c) {d;}
 if(a) {b;} else {if(c) {d;}}
 
 while(a) b;
 while(a) {b;c;}
 
-do a; while(b);
+do a while(b);
 do {a; b;} while(c);
 
-do a; while(b) +33;
+do a while(b) +33;
 do {a; b;} while(c) + while(a)b;
