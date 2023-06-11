@@ -209,6 +209,38 @@ class EchoPass1  extends AstroBaseListener
         putEcho(ctx, sb.toString());
     }
     
+    @Override
+    public void exitExprFunc(ExprFuncContext ctx)
+    {
+        List<ExprContext> args = ctx.func_call().args;
+        sb.setLength(0);
+        sb.append("FUNC(").append(args.size()).append(") ");
+        for(ExprContext arg : args) {
+            sb.append(removeFromEcho(arg)).append(' ');
+        }
+        putEcho(ctx, sb.toString());
+    }
+    
+    @Override
+    public void exitExprUnOp(ExprUnOpContext ctx)
+    {
+        sb.setLength(0);
+        sb.append(ctx.getChild(0).getText()).append(' ')
+                .append(removeFromEcho(ctx.expr()));
+        putEcho(ctx, sb.toString());
+    }
+    
+    @Override
+    public void exitExprQuestOp(ExprQuestOpContext ctx)
+    {
+        sb.setLength(0);
+        sb.append("?: ").append(removeFromEcho(ctx.expr(0))).append(' ')
+                .append(removeFromEcho(ctx.expr(1))).append(' ')
+                .append(removeFromEcho(ctx.expr(2))).append(' ');
+        putEcho(ctx, sb.toString());
+        super.exitExprQuestOp(ctx);
+    }
+    
     private void expr3(ExprContext ctx)
     {
         sb.setLength(0);
