@@ -67,8 +67,17 @@ paren_expr
    : '(' expr ')'
    ;
 
+func_call
+    : Identifier '(' (args+=expr (',' args+=expr)*)? ')'
+    ;
+
+// TODO: Handle the trailing issue in code. ************************
+// TODO: make '*' indirection in expr
+
 expr returns [int fBlock = 0]
-    : expr ('*'|'/'|'%') expr       #exprBinOp
+    : func_call                     #exprFunc
+    | ('!'|'~') expr                #exprUnOp
+    | expr ('*'|'/'|'%') expr       #exprBinOp
     | expr ('+'|'-') expr           #exprBinOp
     | expr ('<<'|'>>') expr         #exprBinOp
     | expr ('<'|'<='|'>'|'>=') expr #exprBinOp
@@ -76,6 +85,7 @@ expr returns [int fBlock = 0]
     | expr ('&') expr               #exprBinOp
     | expr ('^') expr               #exprBinOp
     | expr ('|') expr               #exprBinOp
+    | <assoc=right> expr '?' expr ':' expr      #exprQuestOp
     | lval ('='|'+='|'-=') expr     #exprAssOp
     | term                          #exprTermOp
 
