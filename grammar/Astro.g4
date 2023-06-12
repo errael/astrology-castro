@@ -29,6 +29,9 @@ func_call
 // TODO: make '*' indirection in expr
 
 expr returns [int fBlock = 0]
+@after {
+    $fBlock = $stop.getType() == RightBrace ? 1 : 0;
+}
     : func_call                         #exprFunc
     | ('!'|'~') expr                    #exprUnOp
     | expr ('*'|'/'|'%') expr               #exprBinOp
@@ -46,8 +49,7 @@ expr returns [int fBlock = 0]
     | brace_block                           #exprBraceBlockOp
 
     | 'if' paren_expr expr                          #exprIfOp
-    | 'if' paren_expr e=expr // expr_semi[$e.fBlock]
-                        'else' expr                 #exprIfElseOp
+    | 'if' paren_expr expr 'else' expr              #exprIfElseOp
     | 'while' paren_expr expr                       #exprWhileOp
     | 'do' expr 'while' paren_expr                  #exprDowhileOp
     | 'for' '(' lval '=' expr ';' expr ')' expr     #exprForOp
