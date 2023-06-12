@@ -1,11 +1,24 @@
+/* Copyright © 2023 Ernie Rael. All rights reserved */
 
 grammar Astro;
 
+//
+// TODO:
+//      introduce controlStatement
+//          memory {...}
+//          include
+//      varStatement
+
 program
-    : statement + EOF
+    : macros EOF
     ;
 
-statement
+macros : macro + ;
+macro : 'macro' Identifier ('@' integer)? '{' astroExpressions '}';
+
+astroExpressions : astroExpression + ;
+
+astroExpression
     : expr expr_semi[$expr.fBlock]
     ;
 
@@ -33,7 +46,7 @@ expr returns [int fBlock = 0]
     $fBlock = $stop.getType() == RightBrace ? 1 : 0;
 }
     : func_call                         #exprFunc
-    | ('!'|'~') expr                    #exprUnOp
+    | ('+'|'-'|'!'|'~') expr            #exprUnOp
     | expr ('*'|'/'|'%') expr               #exprBinOp
     | expr ('+'|'-') expr                   #exprBinOp
     | expr ('<<'|'>>') expr                 #exprBinOp
@@ -50,6 +63,7 @@ expr returns [int fBlock = 0]
 
     | 'if' paren_expr expr                          #exprIfOp
     | 'if' paren_expr expr 'else' expr              #exprIfElseOp
+    | 'repeat' paren_expr expr                      #exprRepeatOp
     | 'while' paren_expr expr                       #exprWhileOp
     | 'do' expr 'while' paren_expr                  #exprDowhileOp
     | 'for' '(' lval '=' expr ';' expr ')' expr     #exprForOp
@@ -59,11 +73,12 @@ term
    : integer        #termSingle
    | paren_expr     #termParen
    | lval           #termSingle
+   | '&' Identifier #termAddressOf
    ;
 
 lval
     : Identifier '[' expr ']'   #lvalArray
-    | '@' Identifier            #lvalIndirect
+    | '*' Identifier            #lvalIndirect
     | Identifier                #lvalMem
     ;
 
@@ -95,6 +110,9 @@ Else : 'else';
 For : 'for';
 If : 'if';
 While : 'while';
+Repeat : 'repeat';
+
+At : '@';
 
 LeftParen : '(';
 RightParen : ')';
@@ -111,13 +129,17 @@ LeftShift : '<<';
 RightShift : '>>';
 
 Plus : '+';
+PlusPlus : '++';        // not used
 Minus : '-';
+MinusMinus : '--';      // not used
 Star : '*';
 Div : '/';
 Mod : '%';
 
 And : '&';
 Or : '|';
+AndAnd : '&&';          // not used
+OrOr : '||';            // not used
 Caret : '^';
 Not : '!';
 Tilde : '~';
@@ -142,6 +164,10 @@ OrAssign : '|=';
 
 Equal : '==';
 NotEqual : '!=';
+
+Arrow : '->';           // not used
+Dot : '.';              // not used
+Ellipsis : '...';       // not used
 
 //STRING
 //   : [a-z]+

@@ -1,16 +1,18 @@
 a = p;
 q = p[3];
-q = @p;
-@r;
+q = *p;
+*r;
+*r = q;
+p = &q;
+p = &q + 7;
 // TODO: give a good error for the following
-//@55;
+//*55;
 
-x[3+4] = @y + while(a[3] < x) b+=c;
+x[3+4] = *y + while(a[3] < x) b+=c;
 13 + 11;
 
 q = while(a[3] < x) b+=c + for(p=3;5)h;
 q = b += c + for(p=3;5)h;
-
 
 // NOTE: while is parenthesized in following
 q = (while(a[3] < x) b+=c) + for(p=3;5)h;
