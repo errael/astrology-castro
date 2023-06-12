@@ -29,7 +29,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-import com.raelity.astrolog.castro.Castro.TrailingBraceParseListener;
+import com.raelity.astrolog.castro.antlr.AstroBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 
@@ -132,8 +132,7 @@ String rn(ParseTree pt, boolean useBrackets)
     return s;
 }
 
-    //class EchoPass1  extends AstroBaseListener
-    class EchoPass1  extends TrailingBraceParseListener
+    class EchoPass1  extends AstroBaseListener
     {
     
     @Override
@@ -318,8 +317,7 @@ String rn(ParseTree pt, boolean useBrackets)
     /**
      * Output one line per statement of any collected info.
      */
-    //class EchoDump  extends AstroBaseListener
-    class EchoDump  extends TrailingBraceParseListener
+    class EchoDump  extends AstroBaseListener
     {
     int walkerCount;
     int statementCount;
@@ -333,6 +331,7 @@ String rn(ParseTree pt, boolean useBrackets)
     @Override
     public void exitEveryRule(ParserRuleContext ctx)
     {
+        super.exitEveryRule(ctx);
         String s = echo.get(ctx);
         if(s != null)
             walkerCount++;
@@ -341,8 +340,8 @@ String rn(ParseTree pt, boolean useBrackets)
     @Override
     public void exitStatement(StatementContext ctx)
     {
-        //sb.append(rn(ctx, true)).append(' ')
-        //        .append(removeFromEcho(ctx.expr)).append('\n');
+        if(Castro.getVerbose() > 0)
+            out.printf("input: %s\n", ctx.getText());
         out.printf("%s %s\n", rn(ctx, true), removeFromEcho(ctx.expr));
         statementCount++;
     }

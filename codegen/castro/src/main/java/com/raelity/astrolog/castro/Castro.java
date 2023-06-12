@@ -31,17 +31,13 @@ import gnu.getopt.LongOpt;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ErrorNode;
-import org.antlr.v4.runtime.tree.TerminalNode;
 
-import com.raelity.astrolog.castro.antlr.AstroBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroLexer;
 import com.raelity.astrolog.castro.antlr.AstroParser;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 
 import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 import static org.antlr.v4.runtime.CharStreams.fromPath;
 import static org.antlr.v4.runtime.CharStreams.fromStream;
@@ -162,8 +158,7 @@ public static void main(String[] args)
 
         outputWriter = outFileName == null
                 ? new PrintWriter(System.out)
-                : new PrintWriter(Files.newBufferedWriter(
-                        new File(outFileName).toPath(), WRITE, CREATE));
+                : new PrintWriter(Files.newBufferedWriter(new File(outFileName).toPath(), WRITE, TRUNCATE_EXISTING, CREATE));
 
         ProgramContext program;
         Castro castro = new Castro(inPath, outFileName);
@@ -187,32 +182,6 @@ public static void main(String[] args)
         System.exit(1);
 }
 
-    static class TrailingBraceParseListener extends AstroBaseListener
-    {
-    @Override
-    public void visitTerminal(TerminalNode tn)
-    {
-    }
-
-    @Override
-    public void visitErrorNode(ErrorNode en)
-    {
-    }
-
-    @Override
-    public void enterEveryRule(ParserRuleContext prc)
-    {
-    }
-
-    @Override
-    public void exitEveryRule(ParserRuleContext ctx)
-    {
-        if(ctx instanceof ExprContext expr) {
-            expr.fBlock = expr.getText().endsWith("}") ? 1 : 0;
-        }
-    }
-
-    }
 
 Path inPath;
 String outFileName;
@@ -231,7 +200,6 @@ throws IOException
     CharStream cs = inPath != null ? fromPath(inPath) : fromStream(System.in);
 
     AstroLexer lexer = new AstroLexer(cs);
-    parser.addParseListener(new TrailingBraceParseListener());
     parser.setTokenStream(new CommonTokenStream(lexer));
 
     ProgramContext program = parser.program();
