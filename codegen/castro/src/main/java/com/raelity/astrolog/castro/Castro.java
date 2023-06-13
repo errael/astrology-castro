@@ -1,21 +1,4 @@
-/*
- * Portions created by Ernie Rael are
- * Copyright (C) 2023 Ernie Rael.  All Rights Reserved.
- *
- * The contents of this file are subject to the Mozilla Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- *
- * The Original Code is jvi - vi editor clone.
- *
- * Contributor(s): Ernie Rael <errael@raelity.com>
- */
+/* Copyright © 2023 Ernie Rael. All rights reserved */
 
 package com.raelity.astrolog.castro;
 
@@ -88,6 +71,7 @@ public static void main(String[] args)
 {
     String inFileName = null;
     String outFileName = null;
+    LOG.getLevel(); // So now it's used.
     
     // https://www.gnu.org/software/gnuprologjava/api/gnu/getopt/Getopt.html
     LongOpt longOpts[] = new LongOpt[] {
@@ -136,6 +120,7 @@ public static void main(String[] args)
     if(inFileName != null && inFileName.equals(outFileName))
         usage("infile and outfile can not be the same file");
     
+    // TODO: if inFileName not found, try inFileName.castro
     if("-".equals(outFileName))
         outFileName = null;
     else if(outFileName == null && inFileName != null) {
@@ -162,9 +147,10 @@ public static void main(String[] args)
 
         ProgramContext program;
         Castro castro = new Castro(inPath, outFileName);
-        program = castro.parseProgram();
+        CharStream input = inPath != null ? fromPath(inPath) : fromStream(System.in);
+        program = castro.parseProgram(input);
         switch(runOption) {
-        case "test" -> CastroEcho.genPrefixNotation(parser, program, outputWriter);
+        case "test" -> CastroEcho.genPrefixNotation(parser, input, program, outputWriter);
         case null, default -> usage("compile not supported (YET)");
         }
     } catch(IOException ex) {
@@ -182,22 +168,18 @@ public static void main(String[] args)
         System.exit(1);
 }
 
-
-Path inPath;
-String outFileName;
+//Path inPath;
+//String outFileName;
 
 public Castro(Path inPath, String outFileName)
 {
-    this.inPath = inPath;
-    this.outFileName = outFileName;
+    //this.inPath = inPath;
+    //this.outFileName = outFileName;
 }
 
-ProgramContext parseProgram()
+ProgramContext parseProgram(CharStream cs)
 throws IOException
 {
-    // if in not found, try in.castro
-
-    CharStream cs = inPath != null ? fromPath(inPath) : fromStream(System.in);
 
     AstroLexer lexer = new AstroLexer(cs);
     parser.setTokenStream(new CommonTokenStream(lexer));

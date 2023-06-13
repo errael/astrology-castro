@@ -1,21 +1,4 @@
-/*
- * Portions created by Ernie Rael are
- * Copyright (C) 2023 Ernie Rael.  All Rights Reserved.
- *
- * The contents of this file are subject to the Mozilla Public
- * License Version 1.1 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- *
- * The Original Code is jvi - vi editor clone.
- *
- * Contributor(s): Ernie Rael <errael@raelity.com>
- */
+/* Copyright © 2023 Ernie Rael. All rights reserved */
 
 package com.raelity.astrolog.castro;
 
@@ -23,15 +6,20 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Objects;
 
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
+import com.raelity.antlr.ParseTreeUtil;
 import com.raelity.astrolog.castro.antlr.AstroBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
+
+import static com.raelity.antlr.ParseTreeUtil.getRuleName;
+import static com.raelity.astrolog.castro.antlr.AstroParser.Minus;
+import static com.raelity.astrolog.castro.antlr.AstroParser.Plus;
 
 /**
  * Output the tree in "prefix" notation; keep operator symbols and lvals.
@@ -60,20 +48,22 @@ final TreeProps<String> echo = new TreeProps<>();
 final ParseTreeWalker walker = new ParseTreeWalker();
 final ProgramContext program;
 final AstroParser parser;
+final CharStream input;
 final PrintWriter out;
 
-private CastroEcho(AstroParser parser, ProgramContext program, PrintWriter out) {
+private CastroEcho(AstroParser parser, CharStream input, ProgramContext program, PrintWriter out) {
     this.parser = parser;
+    this.input = input;
     this.program = program;
     this.out = out;
 }
 
 StringBuilder sb = new StringBuilder();
 
-static void genPrefixNotation(AstroParser parser, ProgramContext program,
-                                PrintWriter out)
+static void genPrefixNotation(AstroParser parser, CharStream input,
+                              ProgramContext program, PrintWriter out)
 {
-    CastroEcho castroEcho = new CastroEcho(parser, program, out);
+    CastroEcho castroEcho = new CastroEcho(parser, input, program, out);
     castroEcho.doEcho();
 }
 
@@ -100,7 +90,7 @@ private void putEcho(ParseTree ctx, String s)
     if(Castro.getVerbose() >= 2)
         out.printf("Saving: %08x %s %s'%s'\n",
                    System.identityHashCode(ctx), s,
-                   rn(ctx, true), ctx.getText());
+                   getRuleName(parser, ctx, true), ctx.getText());
     if(s == null)
         Objects.requireNonNull(s, "putEcho");
     echo.put(ctx, s);
@@ -116,22 +106,6 @@ private String removeFromEcho(ParseTree ctx)
     return s;
 }
 
-String rn(ParseTree pt, boolean useBrackets)
-{
-    String s;
-    String name;
-    if(pt instanceof RuleContext ctx)
-        name = parser.getRuleNames()[ctx.getRuleIndex()];
-    else
-        name = "???";
-
-    if(useBrackets)
-        s = '[' + name + ']';
-    else
-        s = name;
-    return s;
-}
-
     class EchoPass1  extends AstroBaseListener
     {
     
@@ -140,7 +114,7 @@ String rn(ParseTree pt, boolean useBrackets)
     {
         super.exitEveryRule(ctx);
         if(Castro.getVerbose() >= 2)
-            out.println("exit " + rn(ctx, false));
+            out.println("exit " + getRuleName(parser, ctx, false));
     }
     
     @Override
@@ -162,6 +136,16 @@ String rn(ParseTree pt, boolean useBrackets)
                 .append(removeFromEcho(ctx.expr(0))).append(' ')
                 .append("ELSE ")
                 .append(removeFromEcho(ctx.expr(1)));
+        putEcho(ctx, sb.toString());
+    }
+    
+    @Override
+    public void exitExprRepeatOp(ExprRepeatOpContext ctx)
+    {
+        sb.setLength(0);
+        sb.append("REPEAT ")
+                .append(removeFromEcho(ctx.paren_expr().expr())).append(' ')
+                .append(removeFromEcho(ctx.expr()));
         putEcho(ctx, sb.toString());
     }
     
@@ -228,7 +212,10 @@ String rn(ParseTree pt, boolean useBrackets)
     public void exitExprUnOp(ExprUnOpContext ctx)
     {
         sb.setLength(0);
-        sb.append(ctx.getChild(0).getText()).append(' ')
+        int opType = ctx.getStart().getType();
+        String text = opType == Minus ? "u-" : opType == Plus ? "u+"
+                                               : ctx.getStart().getText();
+        sb.append(text).append(' ')
                 .append(removeFromEcho(ctx.expr()));
         putEcho(ctx, sb.toString());
     }
@@ -300,8 +287,8 @@ String rn(ParseTree pt, boolean useBrackets)
     public void exitLvalArray(LvalArrayContext ctx)
     {
         sb.setLength(0);
-        sb.append(ctx.Identifier().getText()).append('[')
-                .append(removeFromEcho(ctx.expr())).append(']');
+        sb.append("INDEX").append(' ').append(ctx.Identifier()).append(' ')
+                .append(removeFromEcho(ctx.expr()));
         putEcho(ctx, sb.toString());
     }
 
@@ -309,9 +296,19 @@ String rn(ParseTree pt, boolean useBrackets)
     public void exitLvalIndirect(LvalIndirectContext ctx)
     {
         sb.setLength(0);
-        sb.append('@').append(ctx.Identifier().getText());
+        sb.append("INDIR").append(' ').append(ctx.Identifier().getText());
         putEcho(ctx, sb.toString());
     }
+    
+    @Override
+    public void exitTermAddressOf(TermAddressOfContext ctx)
+    {
+        sb.setLength(0);
+        sb.append("ADDR").append(' ').append(ctx.Identifier().getText());
+        putEcho(ctx, sb.toString());
+        super.exitTermAddressOf(ctx);
+    }
+    
     }
 
     /**
@@ -320,12 +317,12 @@ String rn(ParseTree pt, boolean useBrackets)
     class EchoDump  extends AstroBaseListener
     {
     int walkerCount;
-    int statementCount;
+    int astroExpressionCount;
 
     DumpCounts dump()
     {
         walker.walk(this, program);
-        return new DumpCounts(walkerCount, statementCount);
+        return new DumpCounts(walkerCount, astroExpressionCount);
     }
     
     @Override
@@ -336,16 +333,16 @@ String rn(ParseTree pt, boolean useBrackets)
         if(s != null)
             walkerCount++;
     }
-    
-    @Override
-    public void exitStatement(StatementContext ctx)
-    {
-        if(Castro.getVerbose() > 0)
-            out.printf("input: %s\n", ctx.getText());
-        out.printf("%s %s\n", rn(ctx, true), removeFromEcho(ctx.expr));
-        statementCount++;
-    }
-    
-    }
 
+    @Override
+    public void exitAstroExpression(AstroExpressionContext ctx)
+    {
+        out.printf("input: %s\n", ParseTreeUtil.getOriginalText(ctx, input));
+        out.printf("%s %s\n", getRuleName(parser, ctx, true),
+                              removeFromEcho(ctx.expr));
+        astroExpressionCount++;
+    }
+    
+    }
+    
 }
