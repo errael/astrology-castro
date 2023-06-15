@@ -48,12 +48,6 @@ run: $(NAME)
 grun: $(NAME)
 	cd $(ANTLR_TEST_OUTPUT); grun Astro program -gui
 
-
-AstroParser.java : Astro.g4
-Astro.tokens : Astro.g4
-AstroLexer.java : Astro.g4
-AstroLexer.tokens : Astro.g4
-AstroListener.java : Astro.g4
-AstroBaseListener.java : Astro.g4
-AstroVisitor.java : Astro.g4
-AstroBaseVisitor.java : Astro.g4
+test: $(NAME)
+	castro --test test-in test-out
+	diff test-gold test-out

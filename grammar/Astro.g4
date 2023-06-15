@@ -4,21 +4,56 @@ grammar Astro;
 
 //
 // TODO:
-//      introduce controlStatement
+//      control
 //          memory {...}
 //          include
-//      varStatement
 
 program
-    : macros EOF
+    : (var | macro)+ EOF
     ;
 
-macros : macro + ;
-macro : 'macro' Identifier ('@' integer)? '{' astroExpressions '}';
+// TODO: also string array initialization
 
-astroExpressions : astroExpression + ;
+var
+    : var1 | varArray | varArrayInit
+    ;
 
-astroExpression
+var1
+    : 'var' Identifier ('@' addr=integer)? ('{' init=expr '}')? ';'
+    ;
+
+varArray
+    : 'var' Identifier '[' size=integer ']' ('@' addr=integer)? ';'
+    ;
+
+/*
+ * var p[3] @100 { 4, 3 }    // p is size 3, starts at 100, p[2] is not init.
+ * var p[] { 4, 3 }          // p is size 2
+ */
+varArrayInit
+    : 'var' Identifier '[' (size=integer)? ']' ('@' addr=integer)?
+                                '{' init+=expr (',' init+=expr)* '}' ';'
+    ;
+
+macro
+    : 'macro' Identifier ('@' addr=integer)? '{' s+=astroExprStatement + '}'
+    ;
+
+/*
+ * After top level '} allow optional ';' to avoid conusion.
+ * "if(a){b;} *r = 2;" parses like "if(a){b;} * (r = 2);"
+ * TODO: Give warning if line starts with '*', '+', '-':w
+ */
+astroExprStatement
+    : astroExpr opt_semi[($astroExpr.stop.getType() == Semi) ? 1 : 0]
+    ;
+
+opt_semi[int fHasSemi]
+    : {$fHasSemi == 0}? ';'
+    |
+    ;
+
+astroExpr
     : expr expr_semi[$expr.fBlock]
     ;
 
@@ -28,7 +63,7 @@ expr_semi[int fBlock]
     ;
 
 brace_block
-    : '{' (bs+=expr expr_semi[$expr.fBlock])+ '}'
+    : '{' bs+=astroExprStatement + '}'
     ;
 
 paren_expr
@@ -104,6 +139,9 @@ constant
     |   CharacterConstant
     ;
 **************************************************************/
+
+Var : 'var';
+Macro : 'macro';
 
 Do : 'do';
 Else : 'else';

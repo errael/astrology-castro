@@ -1,50 +1,157 @@
-a = p;
-q = p[3];
-q = *p;
-*r;
-*r = q;
-p = &q;
-p = &q + 7;
-// TODO: give a good error for the following
-//*55;
+//
+// LONE value - no op/assign; should this give a warning?
+//              not in a "return" position (this one's seems more tricky)
+//              calculating the lone value can not have side effects
+//
 
-x[3+4] = *y + while(a[3] < x) b+=c;
-13 + 11;
+macro test_isolated_value {
+    *r;
+    +3;
+    a+b;
+    13 + 11;
 
-q = while(a[3] < x) b+=c + for(p=3;5)h;
-q = b += c + for(p=3;5)h;
+    !a;
+    !(a + b);
+    !a + b;
+    ~a;
+    ~(a + b);
+    ~a + b;
 
-// NOTE: while is parenthesized in following
-q = (while(a[3] < x) b+=c) + for(p=3;5)h;
-q = while(a[3] < x) b+=c; for(p=3;5)h += 3;
-q = (while(a[3] < x) b+=c);
-    // TODO: get this to work with ';' inside the ')' ???
-    //q = (while(a[3] < x) b+=c;);
+    a & b << c + d;
+    (a & b) << c + d;
 
-{ a =b; c = d;}
-{ a1 =b_; c2 = _d; d3 = 345; }
-x = y;
+    // TODO: give a good error for the following
+    //*55;
+}
 
-if(a) b;
-if(a) b else c;
-if(a) {b;c;}
-if(a) {b;c;} else {d;e;}
 
-// NOTE: error if missing ';'
-//if(a) b else c;
+//
+// ASSIGNMENT
+//
+macro test_assignment {
+    a = p;
+    q = p[3];
+    q = *p;
+    *r = q;
+    p = &q;
+    p = &q + 7;
+    *p = &q + 7;
 
-if(a) b; if(c) d else e;
-if(a) if(c) d else e;
+    p = a + b;
+    *p = c + d;
 
-if(a) b else if(c) d;
-if(a) {b;} else if(c) {d;}
-if(a) {b;} else {if(c) {d;}}
+    a = b * - c;
+    a = b * + c;
+}
 
-while(a) b;
-while(a) {b;c;}
+//
+// FUNCTION CALLS
+//
+macro test_function {
+    f();
+    f(a);
+    f(a, b);
+    f(a, b, c);
+    f(a, b+c, d);
+    f(a+b);
+    f(a+b, b);
+    f(a, b, c+b);
 
-do a while(b);
-do {a; b;} while(c);
+    a = f();
+    a = f(a, b+c, d) + g(x, y);
+    a = f(a, b+c, g(x,y) + z);
+    a = f(a, b+c, g(x,y) + h(z));
+}
 
-do a while(b) +33;
-do {a; b;} while(c) + while(a)b;
+//
+// BLOCK
+//
+macro test_block {
+    { a = b; c = d;}
+}
+
+//
+// IF, IF-ELSE
+//
+macro test_if_else {
+    if(a) b;
+    if(a) b else c;
+    if(a) {b;c;}
+    if(a) {b;c;} else {d;e;}
+
+    if(a) b; if(c) d else e;
+    if(a) if(c) d else e;
+
+    if(a) b else if(c) d;
+    if(a) {b;} else if(c) {d;}
+    if(a) {b;} else { if(c) d; }
+
+    if(a+b) c += d else {e; f;}
+    z = if(a+b) c += d else {e; f;}
+}
+
+//
+// QUEST COLON
+//
+macro test_quest_colon {
+    a ? b : d ? d : e ? f : g;
+    a ? b : c() + d ? e : f ? g : h;
+    a ? b : c ? d() + e : f ? g : h;
+    x = a ? b : d ? d : e ? f : g;
+    x = a ? b : c() + d ? e : f ? g : h;
+    x = a ? b : c ? d() + e : f ? g : h;
+}
+
+//
+// FOR, WHILE, DO_WHILE, REPEAT
+//
+macro test_control_expressions {
+    for(a = b+c; d+e) f += a;
+
+    while(a) b;
+    while(a) {b;c;}
+
+    do a while(b);
+    do {a; b;} while(c);
+
+    repeat(x + y) {a;b;}
+}
+
+//
+// COMPLEX EXPRESSSIONS
+//
+macro test_complex_expressions {
+    if(a) {b;}
+    if(c) {d;}
+    if(a) {b;}
+    + if(c) {d;}
+    if(a) {b;};
+    + if(c) {d;}
+
+    x[3+4] = *y + while(a[3] < x) b+=c;
+    do {a; b;} while(c); + while(a) b;
+    do a while(b) + 33;
+    + do a while(b) + 33;
+    do {a; b;} while(c) + while(a) b;
+    a += b + {  c;  d;  }  
+    q = (while(a[3] < x) b+=c);
+    q = b += c + for(p=3; 5) h;
+}
+
+
+//
+// MULTIPLE CONTROL EXPRESSIONS
+//
+macro test_multiple_control_expressions {
+    q = while(a[3] < x) b += c + for(p=3; 5) h;
+    q = (while(a[3] < x) b += c) + for(p = 3; 5) h; // while in parens
+    q = while(a[3] < x) b += c; for(p = 3; 5) h += 3;
+}
+
+//
+// ERROR HANDLING
+//
+// if(a)b; else c   // semi before "else"
+// if(a) {b;} else { if(c) d }  // need semi after "d"
+
+
