@@ -17,7 +17,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
 
     // This dependency is used by the application.
-    implementation 'com.google.guava:guava:31.0.1-jre'
+    implementation 'com.google.guava:guava:32.0.1-jre'
     implementation "org.antlr:antlr4:4.13.0"
     implementation 'gnu.getopt:java-getopt:1.0.13'
     // following was compile

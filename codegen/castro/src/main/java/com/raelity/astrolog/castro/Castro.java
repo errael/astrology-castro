@@ -142,7 +142,7 @@ public static void main(String[] args)
         }
 
         outputWriter = outFileName == null
-                ? new PrintWriter(System.out)
+                ? new PrintWriter(System.out, true)   // TODO: true/false option
                 : new PrintWriter(Files.newBufferedWriter(new File(outFileName).toPath(), WRITE, TRUNCATE_EXISTING, CREATE));
 
         ProgramContext program;

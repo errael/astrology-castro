@@ -64,7 +64,12 @@ static void genPrefixNotation(AstroParser parser, CharStream input,
                               ProgramContext program, PrintWriter out)
 {
     CastroEcho castroEcho = new CastroEcho(parser, input, program, out);
-    castroEcho.doEcho();
+    try {
+        castroEcho.doEcho();
+    } catch (Exception ex) {
+        out.printf("ABORT: %s\n", ex.getMessage());
+        ex.printStackTrace(out);
+    }
 }
 
 record DumpCounts(int walker, int statement){};
@@ -75,8 +80,8 @@ String doEcho()
     walker.walk(echoPass1, program);
 
     sb.setLength(0);
-    EchoDump echoDump = new EchoDump();
-    DumpCounts dump = echoDump.dump();
+    ExprStatementDump exprDump = new ExprStatementDump();
+    DumpCounts dump = exprDump.dump();
     if(dump.walker() != dump.statement() || echo.size() != 0) {
         out.printf("PARSE ERROR: statements %d, found %d. echos left %d\n",
                    dump.statement(), dump.walker(), echo.size());
@@ -102,7 +107,7 @@ private String removeFromEcho(ParseTree ctx)
     if(Castro.getVerbose() >= 2)
         out.printf("Remove: %08x %s\n", System.identityHashCode(ctx), s);
     if(s == null)
-        Objects.requireNonNull(s, "putEcho");
+        Objects.requireNonNull(s, "removeFromEcho");
     return s;
 }
 
@@ -186,13 +191,13 @@ private String removeFromEcho(ParseTree ctx)
     @Override
     public void exitExprBraceBlockOp(ExprBraceBlockOpContext ctx)
     {
-        List<ExprContext> l = ctx.brace_block().bs;
-        //List<ExprContext> l = ctx.bs;
+        List<AstroExprStatementContext> bs = ctx.brace_block().bs;
         sb.setLength(0);
-        sb.append("BLOCK(").append(l.size()).append(") ");
-        for(ExprContext ec : l) {
-            sb.append(removeFromEcho(ec)).append(' ');
+        sb.append("BLOCK(").append(bs.size()).append(") ");
+        for(AstroExprStatementContext s : bs) {
+            sb.append(removeFromEcho(s.astroExpr().expr())).append(' ');
         }
+
         putEcho(ctx, sb.toString());
     }
     
@@ -314,7 +319,7 @@ private String removeFromEcho(ParseTree ctx)
     /**
      * Output one line per statement of any collected info.
      */
-    class EchoDump  extends AstroBaseListener
+    class ExprStatementDump  extends AstroBaseListener
     {
     int walkerCount;
     int astroExpressionCount;
@@ -334,13 +339,32 @@ private String removeFromEcho(ParseTree ctx)
             walkerCount++;
     }
 
-    @Override
-    public void exitAstroExpression(AstroExpressionContext ctx)
+    void dumpStatement(AstroExprStatementContext ctx)
     {
         out.printf("input: %s\n", ParseTreeUtil.getOriginalText(ctx, input));
-        out.printf("%s %s\n", getRuleName(parser, ctx, true),
-                              removeFromEcho(ctx.expr));
-        astroExpressionCount++;
+        out.printf("    %s %s\n", getRuleName(parser, ctx, true),
+                                  removeFromEcho(ctx.astroExpr.expr));
+    }
+    
+    @Override
+    public void exitMacro(MacroContext ctx)
+    {
+        super.exitMacro(ctx);
+        List<AstroExprStatementContext> es = ctx.s;
+
+        sb.setLength(0);
+        sb.append("=== MACRO ").append(ctx.Identifier().getText());
+        if(ctx.addr != null) {
+            sb.append("@").append(removeFromEcho(ctx.addr));
+            astroExpressionCount++; // weird, but the macro addr counts
+        }
+        sb.append('(').append(es.size()).append(')');
+
+        out.printf("\n%s\n", sb.toString());
+        for(AstroExprStatementContext s : es) {
+            dumpStatement(s);
+            astroExpressionCount++;
+        }
     }
     
     }
