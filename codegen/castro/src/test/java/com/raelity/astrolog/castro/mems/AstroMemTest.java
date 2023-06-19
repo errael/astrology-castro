@@ -1,6 +1,6 @@
 /* Copyright © 2023 Ernie Rael. All rights reserved */
 
-package com.raelity.astrolog.castro;
+package com.raelity.astrolog.castro.mems;
 
 import java.util.EnumSet;
 
@@ -10,14 +10,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import com.raelity.astrolog.castro.AstroMem.Var;
+import com.raelity.astrolog.castro.mems.AstroMem.Var;
 
 import static java.util.EnumSet.of;
 import static org.junit.jupiter.api.Assertions.*;
 
-import static com.raelity.astrolog.castro.AstroMem.Var.VarState.DUP_NAME_ERR;
-import static com.raelity.astrolog.castro.AstroMem.Var.VarState.OVERLAP_ERR;
-import static com.raelity.astrolog.castro.AstroMem.Var.VarState.SIZE_ERR;
+import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUP_NAME_ERR;
+import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.OVERLAP_ERR;
+import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.SIZE_ERR;
 
 /**
  *

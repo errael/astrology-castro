@@ -1,6 +1,6 @@
 /* Copyright © 2023 Ernie Rael. All rights reserved */
 
-package com.raelity.astrolog.castro;
+package com.raelity.astrolog.castro.mems;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -18,11 +18,11 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
 
-import static com.raelity.astrolog.castro.AstroMem.Var.VarState;
-import static com.raelity.astrolog.castro.AstroMem.Var.VarState.DUP_NAME_ERR;
-import static com.raelity.astrolog.castro.AstroMem.Var.VarState.NOT_ALLOC;
-import static com.raelity.astrolog.castro.AstroMem.Var.VarState.OVERLAP_ERR;
-import static com.raelity.astrolog.castro.AstroMem.Var.VarState.SIZE_ERR;
+import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState;
+import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUP_NAME_ERR;
+import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.NOT_ALLOC;
+import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.OVERLAP_ERR;
+import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.SIZE_ERR;
 
 // TODO: preallocate builtin variables [a-z]
 // TODO: preallocate limit
