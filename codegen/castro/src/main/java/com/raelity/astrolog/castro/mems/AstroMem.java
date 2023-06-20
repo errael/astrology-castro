@@ -2,13 +2,17 @@
 
 package com.raelity.astrolog.castro.mems;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NavigableSet;
 import java.util.Objects;
-import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.google.common.collect.ContiguousSet;
@@ -41,7 +45,7 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
  */
 abstract class AstroMem
 {
-final String memSpaceName;
+public final String memSpaceName;
 /** Allocated memory; value is the variable name.
  * Any key is a closed range. non-empty? Non-assigne/unallocated var could be empty.
  * 
@@ -49,7 +53,7 @@ final String memSpaceName;
 // May not *need* the RangeMap, but it can provide details messages
 // about conflicting allocations.
 private final RangeMap<Integer, Var> layout = TreeRangeMap.create();
-private final SortedSet<Var> vars = new TreeSet<>();
+private final NavigableSet<VarKey> vars = new TreeSet<>();
 private final List<Var> varsError = new ArrayList<>();
 // probably don't need/want this. Maybe some kind of allocation lock.
 private boolean declarationsDone;
@@ -89,23 +93,24 @@ boolean check()
         if(var.hasError())
             ok = false;
     }
-    for(Var var : vars) {
-        if(var.hasError())
+    for(VarKey var : vars) {
+        if(((Var)var).hasError())
             ok = false;
     }
     return ok;
+}
+
+Map<Range<Integer>, Var> getAllocationMap()
+{
+    return Collections.unmodifiableMap(layout.asMapOfRanges());
 }
 
 /** @return variable for name or null if no such variable */
 public Var getVar(String name)
 {
     Objects.nonNull(name);
-    Var var = null;
-    // Note that Var equals/hash is based only on name
-    SortedSet<Var> varLookup = vars.tailSet(new Var(name));
-    if(!varLookup.isEmpty())
-        var = varLookup.first();
-    return var != null && name.equals(var.name) ? var : null;
+    Var var = (Var)vars.floor(new VarKey(name));
+    return var != null && name.equals(var.getName()) ? var : null;
 }
 
 /** @return an iterator of the active variables */
@@ -121,7 +126,7 @@ public Iterator<Var> getErrorVars()
 }
 
 /**
- * Starting with pre-allocated variables, allocate memory for any variable
+ * Starting from pre-allocated variables, allocate memory for any variable
  * without an assigned memory location.
  * <p>
  * Create a set of allocated ranges, its complement is free memory;
@@ -146,8 +151,9 @@ void allocate()
     declarationsDone = true; // TODO: probably don't need/want this.
     RangeSet<Integer> used = TreeRangeSet.create(layout.asMapOfRanges().keySet());
     RangeSet<Integer> free = used.complement();
-    System.out.printf("free mem: %s\n", free.toString());
-    for(Var var : vars) {
+    //System.out.printf("free mem: %s\n", free.toString());
+    for(VarKey varKey : vars) {
+        Var var = (Var)varKey;
         if(var.hasError())
             throw new IllegalStateException("Can't allocate variable with errors");
         if(var.isAllocated())
@@ -167,21 +173,23 @@ void allocate()
                     break found;
                 }
             }
+            var.addState(OUT_OF_MEM);
             throw new OutOfMemory(var, free);
         }
-        System.out.printf("free mem: %s\n", free.toString());
+        //System.out.printf("free mem: %s\n", free.toString());
     }
 }
 
-    public final class OutOfMemory extends RuntimeException
-    {
-        OutOfMemory(Var var, RangeSet<Integer> free)
-        {
-            super(String.format("%s: name %s, size %d, free %s",
-                                AstroMem.this.getClass().getSimpleName(),
-                                var.getName(), var.getSize(), free));
-        }
-    }
+@SuppressWarnings("serial")
+public final class OutOfMemory extends RuntimeException
+{
+OutOfMemory(Var var, RangeSet<Integer> free)
+{
+    super(String.format("%s: name %s, size %d, free %s",
+                        AstroMem.this.getClass().getSimpleName(),
+                        var.getName(), var.getSize(), free));
+}
+}
 
 /** Add the variable without allocating it.
  * @return Var, may have error state.
@@ -270,12 +278,24 @@ private Range<Integer> varToRange(Var var)
     return Range.closedOpen(var.addr, var.addr + var.size);
 }
 
-    /** iterate Vars with no remove */
+public void dumpAllocation(PrintWriter out)
+{
+    Map<Range<Integer>, Var> allocationMap = getAllocationMap();
+    RangeSet<Integer> used = TreeRangeSet.create(allocationMap.keySet());
+    RangeSet<Integer> free = used.complement();
+    out.printf("// memSpace: %s\n// used %s\n// free %s\n",
+               memSpaceName, used, free);
+    for(Entry<Range<Integer>, Var> entry : allocationMap.entrySet()) {
+        out.printf("%s\n", entry);
+    }
+    out.flush();
+}
+
     private class VarIter implements Iterator<Var>
     {
-        final Iterator<Var> it;
+        final Iterator<? extends VarKey> it;
 
-        public VarIter(Iterator<Var> it)
+        public VarIter(Iterator<? extends VarKey> it)
         {
             this.it = it;
         }
@@ -289,13 +309,56 @@ private Range<Integer> varToRange(Var var)
         @Override
         public Var next()
         {
-            return it.next();
+            return (Var)it.next();
         }
-    
     }
 
     /** For stuff like file/lino, ... */
     public interface VarInfo {}
+
+    /** VarKey uniquely identifies a variable for equals,hashcode.
+     */
+    private class VarKey implements Comparable<VarKey>
+    {
+    private final String name;
+    
+    public VarKey(String name)
+    {
+        this.name = name;
+    }
+    
+    public String getName()
+    {
+        return name;
+    }
+
+    @Override
+    public int compareTo(VarKey o)
+    {
+        return name.compareTo(o.name);
+    }
+    
+    @Override
+    public int hashCode()
+    {
+        int hash = 7;
+        hash = 53 * hash + Objects.hashCode(this.name);
+        return hash;
+    }
+    
+    @Override
+    public boolean equals(Object obj)
+    {
+        if(this == obj)
+            return true;
+        if(obj == null)
+            return false;
+        if(getClass() != obj.getClass())
+            return false;
+        final VarKey other = (Var)obj;
+        return Objects.equals(this.name, other.name);
+    }
+    }
 
     /**
      * A variable, it's size, it's addr; addr {@literal <} 0 means
@@ -303,25 +366,18 @@ private Range<Integer> varToRange(Var var)
      * <p>
      * <b>NOTE:</b> equals and hash are based only on name.
      */
-    public static class Var implements Comparable<Var>
+    public class Var extends VarKey
     {
-    private final String name;
+    //private final String name;
     private final int size;
     private int addr; // -1 means not allocated
     private final EnumSet<VarState> state;
     private VarInfo info; // Could have map of var:info, if not used much
-
-    // This is used to do a lookup
-    private Var(String name)
-    {
-        this.name = name;
-        this.size = 0;
-        state = null;
-    }
     
     private Var(String name, int size, int addr, VarState... a_state)
     {
-        this.name = name;
+        super(name);
+        //this.name = name;
         this.size = size;
         this.addr = addr;
         if(a_state.length > 0) {
@@ -341,6 +397,7 @@ private Range<Integer> varToRange(Var var)
     ALLOC,      // var allocated an addr automatically
     //NOT_ALLOC,  // variable not yet allocated
     DUP_NAME_ERR, SIZE_ERR, OVERLAP_ERR,
+    OUT_OF_MEM,
     INTERNAL,   // used internally, like upper/lower range boundaries
     LIMIT,    // user specified limits/restrictions, not a var
     }
@@ -386,11 +443,6 @@ private Range<Integer> varToRange(Var var)
         return EnumSet.copyOf(state);
     }
     
-    public String getName()
-    {
-        return name;
-    }
-    
     public int getSize()
     {
         return size;
@@ -415,40 +467,12 @@ private Range<Integer> varToRange(Var var)
     {
         this.info = info;
     }
-
-    
-    @Override
-    public int compareTo(Var o)
-    {
-        return name.compareTo(o.name);
-    }
     
     @Override
     public String toString()
     {
-        return "Var{" + "name=" + name + ", addr=" + addr + ", size=" + size
+        return "Var{" + "name=" + getName() + ", addr=" + addr + ", size=" + size
                 + ", state=" + state + '}';
-    }
-    
-    @Override
-    public int hashCode()
-    {
-        int hash = 7;
-        hash = 53 * hash + Objects.hashCode(this.name);
-        return hash;
-    }
-    
-    @Override
-    public boolean equals(Object obj)
-    {
-        if(this == obj)
-            return true;
-        if(obj == null)
-            return false;
-        if(getClass() != obj.getClass())
-            return false;
-        final Var other = (Var)obj;
-        return Objects.equals(this.name, other.name);
     }
     
     }

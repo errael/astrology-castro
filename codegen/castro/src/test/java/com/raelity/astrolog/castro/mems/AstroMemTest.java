@@ -2,6 +2,7 @@
 
 package com.raelity.astrolog.castro.mems;
 
+import java.io.PrintWriter;
 import java.util.EnumSet;
 
 import org.junit.jupiter.api.AfterEach;
@@ -62,8 +63,9 @@ public void tearDown()
 public void testRegistersMem()
 {
     System.out.println("RegistersMem");
-    AstroMem mem = new Registers();
+    Registers mem = new Registers();
 
+    mem.declare("var0", 1, 30, PRE_ASSIGN);
     mem.declare("var1", 10, 41);
     mem.declare("var2", 10, 95);
     mem.declare("var3", 10, 195);
@@ -76,10 +78,19 @@ public void testRegistersMem()
     assertEquals(105, var.getAddr());
     mem.declare("var5", 31);
     Var var6 = mem.declare("var6", 31);
+
+    Var var8 = mem.declare("var8", 1, 230); // out of bounds
+    mem.allocate();
+    assertTrue(var8.hasError());
+
     Var var7 = mem.declare("var7", 31);
     assertThrows(OutOfMemory.class, () -> mem.allocate());
     assertEquals(137, var6.getAddr());
     assertEquals(-1, var7.getAddr());
+
+    mem.dumpAllocation(new PrintWriter(System.out));
+    mem.dumpVars(new PrintWriter(System.out), true);
+    mem.dumpErrors(new PrintWriter(System.out));
 }
 
 /**
