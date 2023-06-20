@@ -10,14 +10,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import com.raelity.astrolog.castro.mems.AstroMem.OutOfMemory;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 
 import static java.util.EnumSet.of;
 import static org.junit.jupiter.api.Assertions.*;
 
-import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUP_NAME_ERR;
-import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.OVERLAP_ERR;
-import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.SIZE_ERR;
+import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 
 /**
  *
@@ -50,6 +49,64 @@ public void tearDown()
 {
 }
 
+    class AstroMemForTest extends AstroMem
+    {
+    public AstroMemForTest()
+    {
+        super("TestingMemorySpace");
+    }
+    }
+
+@Test
+@SuppressWarnings({"UseOfSystemOutOrSystemErr", "ThrowableResultIgnored"})
+public void testRegistersMem()
+{
+    System.out.println("RegistersMem");
+    AstroMem mem = new Registers();
+
+    mem.declare("var1", 10, 41);
+    mem.declare("var2", 10, 95);
+    mem.declare("var3", 10, 195);
+    mem.lowerLimit(100);
+    mem.upperLimit(201);
+
+    Var var = mem.declare("var4", 1);
+    mem.allocate();
+    assertFalse(var.hasError());
+    assertEquals(105, var.getAddr());
+    mem.declare("var5", 31);
+    Var var6 = mem.declare("var6", 31);
+    Var var7 = mem.declare("var7", 31);
+    assertThrows(OutOfMemory.class, () -> mem.allocate());
+    assertEquals(137, var6.getAddr());
+    assertEquals(-1, var7.getAddr());
+}
+
+/**
+ *      test declare a_state errors
+ *      Var constructor a_state errors
+ */
+@Test
+@SuppressWarnings({"UseOfSystemOutOrSystemErr", "ThrowableResultIgnored"})
+public void testVarConstruction()
+{
+    System.out.println("varConstruction");
+    AstroMem mem = new AstroMemForTest();
+
+    assertThrows(IllegalArgumentException.class,
+                 () -> mem.declare("var1", 1, 101, SIZE_ERR));
+    mem.declare("var1", 1, 101);
+    assertThrows(IllegalArgumentException.class,
+                 () -> mem.declare("var2", 1, -1, BUILTIN));
+    assertThrows(IllegalArgumentException.class,
+                 () -> mem.declare("var2", 1, -1, PRE_ASSIGN));
+    assertThrows(IllegalArgumentException.class,
+                 () -> mem.declare("var2", 1, -1, LIMIT));
+    mem.declare("var2", 1, 102, BUILTIN);
+    mem.declare("var3", 1, 103, PRE_ASSIGN);
+    mem.declare("var4", 1, 104, LIMIT);
+}
+
 /**
  * Test of allocate method, of class AstroMem.
  */
@@ -58,7 +115,9 @@ public void tearDown()
 public void testAllocate()
 {
     System.out.println("allocate");
-    AstroMem mem = new AstroMem();
+    AstroMem mem = new AstroMemForTest();
+    mem.lowerLimit(100);
+
     int free;
     Var var;
     // first pre-allocate so there are holes of size 1,2,3,∞
@@ -115,7 +174,9 @@ public void testAllocate()
 public void testDeclare()
 {
     System.out.println("declare");
-    AstroMem mem = new AstroMem();
+    AstroMem mem = new AstroMemForTest();
+    mem.lowerLimit(100);
+
     Var result = mem.declare("var1", 1, 101);
     assertFalse(result.hasError());
     result = mem.declare("var2", 1, 102);
