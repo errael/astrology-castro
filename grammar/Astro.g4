@@ -91,7 +91,8 @@ expr returns [int fBlock = 0]
     | expr ('^') expr                       #exprBinOp
     | expr ('|') expr                       #exprBinOp
     | <assoc=right> expr '?' expr ':' expr      #exprQuestOp
-    | lval ('='|'+='|'-=') expr             #exprAssOp
+    | lval ('='|'+='|'-='|'*='|'/='|'%='|'<<='|'>>='|'&='|'^='|'|=') expr
+                                                                #exprAssOp
     | term                                  #exprTermOp
 
     | brace_block                           #exprBraceBlockOp

@@ -1,37 +1,54 @@
-CONSIDER:
-    structs
+CONSIDER
+========
+structs
 
-    asm instrinsic to copy verbatum, good for init
-        asm(text);
-    Lexer mode to facilitate literal copy?
+asm instrinsic to copy verbatum, good for init
+    asm(text);
+Lexer mode to facilitate literal copy?
 
-    Verbose initialization "~" vs "~1"
-    - Could have a compiler option so all init is verbose; ugh.
-    - Could have "Identifier(:v)?", or "varv".
-    - Could have a control "option verbose {varName (, varName)+}"
-    - Could use "asm(...);" but that's a hack
-    varv seems preferable rather than some arcane syntax.
-    Work around is to edit the output file
+Verbose initialization "~" vs "~1"
+- Could have a compiler option so all init is verbose; ugh.
+- Could have "Identifier(:v)?", or "varv".
+- Could have a control "option verbose {varName (, varName)+}"
+- Could use "asm(...);" but that's a hack
+varv seems preferable rather than some arcane syntax.
+Work around is to edit the output file
 
-    Allow local variables in a macro; makes the stack meaningful.
-        allocate memory { stack <addr>; }
-    Since macros can invoke themselves directly or indirectly, this
-    requires adjusting the stackpoint on entry/exit.
-    Use 'var'; could introduce 'local', but seems no advantage.
+Allow local variables in a macro; makes the stack meaningful.
+    allocate memory { stack <addr>; }
+Since macros can invoke themselves directly or indirectly, this
+requires adjusting the stackpoint on entry/exit.
+Use 'var'; could introduce 'local', but seems no advantage.
 
-    A textual copy/value for later use/substitution
-        define lhs exression;
-    then later
-        v = $lhs + foo + bar;
-    So if "$lhs" is used in an expression, it is copied.
-    Not much bang for the buck. Requires a trick to get the code
-    inserted at the right spot. Could either fake out the scanner
-    and insert string, or compile the string and insert the result.
+A textual copy/value for later use/substitution
+    define lhs exression;
+then later
+    v = $lhs + foo + bar;
+So if "$lhs" is used in an expression, it is copied.
+Not much bang for the buck. Requires a trick to get the code
+inserted at the right spot. Could either fake out the scanner
+and insert string, or compile the string and insert the result.
 
-    sizeof(var) as a constant during parse, counts number items in array.
-    Would probably want to support some simple constant arithmetic.
+sizeof(var) as a constant during parse, counts number items in array.
+Would probably want to support some simple constant arithmetic.
+
+PROBLEMS
+========
+
+
 
 Grammar confusion because everything is an expressions
+
+    It's natural, at first glance, to expect these two lines
+        if(a){b;} *r;
+        if(a)b; *r;
+    to be equivalent. But they are not because "if(a){b;}" is an expression
+    and *r is parsed as multiplication.
+
+    Need to issue a warning. The warning can be fixed with
+        - parenthesis such as (*r)
+        - ';' after '}'
+
     Looking at these statements
         input: if(a){b;}
         *r;
@@ -42,16 +59,9 @@ Grammar confusion because everything is an expressions
 
         input: *r;
         [astroExprStatement] INDIR r
-    It's natural, at first glance, to expect these two lines
-        if(a){b;} *r;
-        if(a)b; *r;
-    to be equivalent. But they are not because "if(a){b;}" is an expression.
-    Could require a semi-colon after the '}' if separate, but use problems
-    will ensue.
-    Need to issue a warning. The warning can be fixed with
-        - parenthesis
-        - ';' after '}' (need to adjust the grammar to allow 'empty statement')
 
+Find expressions with no side effects, e.g. "a + b" is not assiged to anything.
+Give a warning for these.
 
 ==============================================================================
 
