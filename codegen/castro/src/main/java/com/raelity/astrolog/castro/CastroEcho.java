@@ -207,6 +207,7 @@ private String removeFromEcho(ParseTree ctx)
         List<ExprContext> args = ctx.func_call().args;
         sb.setLength(0);
         sb.append("FUNC(").append(args.size()).append(") ");
+        sb.append(ctx.func_call().Identifier().getText()).append(' ');
         for(ExprContext arg : args) {
             sb.append(removeFromEcho(arg)).append(' ');
         }
