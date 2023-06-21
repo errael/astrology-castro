@@ -25,6 +25,8 @@ import com.google.common.collect.TreeRangeSet;
 
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
+import static com.raelity.lib.collect.Util.intersection;
+import static com.raelity.lib.collect.Util.intersects;
 
 // TODO: preallocate limit
 
@@ -58,19 +60,6 @@ private final List<Var> varsError = new ArrayList<>();
 // probably don't need/want this. Maybe some kind of allocation lock.
 private boolean declarationsDone;
 int nLimit; // use to label limit ranges (may be disjoint)
-
-/** return v1 {@literal &} v2 */
-public static <T extends Enum<T>> EnumSet<T> intersection(EnumSet<T> v1, EnumSet<T> v2)
-{
-    EnumSet<T> v0 = EnumSet.copyOf(v1);
-    v0.retainAll(v2);
-    return v0;
-}
-
-public static <T extends Enum<T>> boolean intersects(EnumSet<T> v1, EnumSet<T> v2)
-{
-    return !intersection(v1, v2).isEmpty();
-}
 
 public AstroMem(String name, int min, int max)
 {
