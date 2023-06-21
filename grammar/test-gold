@@ -51,29 +51,29 @@ input: a = b * + c;
 
 === MACRO test_function(12)
 input: f();
-    [astroExprStatement] FUNC(0) 
+    [astroExprStatement] FUNC(0) f 
 input: f(a);
-    [astroExprStatement] FUNC(1) a 
+    [astroExprStatement] FUNC(1) f a 
 input: f(a, b);
-    [astroExprStatement] FUNC(2) a b 
+    [astroExprStatement] FUNC(2) f a b 
 input: f(a, b, c);
-    [astroExprStatement] FUNC(3) a b c 
+    [astroExprStatement] FUNC(3) f a b c 
 input: f(a, b+c, d);
-    [astroExprStatement] FUNC(3) a + b c d 
+    [astroExprStatement] FUNC(3) f a + b c d 
 input: f(a+b);
-    [astroExprStatement] FUNC(1) + a b 
+    [astroExprStatement] FUNC(1) f + a b 
 input: f(a+b, b);
-    [astroExprStatement] FUNC(2) + a b b 
+    [astroExprStatement] FUNC(2) f + a b b 
 input: f(a, b, c+b);
-    [astroExprStatement] FUNC(3) a b + c b 
+    [astroExprStatement] FUNC(3) f a b + c b 
 input: a = f();
-    [astroExprStatement] = a FUNC(0) 
+    [astroExprStatement] = a FUNC(0) f 
 input: a = f(a, b+c, d) + g(x, y);
-    [astroExprStatement] = a + FUNC(3) a + b c d  FUNC(2) x y 
+    [astroExprStatement] = a + FUNC(3) f a + b c d  FUNC(2) g x y 
 input: a = f(a, b+c, g(x,y) + z);
-    [astroExprStatement] = a FUNC(3) a + b c + FUNC(2) x y  z 
+    [astroExprStatement] = a FUNC(3) f a + b c + FUNC(2) g x y  z 
 input: a = f(a, b+c, g(x,y) + h(z));
-    [astroExprStatement] = a FUNC(3) a + b c + FUNC(2) x y  FUNC(1) z  
+    [astroExprStatement] = a FUNC(3) f a + b c + FUNC(2) g x y  FUNC(1) h z  
 
 === MACRO test_block(1)
 input: { a = b; c = d;}
@@ -109,15 +109,15 @@ input: z = if(a+b) c += d else {e; f;}
 input: a ? b : d ? d : e ? f : g;
     [astroExprStatement] ?: a b ?: d d ?: e f g   
 input: a ? b : c() + d ? e : f ? g : h;
-    [astroExprStatement] ?: a b ?: + FUNC(0)  d e ?: f g h   
+    [astroExprStatement] ?: a b ?: + FUNC(0) c  d e ?: f g h   
 input: a ? b : c ? d() + e : f ? g : h;
-    [astroExprStatement] ?: a b ?: c + FUNC(0)  e ?: f g h   
+    [astroExprStatement] ?: a b ?: c + FUNC(0) d  e ?: f g h   
 input: x = a ? b : d ? d : e ? f : g;
     [astroExprStatement] = x ?: a b ?: d d ?: e f g   
 input: x = a ? b : c() + d ? e : f ? g : h;
-    [astroExprStatement] = x ?: a b ?: + FUNC(0)  d e ?: f g h   
+    [astroExprStatement] = x ?: a b ?: + FUNC(0) c  d e ?: f g h   
 input: x = a ? b : c ? d() + e : f ? g : h;
-    [astroExprStatement] = x ?: a b ?: c + FUNC(0)  e ?: f g h   
+    [astroExprStatement] = x ?: a b ?: c + FUNC(0) d  e ?: f g h   
 
 === MACRO test_control_expressions(6)
 input: for(a = b+c; d+e) f += a;
