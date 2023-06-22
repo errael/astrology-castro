@@ -22,6 +22,12 @@ public final class ParseTreeUtil
 {
     private ParseTreeUtil() { }
 
+    /**
+     * Return the text for the node as found in the input stream.
+     * @param ctx text for this node.
+     * @param input extract the text from this stream
+     * @return input text for node
+     */
     public static String getOriginalText(ParserRuleContext ctx, CharStream input)
     {
         int a = ctx.start.getStartIndex();
@@ -30,6 +36,13 @@ public final class ParseTreeUtil
         return input.getText(interval);
     }
 
+    /**
+     * Return the text for the node as a sequence of space separated 
+     * node text. The primary difference to {@linkplain getOriginalText}
+     * is that this method discards the original whitespace.
+     * @param ctx
+     * @return 
+     */
     public static String getSpacedText(ParserRuleContext ctx)
     {
         StringBuilder sb = new StringBuilder();
@@ -41,6 +54,11 @@ public final class ParseTreeUtil
         return sb.toString();
     }
 
+    /**
+     * Return list of terminal nodes in order.
+     * @param pt tree
+     * @return list of terminal nodes
+     */
     public static List<ParseTree> getTerminalNodes(ParseTree pt)
     {
         assert pt != null;
@@ -52,6 +70,13 @@ public final class ParseTreeUtil
         return ptl;
     }
 
+    /**
+     * Return the rule name for the given node.
+     * @param parser this generated the pt
+     * @param pt find this node's rule name, should be a RuleContext
+     * @param useBrackets true if the name should be in brackets, "[rule]"
+     * @return rule name, or "???", possibly in "[]"
+     */
     public static String getRuleName(Parser parser, ParseTree pt,
                                      boolean useBrackets)
     {

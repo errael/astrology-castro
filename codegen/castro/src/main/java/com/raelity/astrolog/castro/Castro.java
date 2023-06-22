@@ -41,7 +41,10 @@ private static int optVerbose;
 private static boolean optTest;
 private static String runOption;
 
+private static PrintWriter outputWriter = null;
+
 static AstroParser parser = new AstroParser(null);
+static AstroLexer lexer;
 
 private static void usage() { usage(null); }
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
@@ -132,7 +135,7 @@ public static void main(String[] args)
     }
 
     boolean some_error = false;
-    PrintWriter outputWriter = null;
+    outputWriter = null;
     try {
         Path inPath = null;
         if(inFileName != null) {
@@ -149,8 +152,11 @@ public static void main(String[] args)
         Castro castro = new Castro(inPath, outFileName);
         CharStream input = inPath != null ? fromPath(inPath) : fromStream(System.in);
         program = castro.parseProgram(input);
+        AstroParseResult apr
+                = AstroParseResult.get(parser, lexer, input, program,outputWriter);
         switch(runOption) {
-        case "test" -> CastroEcho.genPrefixNotation(parser, input, program, outputWriter);
+        //case "test" -> CastroEcho.genPrefixNotation(parser, input, program, outputWriter);
+        case "test" -> GenSimpleOutput.genPrefixNotation(apr);
         case null, default -> usage("compile not supported (YET)");
         }
     } catch(IOException ex) {
@@ -181,7 +187,7 @@ ProgramContext parseProgram(CharStream cs)
 throws IOException
 {
 
-    AstroLexer lexer = new AstroLexer(cs);
+    lexer = new AstroLexer(cs);
     parser.setTokenStream(new CommonTokenStream(lexer));
 
     ProgramContext program = parser.program();
