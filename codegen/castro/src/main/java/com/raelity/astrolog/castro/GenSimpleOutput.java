@@ -11,11 +11,14 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import com.raelity.antlr.ParseTreeUtil;
+import com.raelity.astrolog.castro.Castro.CastroErr;
+import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.antlr.AstroBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
+import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Minus;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Plus;
 
@@ -50,10 +53,15 @@ private GenSimpleOutput(AstroParseResult apr)
     this.parser = apr.getParser();
     this.input = apr.getInput();
     this.program = apr.getProgram();
-    this.out = apr.getOut();
+    this.out = lookup(CastroOut.class).pw;
 }
 
 StringBuilder sb = new StringBuilder();
+
+private static PrintWriter getErr()
+{
+    return lookup(CastroErr.class).pw;
+}
 
 static void genPrefixNotation(AstroParseResult apr)
 {
@@ -61,8 +69,8 @@ static void genPrefixNotation(AstroParseResult apr)
     try {
         simpleOutput.generateAndOutputExprsByMacro();
     } catch (Exception ex) {
-        apr.getOut().printf("ABORT: %s\n", ex.getMessage());
-        ex.printStackTrace(apr.getOut());
+        getErr().printf("ABORT: %s\n", ex.getMessage());
+        ex.printStackTrace(getErr());
     }
 }
 

@@ -9,15 +9,16 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 /**
  * This class contains the setup information for a active parse
- * using the AstroParser. It includes the parser, input, parser result.
+ * using the AstroParser.
+ * It includes the parser, input, parser result.
+ * Note: once the context/parse-result is set to non null, it can not be changed.
  */
-// TODO: this could be
 public class ParseResult<T extends Parser, U extends Lexer>
 {
-final T parser;
-final U lexer;
-final CharStream input;
-final ParserRuleContext context;
+private final T parser;
+private final U lexer;
+private final CharStream input;
+private ParserRuleContext context;
 
 /**
  * 
@@ -55,7 +56,11 @@ public ParserRuleContext getContext()
     return context;
 }
 
-
-
+public void setContext(ParserRuleContext context)
+{
+    if(this.context != null)
+        throw new IllegalStateException("context already set");
+    this.context = context;
+}
 
 }

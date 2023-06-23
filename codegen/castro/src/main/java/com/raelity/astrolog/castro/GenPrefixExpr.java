@@ -2,6 +2,7 @@
 
 package com.raelity.astrolog.castro;
 
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -10,10 +11,12 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.antlr.AstroBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
+import static com.raelity.astrolog.castro.Util.lookup;
 
 /**
  * Process the tree so that each top level expr node has a String property
@@ -58,12 +61,17 @@ abstract String genAssOp(Token opToken, String lhs, String rhs);
 abstract String genLval(LvalContext ctx, String... expr);
 abstract String genAddr(TermAddressOfContext ctx);
 
+private static PrintWriter getOut()
+{
+    return lookup(CastroOut.class).pw;
+}
+
 @Override
 public void exitEveryRule(ParserRuleContext ctx)
 {
     super.exitEveryRule(ctx);
     if(Castro.getVerbose() >= 2)
-        apr.getOut().println("exit " + getRuleName(apr.getParser(), ctx, false));
+        getOut().println("exit " + getRuleName(apr.getParser(), ctx, false));
 }
 
 @Override

@@ -22,9 +22,13 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
 
+import org.antlr.v4.runtime.Token;
+
+import com.raelity.astrolog.castro.AstroParseResult;
 import com.raelity.lib.collect.ValueHashMap;
 import com.raelity.lib.collect.ValueMap;
 
+import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 import static com.raelity.lib.collect.Util.intersection;
@@ -45,7 +49,7 @@ import static com.raelity.lib.collect.Util.intersects;
  * <br>4 - set limits; may cover locations from step 2 and 3
  * <br>5 - allocate
  */
-abstract class AstroMem
+public abstract class AstroMem
 {
 public final String memSpaceName;
 /** Allocated memory; value is the variable name.
@@ -58,7 +62,7 @@ private final RangeMap<Integer, Var> layout = TreeRangeMap.create();
 private final ValueMap<String, Var> vars = new ValueHashMap<>((var) -> var.getName());
 private final List<Var> varsError = new ArrayList<>();
 int nLimit; // use to label limit ranges (may be disjoint)
-// probably don't need/want this. Maybe some kind of allocation lock.
+// probably don't need/want this. Maybe some kind of allocation lock?
 //private boolean declarationsDone;
 
 public AstroMem(String name, int min, int max)
@@ -125,17 +129,16 @@ public Iterator<Var> getErrorVars()
  * @return true if allocation was successful
  * @throws OutOfMemory
  */
-void allocate()
+public void allocate()
 {
     if(Boolean.FALSE)
         if(!varsError.isEmpty())
             throw new IllegalStateException("allocate: have errors");
-    if(Boolean.TRUE) { // TODO: make false, this is more properly an assert
+    if(Boolean.TRUE) // TODO: make false, this is more properly an assert
         for(Var var : layout.asMapOfRanges().values()) {
             if(var.hasError())
                 throw new IllegalStateException("Var errors found in layout");
         }
-    }
     //declarationsDone = true; // TODO: probably don't need/want this.
     RangeSet<Integer> used = TreeRangeSet.create(layout.asMapOfRanges().keySet());
     RangeSet<Integer> free = used.complement();
@@ -165,6 +168,7 @@ void allocate()
                 }
             }
             var.addState(OUT_OF_MEM);
+            lookup(AstroParseResult.class).countError();
             throw new OutOfMemory(var, free);
         }
         //System.out.printf("free mem: %s\n", free.toString());
@@ -185,7 +189,7 @@ OutOfMemory(Var var, RangeSet<Integer> free)
 /** Add the variable without allocating it.
  * @return Var, may have error state.
  */
-Var declare(String name, int size)
+public Var declare(String name, int size)
 {
     return declare(name, size, -1);
 }
@@ -193,7 +197,7 @@ Var declare(String name, int size)
 /** Allocate the variable at the specified address.
  * @return Var, may have error state.
  */
-Var declare(String name, int size, int addr, VarState... a_state)
+public Var declare(String name, int size, int addr, VarState... a_state)
 {
     if(name == null || name.isEmpty())
         throw new IllegalArgumentException("Var name null or empty");
@@ -224,6 +228,7 @@ Var declare(String name, int size, int addr, VarState... a_state)
     if(var.hasState(LIMIT) || var.hasState(INTERNAL))
         vars.remove(var.getName());
 
+    // either add var to allocation map or add it to layout
     if(!var.hasError()) {
         if(var.isAllocated()) {
             layout.put(r, var);
@@ -275,12 +280,18 @@ private Range<Integer> varToRange(Var var)
 
 public void dumpAllocation(PrintWriter out)
 {
+    dumpAllocation(out, EnumSet.noneOf(VarState.class));
+}
+public void dumpAllocation(PrintWriter out, EnumSet<VarState> skip)
+{
     Map<Range<Integer>, Var> allocationMap = getAllocationMap();
     RangeSet<Integer> used = TreeRangeSet.create(allocationMap.keySet());
     RangeSet<Integer> free = used.complement();
     out.printf("// memSpace: %s\n// used %s\n// free %s\n",
                memSpaceName, used, free);
     for(Entry<Range<Integer>, Var> entry : allocationMap.entrySet()) {
+        if(intersects(entry.getValue().getState(), skip))
+                continue;
         out.printf("%s\n", entry);
     }
     out.flush();
@@ -313,7 +324,7 @@ public void dumpAllocation(PrintWriter out)
 
     /** VarKey uniquely identifies a variable for equals,hashcode.
      */
-    private class VarKey implements Comparable<VarKey>
+    public class VarKey implements Comparable<VarKey>
     {
     private final String name;
     
@@ -367,6 +378,8 @@ public void dumpAllocation(PrintWriter out)
     private final int size;
     private int addr; // -1 means not allocated
     private final EnumSet<VarState> state;
+    /** Where the variable is defined */
+    private Token id;
     private VarInfo info; // Could have map of var:info, if not used much
     
     private Var(String name, int size, int addr, VarState... a_state)
@@ -451,6 +464,19 @@ public void dumpAllocation(PrintWriter out)
     private void setAddr(int addr)
     {
         this.addr = addr;
+    }
+
+    public Token getId()
+    {
+        return id;
+    }
+
+    public void setId(Token id)
+    {
+        if(this.id != null)
+            throw new IllegalStateException(String.format(
+                    "var '%s' already has id; new %s", getName(), id.getText()));
+        this.id = id;
     }
     
     public VarInfo getInfo()

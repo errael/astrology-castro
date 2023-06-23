@@ -18,6 +18,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import com.raelity.astrolog.castro.antlr.AstroLexer;
 import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
+import com.raelity.astrolog.castro.lib.CentralLookup;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
@@ -25,26 +26,47 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import static org.antlr.v4.runtime.CharStreams.fromPath;
 import static org.antlr.v4.runtime.CharStreams.fromStream;
 
+import static com.raelity.astrolog.castro.Util.addLookup;
+import static com.raelity.astrolog.castro.Util.lookup;
+import static com.raelity.astrolog.castro.Util.removeLookup;
+import static com.raelity.astrolog.castro.Util.replaceLookup;
+
+
 /**
  * TODO: remove extraneous nodes from the tree after parsing.
  * @author err
  */
 public class Castro
 {
+// until we figure it out, put some common things here up front
+@SuppressWarnings("UseOfSystemOutOrSystemErr")
+private static CastroErr err = new CastroErr(new PrintWriter(System.err, true));
+private static CastroOut out;
+
+
+public static class CastroOut
+{
+    public final PrintWriter pw;
+    public CastroOut(PrintWriter pw) { this.pw = pw; }
+
+}
+public static class CastroErr
+{
+    public final PrintWriter pw;
+    public CastroErr(PrintWriter pw) { this.pw = pw; }
+}
+
+
 static final String cmdName = "castro";
 static final String IN_EXT = ".castro";
 static final String OUT_EXT = ".macro.as";
 static final String OUT_TEST_EXT = ".macro.test";
+
 private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 
 private static int optVerbose;
 private static boolean optTest;
-private static String runOption;
-
-private static PrintWriter outputWriter = null;
-
-static AstroParser parser = new AstroParser(null);
-static AstroLexer lexer;
+private static String runOption = "compile";
 
 private static void usage() { usage(null); }
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
@@ -72,9 +94,8 @@ public static int getVerbose()
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 public static void main(String[] args)
 {
-    String inFileName = null;
-    String outFileName = null;
     LOG.getLevel(); // So now it's used.
+    addLookup(err);
     
     // https://www.gnu.org/software/gnuprologjava/api/gnu/getopt/Getopt.html
     LongOpt longOpts[] = new LongOpt[] {
@@ -104,94 +125,136 @@ public static void main(String[] args)
                            System.getProperty("java.version.date"),
                            System.getProperty("os.name")));
 
+    String inName = null;
+    String outName = null;
+
     int i = g.getOptind();
     if (i != args.length) {
         // There are positional arguemnts.
-        inFileName = args[i++];
+        inName = args[i++];
         if (i != args.length)
-            outFileName = args[i++];
-        if("-".equals(inFileName))
-            inFileName = null;
+            outName = args[i++];
         if(i != args.length)
             usage("At most two arguments");
     }
 
-    if(inFileName != null && inFileName.equals(outFileName))
-        usage("infile and outfile can not be the same file");
+    CastroIO castroIO = new CastroIO();
+    String s = castroIO.setupIO(inName, outName);
+    if(s != null)
+        usage(s);
+    if(castroIO.doAbort)
+        System.exit(1);
+
+    out = new CastroOut(castroIO.outputWriter);
+    addLookup(out);
     
-    // TODO: check for identical files (not just name)
-    if(inFileName != null && inFileName.equals(outFileName))
-        usage("infile and outfile can not be the same file");
+    AstroParseResult apr
+            = AstroParseResult.get(castroIO.parser, castroIO.lexer, castroIO.input);
+    addLookup(apr);
+
+    switch(runOption) {
+    case "test" -> runCompilerTest(apr);
+    case null, default -> Compile.compile(apr);
+    }
     
-    // TODO: if inFileName not found, try inFileName.castro
-    if("-".equals(outFileName))
-        outFileName = null;
-    else if(outFileName == null && inFileName != null) {
-        // Pick outFile built from inFile
-        String base = inFileName;
-        if(inFileName.endsWith(IN_EXT))
-            base = inFileName.substring(0, inFileName.lastIndexOf(IN_EXT));
-        outFileName = base + (optTest ? OUT_TEST_EXT : OUT_EXT);
+
+    if(out != null) {
+        out.pw.close();
+        removeLookup(out);
     }
-
-    boolean some_error = false;
-    outputWriter = null;
-    try {
-        Path inPath = null;
-        if(inFileName != null) {
-            inPath = new File(inFileName).toPath();
-            if(!Files.exists(inPath))
-                usage(String.format("input file '%s' does not exist", inFileName));
-        }
-
-        outputWriter = outFileName == null
-                ? new PrintWriter(System.out, true)   // TODO: true/false option
-                : new PrintWriter(Files.newBufferedWriter(new File(outFileName).toPath(), WRITE, TRUNCATE_EXISTING, CREATE));
-
-        ProgramContext program;
-        Castro castro = new Castro(inPath, outFileName);
-        CharStream input = inPath != null ? fromPath(inPath) : fromStream(System.in);
-        program = castro.parseProgram(input);
-        AstroParseResult apr
-                = AstroParseResult.get(parser, lexer, input, program, outputWriter);
-        switch(runOption) {
-        //case "test" -> CastroEcho.genPrefixNotation(parser, input, program, outputWriter);
-        case "test" -> GenSimpleOutput.genPrefixNotation(apr);
-        case null, default -> usage("compile not supported (YET)");
-        }
-    } catch(IOException ex) {
-        String msg = String.format(
-                "%s: %s\n", ex.getClass().getSimpleName(), ex.getMessage());
-        System.err.print(msg);
-        if(outputWriter != null)
-            outputWriter.print(msg);
-        //LOG.log(Level.SEVERE, null, ex);
-        some_error = true;
+    for(CastroOut tout : CentralLookup.getDefault().lookupAll(CastroOut.class)) {
+        tout.pw.close();
+        removeLookup(tout);
     }
-    if(outputWriter != null)
-        outputWriter.close();
-    if(some_error)
+    for(CastroErr terr : CentralLookup.getDefault().lookupAll(CastroErr.class)) {
+        terr.pw.close();
+        removeLookup(terr);
+    }
+    if(apr.errors() != 0)
         System.exit(1);
 }
 
-//Path inPath;
-//String outFileName;
-
-public Castro(Path inPath, String outFileName)
+static void runCompilerTest(AstroParseResult apr)
 {
-    //this.inPath = inPath;
-    //this.outFileName = outFileName;
+    // Have Err go to Out. Everything goes to the same place for tests
+    replaceLookup(new CastroErr(lookup(CastroOut.class).pw));
+    ProgramContext program = apr.getParser().program();
+    apr.setContext(program);
+    GenSimpleOutput.genPrefixNotation(apr);
 }
 
-ProgramContext parseProgram(CharStream cs)
-throws IOException
-{
+    static class CastroIO
+    {
 
-    lexer = new AstroLexer(cs);
-    parser.setTokenStream(new CommonTokenStream(lexer));
+    private AstroParser parser = new AstroParser(null);
+    private AstroLexer lexer;
 
-    ProgramContext program = parser.program();
-    return program;
-}
+    private PrintWriter outputWriter;
+    private CharStream input;
+    private boolean doAbort;
+
+    public CastroIO()
+    {
+
+    }
+
+    //public CastroIO(Path inPath, String outFileName)
+    //{
+    //    this.outputWriter = outputWriter;
+    //}
+
+    /** check/setup paths/files; setup parser with inputFile's stream.
+     * @return null if OK, else error message.
+     */
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
+    String setupIO(String inFileName, String outFileName)
+    {
+        if("-".equals(inFileName))
+            inFileName = null;
+
+        // TODO: check for identical files (not just name)
+        if(inFileName != null && inFileName.equals(outFileName))
+            return "infile and outfile can not be the same file";
+        
+        // TODO: if inName not found, try inName.castro
+        if("-".equals(outFileName))
+            outFileName = null;
+        else if(outFileName == null && inFileName != null) {
+            // Pick outFile built from inFile
+            String base = inFileName;
+            if(inFileName.endsWith(IN_EXT))
+                base = inFileName.substring(0, inFileName.lastIndexOf(IN_EXT));
+            outFileName = base + (optTest ? OUT_TEST_EXT : OUT_EXT);
+        }
+
+        try {
+            Path tinPath = null;
+            if(inFileName != null) {
+                tinPath = new File(inFileName).toPath();
+                if(!Files.exists(tinPath))
+                    return String.format("input file '%s' does not exist", inFileName);
+            }
+
+            outputWriter = outFileName == null
+                    ? new PrintWriter(System.out, true)   // TODO: true/false option
+                    : new PrintWriter(Files.newBufferedWriter(new File(outFileName).toPath(), WRITE, TRUNCATE_EXISTING, CREATE));
+
+            input = tinPath != null ? fromPath(tinPath) : fromStream(System.in);
+        } catch(IOException ex) {
+            String msg = String.format(
+                    "%s: %s\n", ex.getClass().getSimpleName(), ex.getMessage());
+
+            lookup(CastroErr.class).pw.print(msg);
+            //Castro.getErr().print(msg);
+            doAbort = true;
+            return null;
+        }
+
+        lexer = new AstroLexer(input);
+        parser.setTokenStream(new CommonTokenStream(lexer));
+
+        return null;
+    }
+    }
 
 }

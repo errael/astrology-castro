@@ -24,6 +24,10 @@ dependencies {
     implementation 'com.raelity:raelity-lib:1.3.0'
     // following was compile
     implementation "org.antlr:antlr4-runtime:4.7.1"
+
+    // the following are for CentralLookup
+    implementation "org.netbeans.api:org-openide-util:RELEASE180"
+    implementation "org.netbeans.api:org-openide-util-lookup:RELEASE180"
 }
 
 //task runApp(type: JavaExec) {
