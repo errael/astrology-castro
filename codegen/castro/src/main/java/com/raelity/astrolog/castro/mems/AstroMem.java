@@ -11,24 +11,24 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NavigableSet;
 import java.util.Objects;
-import java.util.TreeSet;
 
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
 
+import com.raelity.lib.collect.ValueHashMap;
+import com.raelity.lib.collect.ValueMap;
+
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 import static com.raelity.lib.collect.Util.intersection;
 import static com.raelity.lib.collect.Util.intersects;
-
-// TODO: preallocate limit
 
 /**
  * AstroExpression register/memory space: layout, allocation;
@@ -55,11 +55,11 @@ public final String memSpaceName;
 // May not *need* the RangeMap, but it can provide details messages
 // about conflicting allocations.
 private final RangeMap<Integer, Var> layout = TreeRangeMap.create();
-private final NavigableSet<VarKey> vars = new TreeSet<>();
+private final ValueMap<String, Var> vars = new ValueHashMap<>((var) -> var.getName());
 private final List<Var> varsError = new ArrayList<>();
-// probably don't need/want this. Maybe some kind of allocation lock.
-private boolean declarationsDone;
 int nLimit; // use to label limit ranges (may be disjoint)
+// probably don't need/want this. Maybe some kind of allocation lock.
+//private boolean declarationsDone;
 
 public AstroMem(String name, int min, int max)
 {
@@ -82,8 +82,8 @@ boolean check()
         if(var.hasError())
             ok = false;
     }
-    for(VarKey var : vars) {
-        if(((Var)var).hasError())
+    for(Var var : vars.values()) {
+        if(var.hasError())
             ok = false;
     }
     return ok;
@@ -98,14 +98,13 @@ Map<Range<Integer>, Var> getAllocationMap()
 public Var getVar(String name)
 {
     Objects.nonNull(name);
-    Var var = (Var)vars.floor(new VarKey(name));
-    return var != null && name.equals(var.getName()) ? var : null;
+    return vars.get(name);
 }
 
 /** @return an iterator of the active variables */
 public Iterator<Var> getVars()
 {
-    return new VarIter(vars.iterator());
+    return new VarIter(vars.values().iterator());
 }
 
 /** @return an iterator of the variables with errors */
@@ -137,12 +136,15 @@ void allocate()
                 throw new IllegalStateException("Var errors found in layout");
         }
     }
-    declarationsDone = true; // TODO: probably don't need/want this.
+    //declarationsDone = true; // TODO: probably don't need/want this.
     RangeSet<Integer> used = TreeRangeSet.create(layout.asMapOfRanges().keySet());
     RangeSet<Integer> free = used.complement();
     //System.out.printf("free mem: %s\n", free.toString());
-    for(VarKey varKey : vars) {
-        Var var = (Var)varKey;
+
+    // Sort by name for easily reproducable results
+    List<Var> values = Lists.newArrayList(getVars());
+    Collections.sort(values);
+    for(Var var : values) {
         if(var.hasError())
             throw new IllegalStateException("Can't allocate variable with errors");
         if(var.isAllocated())
@@ -206,7 +208,10 @@ Var declare(String name, int size, int addr, VarState... a_state)
     setup_var: {
         if(size < 1)
             var.addState(SIZE_ERR);
-        if(!(addedToVars = vars.add(var)))
+        addedToVars = !vars.containsKey(var.getName());
+        if(addedToVars)
+            vars.put(var);
+        else
             var.addState(DUP_NAME_ERR);
         // Can still check range unless size issue
         if(var.hasState(SIZE_ERR) || !var.isAllocated())
@@ -215,8 +220,9 @@ Var declare(String name, int size, int addr, VarState... a_state)
         if(!layout.subRangeMap(r).asMapOfRanges().isEmpty())
             var.addState(OVERLAP_ERR);
     }
+    // Some variables shouldn't be in the list of variables.
     if(var.hasState(LIMIT) || var.hasState(INTERNAL))
-        vars.remove(var);
+        vars.remove(var.getName());
 
     if(!var.hasError()) {
         if(var.isAllocated()) {
@@ -227,7 +233,7 @@ Var declare(String name, int size, int addr, VarState... a_state)
     } else {
         varsError.add(var);
         if(addedToVars)
-            vars.remove(var);
+            vars.remove(var.getName());
     }
     return var;
 }

@@ -90,6 +90,7 @@ public void testRegistersMem()
 
     mem.dumpAllocation(new PrintWriter(System.out));
     mem.dumpVars(new PrintWriter(System.out), true);
+    mem.dumpVars(new PrintWriter(System.out), false);
     mem.dumpErrors(new PrintWriter(System.out));
 }
 

@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
@@ -40,16 +41,12 @@ public void dumpVars(PrintWriter out, boolean byAddr)
     RangeSet<Integer> free = used.complement();
     out.printf("// memSpace: %s\n// used %s\n// free %s\n// errors: %d\n",
                memSpaceName, used, free, varsInError.size());
-    Iterator<Var> it = getVars();
-    // Could use the allocation map for addr sort,
-    // but it doesn't include out of memory issues
-    //    it = allocationMap.values().iterator();
-    if(byAddr) {
-        List<Var> listVar = Lists.newArrayList(it);
-        Collections.sort(listVar, (v1, v2) -> v1.getAddr() - v2.getAddr());
-        it = listVar.iterator();
-    }
-    dumpVars(out, it, true);
+    List<Var> vars = Lists.newArrayList(getVars());
+    if(byAddr)
+        Collections.sort(vars, (v1, v2) -> v1.getAddr() - v2.getAddr());
+    else
+        Collections.sort(vars);
+    dumpVars(out, vars.iterator(), true);
 }
 
 public void dumpErrors(PrintWriter out)
@@ -59,6 +56,7 @@ public void dumpErrors(PrintWriter out)
 }
 
 private void dumpVars(PrintWriter out, Iterator<Var> it, boolean filter) {
+    Objects.nonNull(filter); // it's used now
     for(; it.hasNext();) {
         Var var = it.next();
         //if(filter && (var.hasState(LIMIT) || var.hasState(INTERNAL)))

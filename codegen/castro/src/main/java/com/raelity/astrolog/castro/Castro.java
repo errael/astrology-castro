@@ -153,7 +153,7 @@ public static void main(String[] args)
         CharStream input = inPath != null ? fromPath(inPath) : fromStream(System.in);
         program = castro.parseProgram(input);
         AstroParseResult apr
-                = AstroParseResult.get(parser, lexer, input, program,outputWriter);
+                = AstroParseResult.get(parser, lexer, input, program, outputWriter);
         switch(runOption) {
         //case "test" -> CastroEcho.genPrefixNotation(parser, input, program, outputWriter);
         case "test" -> GenSimpleOutput.genPrefixNotation(apr);
