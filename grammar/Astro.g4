@@ -2,14 +2,32 @@
 
 grammar Astro;
 
-//
-// TODO:
-//      control
-//          memory {...}
-//          include
-
+// The restriction of layout before anything else is
+// implemented in code.
 program
-    : (var | macro)+ EOF
+    : (layout | var | macro)+ EOF
+    ;
+
+layout
+    : 'layout' layout_region '{' (constraint ';')+ '}'
+    ;
+
+layout_region
+    : 'memory'
+    | 'macro'
+    | 'switch'
+    ;
+
+constraint
+    : 'base' integer                        #baseContstraint
+    // | 'stack' integer                    #stackContstraint
+    | 'limit' integer                       #limitContstraint
+    | 'reserve' rsv_loc (',' rsv_loc)*      #reserveContstraint
+    ;
+
+rsv_loc
+    : range+=integer
+    | range+=integer ':' range+=integer
     ;
 
 // TODO: also string array initialization
@@ -140,6 +158,14 @@ constant
     |   CharacterConstant
     ;
 **************************************************************/
+
+Layout : 'layout';
+Memory : 'memory';
+Switch : 'switch';
+Base : 'base';
+Stack : 'stack';
+Limit : 'limit';
+Reserve : 'reserve';
 
 Var : 'var';
 Macro : 'macro';

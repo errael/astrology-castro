@@ -104,20 +104,29 @@ Possible syntax other than AstroExpression
 include filename;       // maybe most usefull to include memory maps
                         // for prev/exist memory {...}
 
-allocate memory {
+// The layouts specify "keep out"/"don't allocate";
+// they apply to automatic allocation.
+// Manually allocated addresses in these regions are allowed.
+// TODO: warn if manual allocation in a reserved area
+
+// NOTE: In a layout, the reserve areas may overlap
+layout memory {
     base <addr>;    // start automatic allocation here.
     stack <addr>;   // reserved for future use. Stack grows higher.
     limit <addr>;   // don't allocate this location or higher.
     reserve <addr>, <addr>, <addr_lower>:<addr_upper_exclusive>, ...;
 }
-allocate macro {
-    base <addr>;     // start automatic allocation here, default 50.
+layout macro {
+    base <addr>;     // start automatic allocation here.
     reserve <addr>, <addr>, <addr_lower>:<addr_upper_exclusive>, ...;
 }
 
 var name;                   // declare variable foo
+var name {expr};            // declare variable foo, initialize it
 var name @<addr>;           // declare foo at specified address
 var name [<size>];          // declare an array
+var name [<size>] {e1, e2}; // declare an array, initialize
+var name [] {e1, e2};       // declare an array size of initialization
 var name [<size>] @<addr>   // declare an array at specified address
 
 macro name { astroExpression+ }
