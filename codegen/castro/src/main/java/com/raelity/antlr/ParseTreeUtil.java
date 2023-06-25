@@ -12,6 +12,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -68,6 +69,18 @@ public final class ParseTreeUtil
         for(int i = 0; i < pt.getChildCount(); i++)
             ptl.addAll(getTerminalNodes(pt.getChild(i)));
         return ptl;
+    }
+
+    public static boolean hasErrorNode(ParseTree pt)
+    {
+        if(pt == null)
+            return false;
+        if(pt instanceof ErrorNode)
+            return true;
+        for(int i = 0; i < pt.getChildCount(); i++)
+            if(hasErrorNode(pt.getChild(i)))
+                return true;
+        return false;
     }
 
     /**

@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.ParseTreeProperty;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.raelity.astrolog.castro.Castro.CastroOut;
@@ -34,10 +33,6 @@ import static com.raelity.astrolog.castro.Util.lookup;
  */
 public abstract class GenPrefixExpr extends AstroBaseListener
 {
-    public static class TreeProps<T> extends ParseTreeProperty<T>
-    {
-    public int size() { return annotations.size(); }
-    }
 
 final AstroParseResult apr;
 

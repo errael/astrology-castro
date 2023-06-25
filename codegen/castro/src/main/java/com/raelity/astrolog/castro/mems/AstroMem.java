@@ -93,7 +93,7 @@ boolean check()
     return ok;
 }
 
-Map<Range<Integer>, Var> getAllocationMap()
+public Map<Range<Integer>, Var> getAllocationMap()
 {
     return Collections.unmodifiableMap(layout.asMapOfRanges());
 }
@@ -103,6 +103,17 @@ public Var getVar(String name)
 {
     Objects.nonNull(name);
     return vars.get(name);
+}
+
+/** Number of variables, not including externally specified/builtin.
+ * Performance note, this scans the variables.
+ */
+public int getVarCount()
+{
+    int nVar = (int)vars.values().stream()
+            .filter((var) -> !intersects(Var.externalSpecify, var.getState()))
+            .count();
+    return nVar + varsError.size();
 }
 
 /** @return an iterator of the active variables */
@@ -121,10 +132,10 @@ public Iterator<Var> getErrorVars()
  * Starting from pre-allocated variables, allocate memory for any variable
  * without an assigned memory location.
  * <p>
- * Create a set of allocated ranges, its complement is free memory;
- * first fit to allocate from free memory.
- * When a var is allocated, update it in the set vars,
- * add it to the layout.
+ Create a set of allocated ranges, its complement is free memory;
+ first fit to allocate from free memory.
+ When a var is allocated, update it in the set vars,
+ add it to the layout.
  * 
  * @return true if allocation was successful
  * @throws OutOfMemory
@@ -158,7 +169,7 @@ public void allocate()
                 if(cs.size() >= var.size) {
                     var.setAddr(cs.first());
                     Range<Integer> r = varToRange(var);
-                    if(intersects(Var.manualAlloc, var.getState()))
+                    if(intersects(Var.manualAddr, var.getState()))
                         throw new IllegalStateException("allocating, but manual alloc");
                     layout.put(r, var);
                     used.add(r);
@@ -184,6 +195,20 @@ OutOfMemory(Var var, RangeSet<Integer> free)
                         AstroMem.this.getClass().getSimpleName(),
                         var.getName(), var.getSize(), free));
 }
+}
+
+public Var declare(Token id, int size, int addr, VarState... a_state)
+{
+    Var var = declare(id.getText(), size, addr, a_state);
+    var.setId(id);
+    return var;
+}
+
+public Var declare(Token id, int size)
+{
+    Var var = declare(id.getText(), size);
+    var.setId(id);
+    return var;
 }
 
 /** Add the variable without allocating it.
@@ -249,7 +274,7 @@ public Var declare(String name, int size, int addr, VarState... a_state)
 public void lowerLimit(int addr)
 {
     RangeSet<Integer> ll = TreeRangeSet.create(List.of(Range.lessThan(addr + 1)));
-    fixLimit(ll, "#reserver_limit_" + addr);
+    fixLimit(ll, "#reserve_limit_" + addr);
 }
 
 /** Prevent allocation of address greater than or equal to higher.
@@ -258,7 +283,17 @@ public void lowerLimit(int addr)
 public void upperLimit(int addr)
 {
     RangeSet<Integer> ll = TreeRangeSet.create(List.of(Range.atLeast(addr)));
-    fixLimit(ll, "#reserver_limit_" + addr);
+    fixLimit(ll, "#reserve_limit_" + addr);
+}
+
+/** Prevent allocation of address greater than or equal to higher.
+ * Does not affect something already allocated.
+ */
+public void rangeLimit(RangeSet<Integer> reserved)
+{
+    TreeRangeSet<Integer> ll = TreeRangeSet.create(reserved);
+    //RangeSet<Integer> ll = TreeRangeSet.create(List.of(Range.atLeast(addr)));
+    fixLimit(ll, "#reserve_limit_range");
 }
 
 private void fixLimit(RangeSet<Integer> limit, String varBaseName)
@@ -296,6 +331,51 @@ public void dumpAllocation(PrintWriter out, EnumSet<VarState> skip)
     }
     out.flush();
 }
+
+
+/** It is expected that the output is in a suitable format
+ * for input into the compiler.
+ */
+public void dumpVars(PrintWriter out, boolean byAddr)
+{
+    dumpVars(out, byAddr, EnumSet.noneOf(VarState.class));
+}
+
+public void dumpVars(PrintWriter out, boolean byAddr, EnumSet<VarState> skip)
+{
+    Map<Range<Integer>, Var> allocationMap = getAllocationMap();
+    ArrayList<Var> varsInError = Lists.newArrayList(getErrorVars());
+    RangeSet<Integer> used = TreeRangeSet.create(allocationMap.keySet());
+    RangeSet<Integer> free = used.complement();
+
+    out.printf("// Space: %s\n// used %s\n// free %s\n// errors: %d\n",
+               memSpaceName, used, free, varsInError.size());
+
+    List<Var> varList = Lists.newArrayList(getVars());
+    if(byAddr)
+        Collections.sort(varList, (v1, v2) -> v1.getAddr() - v2.getAddr());
+    else
+        Collections.sort(varList);
+    dumpVars(out, varList.iterator(), skip);
+}
+
+public void dumpErrors(PrintWriter out)
+{
+    out.printf("// memSpace: %s. Variables with errors\n", memSpaceName);
+    dumpVars(out, getErrorVars(), EnumSet.noneOf(VarState.class));
+}
+
+private void dumpVars(PrintWriter out, Iterator<Var> it, EnumSet<VarState> skip) {
+    for(; it.hasNext();) {
+        Var var = it.next();
+        if(intersects(var.getState(), skip))
+            continue;
+        dumpVar(out, var);
+    }
+    out.flush();
+}
+
+abstract void dumpVar(PrintWriter out, Var var);
 
     private class VarIter implements Iterator<Var>
     {
@@ -410,14 +490,21 @@ public void dumpAllocation(PrintWriter out, EnumSet<VarState> skip)
     LIMIT,    // user specified limits/restrictions, not a var
     }
 
+    /** Var errors, note that OOM is not a var error. */
     private static final EnumSet<VarState>
             anyError = EnumSet.of(DUP_NAME_ERR, SIZE_ERR, OVERLAP_ERR);
+    /** State that can be specified as part of a declaration. */
     private static final EnumSet<VarState>
             canSpecify = EnumSet.of(BUILTIN, PRE_ASSIGN, INTERNAL, LIMIT);
+    /** Var/range that requires a manually specified address. */
     private static final EnumSet<VarState>
             requiresAddr = EnumSet.of(BUILTIN, PRE_ASSIGN, LIMIT);
+    /** Var manually assigned an address (not automatically allocated). */
     private static final EnumSet<VarState>
-            manualAlloc = EnumSet.of(BUILTIN, PRE_ASSIGN, ASSIGN);
+            manualAddr = EnumSet.of(BUILTIN, PRE_ASSIGN, ASSIGN);
+    /** Var not specified in the compilation unit. */
+    private static final EnumSet<VarState>
+            externalSpecify = EnumSet.of(BUILTIN, PRE_ASSIGN);
 
     private void addState(VarState s)
     {

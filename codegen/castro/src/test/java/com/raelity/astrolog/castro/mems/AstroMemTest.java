@@ -11,6 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import com.raelity.astrolog.castro.AstroParseResult;
+import com.raelity.astrolog.castro.Util;
 import com.raelity.astrolog.castro.mems.AstroMem.OutOfMemory;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 
@@ -30,14 +32,18 @@ public AstroMemTest()
 {
 }
 
+static AstroParseResult aprTesting;
 @BeforeAll
 public static void setUpClass()
 {
+    aprTesting = AstroParseResult.testingResult();
+    Util.addLookup(aprTesting);
 }
 
 @AfterAll
 public static void tearDownClass()
 {
+    Util.removeLookup(aprTesting);
 }
 
 @BeforeEach
@@ -56,6 +62,13 @@ public void tearDown()
     {
         super("TestingMemorySpace");
     }
+
+        @Override
+        void dumpVar(PrintWriter out, Var var)
+        {
+            out.printf("Var dump: %s", var);
+        }
+
     }
 
 @Test

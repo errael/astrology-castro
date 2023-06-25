@@ -138,10 +138,9 @@ public static void main(String[] args)
             usage("At most two arguments");
     }
 
-    CastroIO castroIO = new CastroIO();
-    String s = castroIO.setupIO(inName, outName);
-    if(s != null)
-        usage(s);
+    CastroIO castroIO = new CastroIO(inName, outName);
+    if(castroIO.status != null)
+        usage(castroIO.status);
     if(castroIO.doAbort)
         System.exit(1);
 
@@ -183,8 +182,13 @@ static void runCompilerTest(AstroParseResult apr)
     GenSimpleOutput.genPrefixNotation(apr);
 }
 
+    /** Given an input and output file name,
+     * check/setup paths/files; setup parser with inputFile's stream.
+     * @return null if OK, else error message.
+     */
     static class CastroIO
     {
+    private String status;
 
     private AstroParser parser = new AstroParser(null);
     private AstroLexer lexer;
@@ -193,21 +197,12 @@ static void runCompilerTest(AstroParseResult apr)
     private CharStream input;
     private boolean doAbort;
 
-    public CastroIO()
+    public CastroIO(String inFileName, String outFileName)
     {
-
+        status = setupIO(inFileName, outFileName);
     }
-
-    //public CastroIO(Path inPath, String outFileName)
-    //{
-    //    this.outputWriter = outputWriter;
-    //}
-
-    /** check/setup paths/files; setup parser with inputFile's stream.
-     * @return null if OK, else error message.
-     */
     @SuppressWarnings("UseOfSystemOutOrSystemErr")
-    String setupIO(String inFileName, String outFileName)
+    private String setupIO(String inFileName, String outFileName)
     {
         if("-".equals(inFileName))
             inFileName = null;

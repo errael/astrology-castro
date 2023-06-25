@@ -9,7 +9,6 @@ import java.util.Objects;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
 import com.raelity.antlr.ParseResult;
 import com.raelity.astrolog.castro.Castro.CastroErr;
@@ -45,10 +44,20 @@ public static AstroParseResult get(AstroParser parser, AstroLexer lexer,
     return new AstroParseResult(parser, lexer, input, null);
 }
 
+public static AstroParseResult testingResult()
+{
+    return new AstroParseResult(null, null, null, null);
+}
+
 private AstroParseResult(AstroParser parser, AstroLexer lexer,
                                 CharStream input, ParserRuleContext context)
 {
     super(parser, lexer, input, context);
+}
+
+public boolean hasError()
+{
+    return errors != 0 || getParser().getNumberOfSyntaxErrors() != 0;
 }
 
 public int errors()
@@ -79,21 +88,19 @@ public Props getPrefixExprProps()
 
 
 
-    /** Props with size() and optional debug output */
-    public class Props extends ParseTreeProperty<String>
+    /** Props with optional debug output */
+    public class Props extends TreeProps<String>
     {
     private final String tag;
 
     public Props(String tag) { this.tag = tag; }
-
-    public int size() { return annotations.size(); }
 
     private String reportNullProp(ParseTree node, String tag)
     {
         assert node != null;
         // TODO: get line's text
         if(node instanceof ParserRuleContext ctx)
-            getErr().printf("%s '%s' not found for %s\n",
+            err().printf("%s '%s' not found for %s\n",
                             tokenLoc(ctx), getLineText(ctx.start), tag);
         else
             Objects.requireNonNull(null, String.format("%s '%s'", tag, node.getText()));
@@ -105,7 +112,7 @@ public Props getPrefixExprProps()
     {
         String s = super.removeFrom(node);
         if(Castro.getVerbose() >= 2)
-            getErr().printf("Remove: %08x %s\n", System.identityHashCode(node), s);
+            err().printf("Remove: %08x %s\n", System.identityHashCode(node), s);
         return s != null ? s : reportNullProp(node, "removeFrom"+tag);
     }
     
@@ -113,9 +120,9 @@ public Props getPrefixExprProps()
     public void put(ParseTree node, String value)
     {
         if(Castro.getVerbose() >= 2)
-            getErr().printf("Saving: %08x %s %s'%s'\n",
-                            System.identityHashCode(node), value,
-                            getRuleName(getParser(), node, true), node.getText());
+            err().printf("Saving: %08x %s %s'%s'\n",
+                         System.identityHashCode(node), value,
+                         getRuleName(getParser(), node, true), node.getText());
         if(value == null) {
             reportNullProp(node, "putTo"+tag);
             Objects.requireNonNull(value, "putTo"+tag);
@@ -123,7 +130,7 @@ public Props getPrefixExprProps()
         super.put(node, value);
     }
 
-    private PrintWriter getErr()
+    private PrintWriter err()
     {
         return lookup(CastroErr.class).pw;
     }
