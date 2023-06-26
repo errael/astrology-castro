@@ -12,10 +12,6 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
  */
 public class Registers extends AstroMem
 {
-    public static class VarInfoR implements VarInfo
-    {
-    }
-
 public Registers()
 {
     super("Registers");

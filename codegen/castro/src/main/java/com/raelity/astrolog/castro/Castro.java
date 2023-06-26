@@ -147,8 +147,7 @@ public static void main(String[] args)
     out = new CastroOut(castroIO.outputWriter);
     addLookup(out);
     
-    AstroParseResult apr
-            = AstroParseResult.get(castroIO.parser, castroIO.lexer, castroIO.input);
+    AstroParseResult apr = castroIO.apr;
     addLookup(apr);
 
     switch(runOption) {
@@ -196,6 +195,7 @@ static void runCompilerTest(AstroParseResult apr)
     private PrintWriter outputWriter;
     private CharStream input;
     private boolean doAbort;
+    AstroParseResult apr;
 
     public CastroIO(String inFileName, String outFileName)
     {
@@ -247,6 +247,7 @@ static void runCompilerTest(AstroParseResult apr)
 
         lexer = new AstroLexer(input);
         parser.setTokenStream(new CommonTokenStream(lexer));
+        apr = AstroParseResult.get(parser, lexer, input);
 
         return null;
     }

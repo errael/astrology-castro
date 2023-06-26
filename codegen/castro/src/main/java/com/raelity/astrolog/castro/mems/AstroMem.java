@@ -395,7 +395,7 @@ public void dumpVars(PrintWriter out, boolean byAddr, EnumSet<VarState> skip)
 
 public void dumpErrors(PrintWriter out)
 {
-    out.printf("// memSpace: %s. Variables with errors\n", memSpaceName);
+    out.printf("// Space: %s. Variables with errors\n", memSpaceName);
     dumpVars(out, getErrorVars(), EnumSet.noneOf(VarState.class));
 }
 
@@ -410,6 +410,11 @@ private void dumpVars(PrintWriter out, Iterator<Var> it, EnumSet<VarState> skip)
 }
 
 abstract void dumpVar(PrintWriter out, Var var);
+
+public void dumpLayout(PrintWriter out)
+{
+    out.printf("// Space: %s. Layout: %s\n", memSpaceName, layoutRestrictions);
+}
 
     private class VarIter implements Iterator<Var>
     {

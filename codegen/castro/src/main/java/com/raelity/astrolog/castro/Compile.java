@@ -45,6 +45,10 @@ static void compile()
         err.printf("Pass1: %d other errors\n", apr.errors());
     }
 
+    lookup(Registers.class).dumpLayout(out);
+    lookup(Macros.class).dumpLayout(out);
+    lookup(Switches.class).dumpLayout(out);
+
     applyLayoutsAndAllocate();
 
     if(apr.hasError())

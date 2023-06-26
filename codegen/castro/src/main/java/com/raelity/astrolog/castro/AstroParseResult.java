@@ -29,30 +29,40 @@ public class AstroParseResult extends ParseResult<AstroParser, AstroLexer>
 {
 // TODO: accumulate errors in here
 private int errors;
+private final String inputFileName;
 
 final Props prefixExpr = new Props("PrefixExpr");
 
 public static AstroParseResult get(AstroParser parser, AstroLexer lexer,
+                                CharStream input, ParserRuleContext context,
+                                String inputFileName)
+{
+    return new AstroParseResult(parser, lexer, input, context, inputFileName);
+}
+
+public static AstroParseResult get(AstroParser parser, AstroLexer lexer,
                                 CharStream input, ParserRuleContext context)
 {
-    return new AstroParseResult(parser, lexer, input, context);
+    return get(parser, lexer, input, context, null);
 }
 
 public static AstroParseResult get(AstroParser parser, AstroLexer lexer,
                                 CharStream input)
 {
-    return new AstroParseResult(parser, lexer, input, null);
+    return get(parser, lexer, input, null);
 }
 
 public static AstroParseResult testingResult()
 {
-    return new AstroParseResult(null, null, null, null);
+    return new AstroParseResult(null, null, null, null, null);
 }
 
 private AstroParseResult(AstroParser parser, AstroLexer lexer,
-                                CharStream input, ParserRuleContext context)
+                         CharStream input, ParserRuleContext context,
+                         String inputFileName)
 {
     super(parser, lexer, input, context);
+    this.inputFileName = inputFileName;
 }
 
 public boolean hasError()
@@ -79,6 +89,12 @@ public void countError()
 public ProgramContext getProgram()
 {
     return (ProgramContext)super.getContext();
+}
+
+/** May be null */
+public String getInputFileName()
+{
+    return inputFileName;
 }
 
 public Props getPrefixExprProps()

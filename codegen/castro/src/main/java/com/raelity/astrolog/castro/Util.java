@@ -23,6 +23,17 @@ public class Util
 {
 private Util() { }
 
+// Not a convenient way...
+// public static LineMap buildLineMap(String fName)
+// {
+//     new WriteableLineMap(new ArrayList<>(100));
+// 
+//     //https://stackoverflow.com/questions/14791997/how-to-know-offset-of-a-begining-of-a-line-in-text-file-in-java
+//     //offset += strline.getBytes(Charset.defaultCharset()).length + 1;
+// 
+//     return null;
+// }
+
 public static PrintWriter getErr()
 {
     return lookup(CastroErr.class).pw;
