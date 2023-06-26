@@ -15,6 +15,7 @@ import java.util.Objects;
 
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.ImmutableRangeSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
@@ -93,6 +94,29 @@ boolean check()
     return ok;
 }
 
+private Layout layoutRestrictions;
+/** return unspecified layout for this space; if the layout is
+ * already specified then the returned layout has no back reference to this.
+ * The layout must be filled in before invoking {@link #allocate() }.
+ */
+public Layout getNewLayout()
+{
+    Layout lr;
+    if(layoutRestrictions == null) {
+        lr = new Layout(this);
+        layoutRestrictions = lr;
+    } else
+        lr = new Layout(null);
+    return lr;
+}
+
+public RangeSet<Integer> getLayoutReserve()
+{
+    return layoutRestrictions != null
+           ? ImmutableRangeSet.copyOf(layoutRestrictions.reserve)
+           : ImmutableRangeSet.copyOf(Collections.emptyList());
+}
+
 public Map<Range<Integer>, Var> getAllocationMap()
 {
     return Collections.unmodifiableMap(layout.asMapOfRanges());
@@ -131,6 +155,7 @@ public Iterator<Var> getErrorVars()
 /**
  * Starting from pre-allocated variables, allocate memory for any variable
  * without an assigned memory location.
+ * Before allocation the layoutRestrictions, if any, are applied.
  * <p>
  Create a set of allocated ranges, its complement is free memory;
  first fit to allocate from free memory.
@@ -150,6 +175,15 @@ public void allocate()
             if(var.hasError())
                 throw new IllegalStateException("Var errors found in layout");
         }
+
+    if(layoutRestrictions != null) {
+        if(layoutRestrictions.base >= 0)
+            lowerLimit(layoutRestrictions.base - 1);
+        if(layoutRestrictions.limit >= 0)
+            upperLimit(layoutRestrictions.limit);
+        rangeLimit(layoutRestrictions.reserve);
+    }
+
     //declarationsDone = true; // TODO: probably don't need/want this.
     RangeSet<Integer> used = TreeRangeSet.create(layout.asMapOfRanges().keySet());
     RangeSet<Integer> free = used.complement();

@@ -2,6 +2,7 @@
 
 package com.raelity.astrolog.castro;
 
+import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.Arrays;
 
@@ -21,6 +22,35 @@ import com.raelity.astrolog.castro.mems.AstroMem.Var;
 public class Util
 {
 private Util() { }
+
+public static PrintWriter getErr()
+{
+    return lookup(CastroErr.class).pw;
+}
+
+// TODO: put the following in Util
+public static void reportError(ParserRuleContext ctx, Object... msg)
+{
+    reportError(ctx.start, msg);
+}
+
+public static void reportError(Token token, Object... msg)
+{
+    report(true, token, msg);
+}
+
+public static void report(boolean fError, Token token, Object... msg)
+{
+    String optMsg = msg.length == 0 ? "" : String.format(
+            (String)msg[0], Arrays.copyOfRange(msg, 1, msg.length));
+    String lineText = getLineText(token);
+    if(!lineText.isEmpty())
+        lineText = "'" + lineText + "' ";
+    getErr().printf("%s %s%s %s\n", tokenLoc(token), lineText,
+                    (fError ? "Error:" : "Warn:"), optMsg);
+    if(fError)
+        lookup(AstroParseResult.class).countError();
+}
 
 public static String getLineText(Token token)
 {

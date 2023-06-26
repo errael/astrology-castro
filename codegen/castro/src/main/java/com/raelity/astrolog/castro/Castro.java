@@ -153,7 +153,7 @@ public static void main(String[] args)
 
     switch(runOption) {
     case "test" -> runCompilerTest(apr);
-    case null, default -> Compile.compile(apr);
+    case null, default -> Compile.compile();
     }
     
 
