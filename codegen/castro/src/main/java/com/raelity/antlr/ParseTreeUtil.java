@@ -107,6 +107,15 @@ public final class ParseTreeUtil
         return s;
     }
 
+    public static boolean hasAncestor(ParserRuleContext ctx, Class<?> clazz)
+    {
+        ParserRuleContext ancestor = ctx;
+        while((ancestor = ancestor.getParent()) != null)
+            if(clazz.isInstance(ancestor))
+                return true;
+        return false;
+    }
+
 
     // ===================================================================
     // The following is from 

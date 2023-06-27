@@ -51,10 +51,10 @@ class Pass1 extends AstroBaseListener
 {
 /** use line number as index, first entry is null. */
 private final WriteableLineMap wLineMap;
-Registers registers = new Registers();
-Macros macros = new Macros();
-Switches switches = new Switches();
-Layout workingLayout;
+private final Registers registers = new Registers();
+private final Macros macros = new Macros();
+private final Switches switches = new Switches();
+private Layout workingLayout;
 
 public Pass1()
 {

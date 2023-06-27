@@ -151,7 +151,7 @@ public static void main(String[] args)
     addLookup(apr);
 
     switch(runOption) {
-    case "test" -> runCompilerTest(apr);
+    case "test" -> runCompilerTest();
     case null, default -> Compile.compile();
     }
     
@@ -172,13 +172,14 @@ public static void main(String[] args)
         System.exit(1);
 }
 
-static void runCompilerTest(AstroParseResult apr)
+static void runCompilerTest()
 {
+    AstroParseResult apr = lookup(AstroParseResult.class);
     // Have Err go to Out. Everything goes to the same place for tests
     replaceLookup(new CastroErr(lookup(CastroOut.class).pw));
     ProgramContext program = apr.getParser().program();
     apr.setContext(program);
-    GenSimpleOutput.genPrefixNotation(apr);
+    GenSimpleOutput.genPrefixNotation();
 }
 
     /** Given an input and output file name,

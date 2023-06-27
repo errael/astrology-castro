@@ -5,6 +5,8 @@ package com.raelity.astrolog.castro;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.IntStream;
@@ -57,8 +59,8 @@ public static void report(boolean fError, Token token, Object... msg)
     String lineText = getLineText(token);
     if(!lineText.isEmpty())
         lineText = "'" + lineText + "' ";
-    getErr().printf("%s %s%s %s\n", tokenLoc(token), lineText,
-                    (fError ? "Error:" : "Warn:"), optMsg);
+    getErr().printf("%s %s %s%s\n", (fError ? "Error:" : "Warn:"),
+                    tokenLoc(token), lineText, optMsg);
     if(fError)
         lookup(AstroParseResult.class).countError();
 }
@@ -110,16 +112,18 @@ public static void checkReport(Var var, Object... msg)
         return;
     String optMsg = msg.length == 0 ? "" : String.format(
             (String)msg[0], Arrays.copyOfRange(msg, 1, msg.length));
-    String s = getLineText(var.getId());
-    lookup(CastroErr.class).pw
-            .printf("%s '%s' %s %s %s\n", tokenLoc(var.getId()),
-                    s, var.getName(), var.getState(), optMsg);
-    lookup(AstroParseResult.class).countError();
+    reportError(var.getId(), "%s %s %s", var.getName(), var.getState(), optMsg);
 }
 
 public static <T> T lookup(Class<T> clazz)
 {
     return CentralLookup.getDefault().lookup(clazz);
+}
+
+public static <T> Collection<T> lookupAll(Class<T> clazz)
+{
+    return Collections.unmodifiableCollection(
+            CentralLookup.getDefault().lookupAll(clazz));
 }
 
 public static void addLookup(Object instance)

@@ -1,4 +1,7 @@
 syntax: glob
+
+castro/src/main/java/com/raelity/astrolog/castro/antlr
+
 .gradle
 build
 

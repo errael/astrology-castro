@@ -10,7 +10,6 @@ import com.google.common.collect.RangeSet;
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
-import com.raelity.astrolog.castro.lib.CentralLookup;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
@@ -18,10 +17,14 @@ import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 
 import static com.raelity.astrolog.castro.Util.lookup;
+import static com.raelity.astrolog.castro.Util.lookupAll;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 
 /**
- *
+ * Run the passes. <br>
+ * Pass1 - layout info, var/mem symbol tables, check func name/nargs.
+ * Pass2 - check used variables are defined.
+ * Pass3 - generate code.
  * @author err
  */
 public class Compile
@@ -59,13 +62,21 @@ static void compile()
     lookup(Macros.class).dumpVars(out, true, EnumSet.of(BUILTIN));
     lookup(Switches.class).dumpVars(out, true, EnumSet.of(BUILTIN));
 
-    //ParseTreeWalker walker = new ParseTreeWalker();
-    //walker.walk(compile.new Pass1(), program);
+    int pass1ErrorCount = apr.errors();
+
+    Pass2.pass2();
+
+    int pass2ErrorCount = apr.errors() - pass1ErrorCount;
+    if(pass2ErrorCount != 0)
+        err.printf("Pass2: %d errors\n", pass2ErrorCount);
+    if(apr.hasError())
+        return;
+    out.printf("PROCEEDING TO CODE GENERATION\n");
 }
 
 static void applyLayoutsAndAllocate()
 {
-    for(AstroMem mem : CentralLookup.getDefault().lookupAll(AstroMem.class)) {
+    for(AstroMem mem : lookupAll(AstroMem.class)) {
         if(mem == null)
             return;
         // warn if ASSIGN in reserve area

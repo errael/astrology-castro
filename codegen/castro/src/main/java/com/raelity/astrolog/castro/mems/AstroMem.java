@@ -522,6 +522,7 @@ public void dumpLayout(PrintWriter out)
     PRE_ASSIGN, // like from an include, by default should not be output
     ASSIGN,     // var addr at declaration, not BUILTIN or PRE_ASSIGN
     ALLOC,      // var allocated an addr automatically
+    DUMMY,      // e.g. for an undeclared variable found in an expression
     //NOT_ALLOC,  // variable not yet allocated
     DUP_NAME_ERR, SIZE_ERR, OVERLAP_ERR,
     OUT_OF_MEM,
@@ -534,7 +535,7 @@ public void dumpLayout(PrintWriter out)
             anyError = EnumSet.of(DUP_NAME_ERR, SIZE_ERR, OVERLAP_ERR);
     /** State that can be specified as part of a declaration. */
     private static final EnumSet<VarState>
-            canSpecify = EnumSet.of(BUILTIN, PRE_ASSIGN, INTERNAL, LIMIT);
+            canSpecify = EnumSet.of(BUILTIN, PRE_ASSIGN, INTERNAL, LIMIT, DUMMY);
     /** Var/range that requires a manually specified address. */
     private static final EnumSet<VarState>
             requiresAddr = EnumSet.of(BUILTIN, PRE_ASSIGN, LIMIT);

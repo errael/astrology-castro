@@ -4,11 +4,14 @@ package com.raelity.astrolog.castro;
 
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Map.Entry;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import org.antlr.v4.runtime.tree.xpath.XPath;
 
 import com.raelity.antlr.ParseTreeUtil;
 import com.raelity.astrolog.castro.Castro.CastroErr;
@@ -18,6 +21,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
+import static com.raelity.antlr.ParseTreeUtil.hasAncestor;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Minus;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Plus;
@@ -47,9 +51,9 @@ final CharStream input;
 final PrintWriter out;
 final AstroParseResult apr;
 
-private GenSimpleOutput(AstroParseResult apr)
+private GenSimpleOutput()
 {
-    this.apr = apr;
+    this.apr = lookup(AstroParseResult.class);
     this.parser = apr.getParser();
     this.input = apr.getInput();
     this.program = apr.getProgram();
@@ -63,9 +67,9 @@ private static PrintWriter getErr()
     return lookup(CastroErr.class).pw;
 }
 
-static void genPrefixNotation(AstroParseResult apr)
+static void genPrefixNotation()
 {
-    GenSimpleOutput simpleOutput = new GenSimpleOutput(apr);
+    GenSimpleOutput simpleOutput = new GenSimpleOutput();
     try {
         simpleOutput.generateAndOutputExprsByMacro();
     } catch (Exception ex) {
@@ -86,9 +90,39 @@ void generateAndOutputExprsByMacro()
 
     // verify that the number of statements is correct and that
     // all properties are consumed.
-    if(dump.walker() != dump.statement() || apr.prefixExpr.size() != 0) {
-        out.printf("PARSE ERROR: statements %d, found %d. prefixExpr left %d\n",
-                   dump.statement(), dump.walker(), apr.prefixExpr.size());
+
+    // First get rid of var initializers and layout stuff. Work on that later.
+    // But need to count them.
+    int countExtra = 0;
+    //out.printf("prefixExpr size: %d\n", apr.prefixExpr.size());
+    for(String xpath : new String[]
+            {"//var//expr", "//var//integer", "//layout//integer" }) {
+        for(ParseTree pt : XPath.findAll(apr.getProgram(), xpath, apr.getParser())) {
+            if(!xpath.equals("//var//expr")
+                    || !hasAncestor((ParserRuleContext)pt, ExprContext.class)) {
+                // this case is because "var foo {a + b};"
+                // has "+ a b" but "//var//expr" also cactches "a" and "b".
+                apr.prefixExpr.removeFrom(pt);
+                countExtra++;
+            }
+        }
+        // out.printf("prefixExpr size: %d (after filter %s)\n",
+        //            apr.prefixExpr.size(), xpath);
+    }
+
+    if(Castro.getVerbose() > 0)
+        out.printf("statements %d, extra %d, found %d. prefixExpr left %d\n",
+                   dump.statement(), countExtra, dump.walker(), apr.prefixExpr.size());
+
+    if(dump.walker() != dump.statement() + countExtra || apr.prefixExpr.size() != 0) {
+        out.printf("PARSE ERROR: statements %d, extra %d, found %d. prefixExpr left %d\n",
+                   dump.statement(), countExtra, dump.walker(), apr.prefixExpr.size());
+        for(Entry<ParseTree, String> pt : apr.prefixExpr.getMap().entrySet()) {
+            int line = pt.getKey() instanceof ParserRuleContext prc
+                       ? prc.start.getLine(): -1;
+            out.printf("pt: line %d: %s %s\n",
+                       line, pt.getKey().getClass().getSimpleName(), pt);
+        }
     }
 }
 
