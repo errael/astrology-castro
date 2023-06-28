@@ -51,10 +51,10 @@ public void testBinFunc()
 {
     System.out.println("binFunc");
     
-    String func = Ops.binFunc(LeftShift);
+    String func = Ops.astroCode(LeftShift);
     assertEquals("<<", func);
-    func = Ops.binFunc(LeftShiftAssign);
-    assertEquals("<<", func);
+    func = Ops.astroCode(LeftShiftAssign);
+    assertEquals("<<=", func);
 }
 
 }

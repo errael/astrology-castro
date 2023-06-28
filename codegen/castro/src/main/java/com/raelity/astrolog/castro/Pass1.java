@@ -203,15 +203,15 @@ public void exitRsv_loc(Rsv_locContext ctx)
 public void exitExprFunc(ExprFuncContext _ctx)
 {
     Func_callContext ctx = _ctx.func_call();
-    Integer narg = Functions.narg(ctx.Identifier().getText());
+    Integer narg = Functions.narg(ctx.func_name().getText());
     if(narg == null) {
-        reportError(ctx.Identifier().getSymbol(),
-                    "unknown function '%s'", ctx.Identifier().getText());
+        reportError(ctx.func_name().id,
+                    "unknown function '%s'", ctx.func_name().id.getText());
         return;
     }
     if(ctx.args.size() != narg)
         reportError(ctx, "function '%s' argument count, expect %d not %d",
-                    ctx.Identifier().getText(), narg, ctx.args.size());
+                    ctx.func_name().id.getText(), narg, ctx.args.size());
 }
 
 /** build the LineMap */

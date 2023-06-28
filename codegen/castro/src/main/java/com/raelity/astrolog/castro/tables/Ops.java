@@ -2,75 +2,134 @@
 
 package com.raelity.astrolog.castro.tables;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.ImmutableBiMap;
 
 import static com.raelity.astrolog.castro.antlr.AstroLexer.*;
 
 /**
- *
- * @author err
+ * This is a list of control/operation AstroExpression functions;
+ * are primarily used for flow control. Th
  */
 public class Ops
 {
-private Ops(){}
 
-/** Map token number to AstroExpression operator function name */
-private static Map<Integer, String> ops = null;
-
-/** @return AstroExpression function name corresponding to token as operator */
-public static String binFunc(int token)
-{
-    if(ops == null) {
-        // ~30 items, 40 entries, load-factor .75
-        ops = new HashMap<>(45);
-        createEntries();
-        ops = Collections.unmodifiableMap(ops);
-    }
-    return ops.get(token);
+public static enum Flow {
+DO_WHILE(Do), IF_ELSE(Else),
+FOR(For), IF(If),
+WHILE(While), REPEAT(Repeat),
+VAR   (Var),
+XDO   (1000002),
+XDO2  (1000003),
+XDO3  (1000004),
+MACRO (1000005),
+SWITCH(1000006),
+ASSIGN(1000007),
+;
+private final int key;
+private Flow(int key) { this.key = key; }
+public int key() { return key; }
 }
 
-private static void createEntries()
+/** @return AstroExpression function name corresponding to token as operator */
+public static String astroCode(int token)
 {
-    ops.put(Less, "Lt");
-    ops.put(LessEqual, "Lte");
-    ops.put(Greater, "Gt");
-    ops.put(GreaterEqual, "Gte");
-    ops.put(LeftShift, "<<");
-    ops.put(RightShift, ">>");
-    ops.put(Plus, "Add");
-    //ops.put(PlusPlus, "");    // not used
-    ops.put(Minus, "Sub");
-    //ops.put(MinusMinus, "");       // not used
-    ops.put(Star, "Mul");
-    ops.put(Div, "Div");
-    ops.put(Mod, "Mod");
-    ops.put(And, "And");
-    ops.put(Or, "Or");
-    //ops.put(AndAnd, "");       // not used
-    //ops.put(OrOr, "");     // not used
-    ops.put(Caret, "Xor");
-    ops.put(Not, "Not");
-    ops.put(Tilde, "Inv");
-    //ops.put(Question, "");
-    //ops.put(Colon, "");
-    //ops.put(Semi, "");
-    //ops.put(Comma, "");
-    ops.put(Equal, "Equ");
-    ops.put(NotEqual, "Neq");
-    ops.put(Assign, "=");   // Could use "Assign"
-    // The assign ops are rewriten to use assign: a += b ---> a = a + b
-    ops.put(StarAssign, "Mul");
-    ops.put(DivAssign, "Div");
-    ops.put(ModAssign, "Mod");
-    ops.put(PlusAssign, "Add");
-    ops.put(MinusAssign, "Sub");
-    ops.put(LeftShiftAssign, "<<");
-    ops.put(RightShiftAssign, ">>");
-    ops.put(AndAssign, "And");
-    ops.put(XorAssign, "Xor");
-    ops.put(OrAssign, "Or");
+    return operations.ops.get(token);
+}
+
+public static boolean isAnyOp(String astroCode)
+{
+    return operations.ops.inverse().containsKey(astroCode);
+}
+
+public static boolean isAssignOp(int token)
+{
+    String code = astroCode(token);
+    return code != null && code.length() > 1 && code.endsWith("=");
+}
+
+/** Map token number to AstroExpression operator function name */
+private static final Ops operations = new Ops();
+private final BiMap<Integer, String> ops;
+
+@SuppressWarnings("UseOfSystemOutOrSystemErr")
+private Ops()
+{
+    ImmutableBiMap.Builder<Integer,String> builder = ImmutableBiMap.builder();
+    createEntries(builder);
+    BiMap<Integer, String> ops00;
+    try {
+        ops00 = builder.buildOrThrow();
+    } catch (Exception ex) {
+        System.err.println("Ops Initialization: " + ex.getMessage());
+        throw new RuntimeException(ex);
+    }
+    ops = ops00;
+}
+
+private void createEntries(ImmutableBiMap.Builder<Integer,String> builder)
+{
+    builder
+            // Where it makes sense the Flow enum's key is the same
+            // name as a related token
+            .put(Do, "DoWhile")
+            .put(Else, "IfElse")
+            .put(For, "For")
+            .put(If, "If")
+            .put(While, "While")
+            .put(Repeat, "DoCount")
+            
+            // Want all the AstroExpr control/code-gen functions,
+            // on the right; make up some int that are not defined tokens.
+            .put(Var, "Var")
+            .put(Flow.XDO.key(), "Do")
+            .put(Flow.XDO2.key(), "Do2")
+            .put(Flow.XDO3.key(), "Do3")
+            .put(Macro, "Macro")
+            .put(Switch, "Switch")
+            .put(Flow.ASSIGN.key(), "Assign")
+
+            // Operators use the token to pick up the AstroExpr function
+            
+            .put(Less, "Lt")
+            .put(LessEqual, "Lte")
+            .put(Greater, "Gt")
+            .put(GreaterEqual, "Gte")
+            .put(LeftShift, "<<")
+            .put(RightShift, ">>")
+            .put(Plus, "Add")
+            //ops.put(PlusPlus, "")    // not used
+            .put(Minus, "Sub")
+            //ops.put(MinusMinus, "")       // not used
+            .put(Star, "Mul")
+            .put(Div, "Div")
+            .put(Mod, "Mod")
+            .put(And, "And")
+            .put(Or, "Or")
+            //ops.put(AndAnd, "")       // not used
+            //ops.put(OrOr, "")     // not used
+            .put(Caret, "Xor")
+            .put(Not, "Not")
+            .put(Tilde, "Inv")
+            //ops.put(Question, "")
+            //ops.put(Colon, "")
+            //ops.put(Semi, "")
+            //ops.put(Comma, "")
+            .put(Equal, "Equ")
+            .put(NotEqual, "Neq")
+            .put(Assign, "=")   // Could use "Assign"
+            
+            // The assign ops are rewriten to use assign: a += b ---> a = a + b
+            .put(StarAssign, "Mul=")
+            .put(DivAssign, "Div=")
+            .put(ModAssign, "Mod=")
+            .put(PlusAssign, "Add=")
+            .put(MinusAssign, "Sub=")
+            .put(LeftShiftAssign, "<<=")
+            .put(RightShiftAssign, ">>=")
+            .put(AndAssign, "And=")
+            .put(XorAssign, "Xor=")
+            .put(OrAssign, "Or=");
 }
 
 }

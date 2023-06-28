@@ -4,11 +4,18 @@ package com.raelity.astrolog.castro;
 
 import java.io.PrintWriter;
 import java.util.EnumSet;
+import java.util.List;
 
 import com.google.common.collect.RangeSet;
 
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.xpath.XPath;
+
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroOut;
+import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprStatementContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.LvalContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
@@ -72,6 +79,26 @@ static void compile()
     if(apr.hasError())
         return;
     out.printf("PROCEEDING TO CODE GENERATION\n");
+    Pass3.pass3();
+
+    StringBuilder sb = new StringBuilder(100);
+    for(ParseTree tree : XPath.findAll(apr.getProgram(), "//macro", apr.getParser())) {
+        MacroContext ctx = (MacroContext)tree;
+        List<AstroExprStatementContext> es = ctx.s;
+
+        sb.setLength(0);
+        sb.append("// MACRO ").append(ctx.Identifier().getText());
+        if(ctx.addr != null) {
+            sb.append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
+        }
+        sb.append('(').append(es.size()).append(')');
+
+        out.printf("\n%s\n", sb.toString());
+        for(AstroExprStatementContext s : es) {
+            out.printf("    %s\n", apr.prefixExpr.removeFrom(s.astroExpr.expr));
+        }
+    }
+
 }
 
 static void applyLayoutsAndAllocate()

@@ -91,7 +91,11 @@ void generateAndOutputExprsByMacro()
     // verify that the number of statements is correct and that
     // all properties are consumed.
 
-    // First get rid of var initializers and layout stuff. Work on that later.
+    // During prefixExpr generation the exprs are built up,
+    // such that top-level exprs include their descendents;
+    // currently only statements are collected/output.
+    // Get rid of var initializers and layout stuff.
+    // (Work on their output later.)
     // But need to count them.
     int countExtra = 0;
     //out.printf("prefixExpr size: %d\n", apr.prefixExpr.size());
@@ -135,7 +139,7 @@ void generateAndOutputExprsByMacro()
     }
 
     @Override
-    String genIfOp(String condition, String if_true)
+    String genIfOp(ExprIfOpContext ctx, String condition, String if_true)
     {
         sb.setLength(0);
         sb.append("IF ")
@@ -145,7 +149,7 @@ void generateAndOutputExprsByMacro()
     }
             
     @Override
-    String genIfElseOp(String condition, String if_true, String if_false)
+    String genIfElseOp(ExprIfElseOpContext ctx, String condition, String if_true, String if_false)
     {
         sb.setLength(0);
         sb.append("IF ")
@@ -157,7 +161,7 @@ void generateAndOutputExprsByMacro()
     }
     
     @Override
-    String genRepeatOp(String count, String statement)
+    String genRepeatOp(ExprRepeatOpContext ctx, String count, String statement)
     {
         sb.setLength(0);
         sb.append("REPEAT ")
@@ -167,7 +171,7 @@ void generateAndOutputExprsByMacro()
     }
     
     @Override
-    String genWhileOp(String condition, String statement)
+    String genWhileOp(ExprWhileOpContext ctx, String condition, String statement)
     {
         sb.setLength(0);
         sb.append("WHILE ")
@@ -178,7 +182,7 @@ void generateAndOutputExprsByMacro()
     }
     
     @Override
-    String genDoWhileOp(String statement, String condition)
+    String genDoWhileOp(ExprDowhileOpContext ctx, String statement, String condition)
     {
         sb.setLength(0);
         sb.append("DO_WHILE ")
@@ -188,8 +192,7 @@ void generateAndOutputExprsByMacro()
     }
     
     @Override
-    String genForOp(String counter, String begin, String end,
-                                          String statement)
+    String genForOp(ExprForOpContext ctx, String counter, String begin, String end, String statement)
     {
         sb.setLength(0);
         sb.append("FOR ")
@@ -203,7 +206,7 @@ void generateAndOutputExprsByMacro()
     }
     
     @Override
-    String genBraceBlockOp(List<String> statements)
+    String genBraceBlockOp(ExprBraceBlockOpContext ctx, List<String> statements)
     {
         sb.setLength(0);
         sb.append("BLOCK(").append(statements.size()).append(") ");
@@ -215,7 +218,7 @@ void generateAndOutputExprsByMacro()
     }
     
     @Override
-    String genFuncCallOp(String funcName, List<String> args)
+    String genFuncCallOp(ExprFuncContext ctx, String funcName, List<String> args)
     {
         sb.setLength(0);
         sb.append("FUNC(").append(args.size()).append(") ");
@@ -227,7 +230,7 @@ void generateAndOutputExprsByMacro()
     }
     
     @Override
-    String genUnOp(Token opToken, String expr)
+    String genUnOp(ExprUnOpContext ctx, Token opToken, String expr)
     {
         sb.setLength(0);
         int opType = opToken.getType();
@@ -238,7 +241,7 @@ void generateAndOutputExprsByMacro()
     }
     
     @Override
-    String genQuestColonOp(String condition, String if_true, String if_false)
+    String genQuestColonOp(ExprQuestOpContext ctx, String condition, String if_true, String if_false)
     {
         sb.setLength(0);
         sb.append("?: ")
@@ -249,7 +252,7 @@ void generateAndOutputExprsByMacro()
     }
     
     @Override
-    String genBinOp(Token opToken, String lhs, String rhs)
+    String genBinOp(ExprBinOpContext ctx, Token opToken, String lhs, String rhs)
     {
         sb.setLength(0);
         sb.append(opToken.getText()).append(' ')
@@ -259,9 +262,10 @@ void generateAndOutputExprsByMacro()
     }
     
     @Override
-    String genAssOp(Token opToken, String lhs, String rhs)
+    String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String rhs)
     {
-        return genBinOp(opToken, lhs, rhs);
+        // NOTE: null in following is not used
+        return genBinOp(null, opToken, lhs, rhs);
     }
     
     @Override

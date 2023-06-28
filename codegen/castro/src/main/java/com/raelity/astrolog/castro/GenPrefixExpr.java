@@ -3,6 +3,7 @@
 package com.raelity.astrolog.castro;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,19 +42,32 @@ public GenPrefixExpr(AstroParseResult apr)
     this.apr = apr;
 }
 
-abstract String genIfOp(String condition, String if_true);
-abstract String genIfElseOp(String condition, String if_true, String if_false);
-abstract String genRepeatOp(String count, String statement);
-abstract String genWhileOp(String condition, String statement);
-abstract String genDoWhileOp(String statement, String condition);
-abstract String genForOp(String counter, String begin, String end, String statement);
-abstract String genBraceBlockOp(List<String> statements);
-abstract String genFuncCallOp(String funcName, List<String> args);
-abstract String genQuestColonOp(String condition, String if_true, String if_false);
-abstract String genUnOp(Token opToken, String expr);
-abstract String genBinOp(Token opToken, String lhs, String rhs);
-abstract String genAssOp(Token opToken, String lhs, String rhs);
-abstract String genLval(LvalContext ctx, String... expr);
+abstract String genIfOp(ExprIfOpContext ctx,
+                        String condition, String if_true);
+abstract String genIfElseOp(ExprIfElseOpContext ctx,
+                            String condition, String if_true, String if_false);
+abstract String genRepeatOp(ExprRepeatOpContext ctx,
+                            String count, String statement);
+abstract String genWhileOp(ExprWhileOpContext ctx,
+                           String condition, String statement);
+abstract String genDoWhileOp(ExprDowhileOpContext ctx,
+                             String statement, String condition);
+abstract String genForOp(ExprForOpContext ctx,
+                         String counter, String begin, String end, String statement);
+abstract String genBraceBlockOp(ExprBraceBlockOpContext ctx,
+                                List<String> statements);
+abstract String genFuncCallOp(ExprFuncContext ctx,
+                              String funcName, List<String> args);
+abstract String genQuestColonOp(ExprQuestOpContext ctx,
+                                String condition, String if_true, String if_false);
+abstract String genUnOp(ExprUnOpContext ctx,
+                        Token opToken, String expr);
+abstract String genBinOp(ExprBinOpContext ctx,
+                         Token opToken, String lhs, String rhs);
+abstract String genAssOp(ExprAssOpContext ctx,
+                         Token opToken, String lhs, String rhs);
+abstract String genLval(LvalContext ctx,
+                        String... expr);
 abstract String genAddr(TermAddressOfContext ctx);
 
 private static PrintWriter getOut()
@@ -72,7 +86,8 @@ public void exitEveryRule(ParserRuleContext ctx)
 @Override
 public void exitExprIfOp(ExprIfOpContext ctx)
 {
-    String s = genIfOp(apr.prefixExpr.removeFrom(ctx.paren_expr().expr()),
+    String s = genIfOp(ctx,
+                       apr.prefixExpr.removeFrom(ctx.paren_expr().expr()),
                        apr.prefixExpr.removeFrom(ctx.expr()));
     apr.prefixExpr.put(ctx, s);
 }
@@ -80,7 +95,8 @@ public void exitExprIfOp(ExprIfOpContext ctx)
 @Override
 public void exitExprIfElseOp(ExprIfElseOpContext ctx)
 {
-    String s = genIfElseOp(apr.prefixExpr.removeFrom(ctx.paren_expr().expr()),
+    String s = genIfElseOp(ctx,
+                           apr.prefixExpr.removeFrom(ctx.paren_expr().expr()),
                            apr.prefixExpr.removeFrom(ctx.expr(0)),
                            apr.prefixExpr.removeFrom(ctx.expr(1)));
     apr.prefixExpr.put(ctx, s);
@@ -89,7 +105,8 @@ public void exitExprIfElseOp(ExprIfElseOpContext ctx)
 @Override
 public void exitExprRepeatOp(ExprRepeatOpContext ctx)
 {
-    String s = genRepeatOp(apr.prefixExpr.removeFrom(ctx.paren_expr().expr()),
+    String s = genRepeatOp(ctx,
+                           apr.prefixExpr.removeFrom(ctx.paren_expr().expr()),
                            apr.prefixExpr.removeFrom(ctx.expr()));
     apr.prefixExpr.put(ctx, s);
 }
@@ -97,7 +114,8 @@ public void exitExprRepeatOp(ExprRepeatOpContext ctx)
 @Override
 public void exitExprWhileOp(ExprWhileOpContext ctx)
 {
-    String s = genWhileOp(apr.prefixExpr.removeFrom(ctx.paren_expr().expr()),
+    String s = genWhileOp(ctx,
+                          apr.prefixExpr.removeFrom(ctx.paren_expr().expr()),
                           apr.prefixExpr.removeFrom(ctx.expr()));
     apr.prefixExpr.put(ctx, s);
 }
@@ -105,7 +123,8 @@ public void exitExprWhileOp(ExprWhileOpContext ctx)
 @Override
 public void exitExprDowhileOp(ExprDowhileOpContext ctx)
 {
-    String s = genDoWhileOp(apr.prefixExpr.removeFrom(ctx.expr()),
+    String s = genDoWhileOp(ctx,
+                            apr.prefixExpr.removeFrom(ctx.expr()),
                             apr.prefixExpr.removeFrom(ctx.paren_expr().expr()));
     apr.prefixExpr.put(ctx, s);
 }
@@ -113,7 +132,8 @@ public void exitExprDowhileOp(ExprDowhileOpContext ctx)
 @Override
 public void exitExprForOp(ExprForOpContext ctx)
 {
-    String s = genForOp(apr.prefixExpr.removeFrom(ctx.lval()),
+    String s = genForOp(ctx,
+                        apr.prefixExpr.removeFrom(ctx.lval()),
                         apr.prefixExpr.removeFrom(ctx.expr(0)),
                         apr.prefixExpr.removeFrom(ctx.expr(1)),
                         apr.prefixExpr.removeFrom(ctx.expr(2)));
@@ -123,16 +143,18 @@ public void exitExprForOp(ExprForOpContext ctx)
 @Override
 public void exitExprBraceBlockOp(ExprBraceBlockOpContext ctx)
 {
-    String s = genBraceBlockOp(ctx.brace_block().bs.stream()
-            .map((bsctx) -> apr.prefixExpr.removeFrom(bsctx.astroExpr().expr()))
-            .collect(Collectors.toList()));
-    apr.prefixExpr.put(ctx, s);
+    String s = genBraceBlockOp(ctx,
+            ctx.brace_block().bs.stream()
+                .map((bsctx) -> apr.prefixExpr.removeFrom(bsctx.astroExpr().expr()))
+                .collect(Collectors.toCollection(ArrayList::new)));
+        apr.prefixExpr.put(ctx, s);
 }
 
 @Override
 public void exitExprFunc(ExprFuncContext ctx)
 {
-    String s = genFuncCallOp(ctx.func_call().Identifier().getText(),
+    String s = genFuncCallOp(ctx,
+                             ctx.func_call().func_name().getText(),
                              ctx.func_call().args.stream()
                                      .map((arg) -> apr.prefixExpr.removeFrom(arg))
                                      .collect(Collectors.toList()));
@@ -142,7 +164,8 @@ public void exitExprFunc(ExprFuncContext ctx)
 @Override
 public void exitExprUnOp(ExprUnOpContext ctx)
 {
-    String s = genUnOp(((TerminalNode)ctx.getChild(0)).getSymbol(),
+    String s = genUnOp(ctx,
+                       ((TerminalNode)ctx.getChild(0)).getSymbol(),
                        apr.prefixExpr.removeFrom(ctx.expr()));
     apr.prefixExpr.put(ctx, s);
 }
@@ -150,7 +173,8 @@ public void exitExprUnOp(ExprUnOpContext ctx)
 @Override
 public void exitExprQuestOp(ExprQuestOpContext ctx)
 {
-    String s = genQuestColonOp(apr.prefixExpr.removeFrom(ctx.expr(0)),
+    String s = genQuestColonOp(ctx,
+                               apr.prefixExpr.removeFrom(ctx.expr(0)),
                                apr.prefixExpr.removeFrom(ctx.expr(1)),
                                apr.prefixExpr.removeFrom(ctx.expr(2)));
     apr.prefixExpr.put(ctx, s);
@@ -159,7 +183,8 @@ public void exitExprQuestOp(ExprQuestOpContext ctx)
 @Override
 public void exitExprBinOp(ExprBinOpContext ctx)
 {
-    String s = genBinOp(((TerminalNode)ctx.getChild(1)).getSymbol(),
+    String s = genBinOp(ctx,
+                        ((TerminalNode)ctx.getChild(1)).getSymbol(),
                         apr.prefixExpr.removeFrom(ctx.getChild(0)),
                         apr.prefixExpr.removeFrom(ctx.getChild(2)));
     apr.prefixExpr.put(ctx, s);
@@ -168,7 +193,8 @@ public void exitExprBinOp(ExprBinOpContext ctx)
 @Override
 public void exitExprAssOp(ExprAssOpContext ctx)
 {
-    String s = genAssOp(((TerminalNode)ctx.getChild(1)).getSymbol(),
+    String s = genAssOp(ctx,
+                        ((TerminalNode)ctx.getChild(1)).getSymbol(),
                         apr.prefixExpr.removeFrom(ctx.getChild(0)),
                         apr.prefixExpr.removeFrom(ctx.getChild(2)));
     apr.prefixExpr.put(ctx, s);
