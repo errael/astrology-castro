@@ -8,7 +8,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.xpath.XPath;
 
-import com.raelity.astrolog.castro.antlr.AstroBaseListener;
+import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
@@ -25,7 +25,7 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUMMY;
  *
  * @author err
  */
-class Pass2 extends AstroBaseListener
+class Pass2 extends AstroParserBaseListener
 {
 static void pass2()
 {

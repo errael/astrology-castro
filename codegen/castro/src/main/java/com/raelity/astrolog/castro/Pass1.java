@@ -14,8 +14,10 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.raelity.antlr.ParseTreeUtil;
 import com.raelity.astrolog.castro.LineMap.WriteableLineMap;
-import com.raelity.astrolog.castro.antlr.AstroBaseListener;
+import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser;
+import com.raelity.astrolog.castro.antlr.AstroParser.Assign_macro_addrContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Assign_switch_addrContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.BaseContstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ConstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
@@ -26,6 +28,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.Layout_regionContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LimitContstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Rsv_locContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Var1Context;
 import com.raelity.astrolog.castro.antlr.AstroParser.VarArrayContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.VarArrayInitContext;
@@ -47,7 +50,7 @@ import static com.raelity.astrolog.castro.Util.reportError;
  * and build line index map to interval.
  * Publish {@link AstroMem}s and {@link LineMap} to lookup.
  */
-class Pass1 extends AstroBaseListener
+class Pass1 extends AstroParserBaseListener
 {
 /** use line number as index, first entry is null. */
 private final WriteableLineMap wLineMap;
@@ -111,16 +114,39 @@ public void exitVar(VarContext ctx)
         declareVar((ParserRuleContext)child);
 }
 
+private void declareSwithOrMacro(AstroMem mem, IntegerContext i_ctx, Token id)
+{
+    int addr;
+    if(i_ctx == null || ParseTreeUtil.hasErrorNode(i_ctx))
+        addr = -1;
+    else
+        addr = Integer.parseInt(i_ctx.getText());
+    Var var = mem.declare(id, 1, addr);
+    checkReport(var);
+};
+
 @Override
 public void exitMacro(MacroContext ctx)
 {
-    int addr;
-    if(ctx.addr == null || ParseTreeUtil.hasErrorNode(ctx.addr))
-        addr = -1;
-    else
-        addr = Integer.parseInt(ctx.addr.getText());
-    Var var = macros.declare(ctx.Identifier().getSymbol(), 1, addr);
-    checkReport(var);
+    declareSwithOrMacro(macros, ctx.addr, ctx.id);
+}
+
+@Override
+public void exitSwitch(SwitchContext ctx)
+{
+    declareSwithOrMacro(switches, ctx.addr, ctx.id);
+}
+
+@Override
+public void exitAssign_switch_addr(Assign_switch_addrContext ctx)
+{
+    declareSwithOrMacro(switches, ctx.addr, ctx.id);
+}
+
+@Override
+public void exitAssign_macro_addr(Assign_macro_addrContext ctx)
+{
+    declareSwithOrMacro(macros, ctx.addr, ctx.id);
 }
 
 @Override

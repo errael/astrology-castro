@@ -16,7 +16,7 @@ import org.antlr.v4.runtime.tree.xpath.XPath;
 import com.raelity.antlr.ParseTreeUtil;
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroOut;
-import com.raelity.astrolog.castro.antlr.AstroBaseListener;
+import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 
@@ -102,10 +102,11 @@ void generateAndOutputExprsByMacro()
     for(String xpath : new String[]
             {"//var//expr", "//var//integer", "//layout//integer" }) {
         for(ParseTree pt : XPath.findAll(apr.getProgram(), xpath, apr.getParser())) {
-            if(!xpath.equals("//var//expr")
+            if(xpath.equals("//layout//integer")
                     || !hasAncestor((ParserRuleContext)pt, ExprContext.class)) {
                 // this case is because "var foo {a + b};"
                 // has "+ a b" but "//var//expr" also cactches "a" and "b".
+                // Also "var foo {3}" is an integer that's in an expr
                 apr.prefixExpr.removeFrom(pt);
                 countExtra++;
             }
@@ -119,7 +120,7 @@ void generateAndOutputExprsByMacro()
                    dump.statement(), countExtra, dump.walker(), apr.prefixExpr.size());
 
     if(dump.walker() != dump.statement() + countExtra || apr.prefixExpr.size() != 0) {
-        out.printf("PARSE ERROR: statements %d, extra %d, found %d. prefixExpr left %d\n",
+        out.printf("PARSE ERROR: statements %d, extra %d, found %d, prefixExpr left %d\n",
                    dump.statement(), countExtra, dump.walker(), apr.prefixExpr.size());
         for(Entry<ParseTree, String> pt : apr.prefixExpr.getMap().entrySet()) {
             int line = pt.getKey() instanceof ParserRuleContext prc
@@ -137,6 +138,18 @@ void generateAndOutputExprsByMacro()
     {
         super(apr);
     }
+
+    @Override
+    String genSwitch(SwitchContext ctx, List<String> l, String joined,
+                     boolean hasQuote1, boolean hasQuote2)
+    {
+        sb.setLength(0);
+        sb.append("SWITCH ")
+                .append(joined);
+        return sb.toString();
+    }
+    
+    
 
     @Override
     String genIfOp(ExprIfOpContext ctx, String condition, String if_true)
@@ -300,7 +313,7 @@ void generateAndOutputExprsByMacro()
     /**
      * Output one line per statement of any collected info.
      */
-    class Pass2  extends AstroBaseListener
+    class Pass2  extends AstroParserBaseListener
     {
     int walkerCount;
     int astroExpressionCount;
@@ -312,7 +325,7 @@ void generateAndOutputExprsByMacro()
     }
     
     @Override
-    public void exitEveryRule(ParserRuleContext ctx)
+    public void enterEveryRule(ParserRuleContext ctx)
     {
         super.exitEveryRule(ctx);
         String s = apr.prefixExpr.get(ctx);
@@ -330,7 +343,6 @@ void generateAndOutputExprsByMacro()
     @Override
     public void exitMacro(MacroContext ctx)
     {
-        super.exitMacro(ctx);
         List<AstroExprStatementContext> es = ctx.s;
 
         sb.setLength(0);
@@ -347,6 +359,29 @@ void generateAndOutputExprsByMacro()
             astroExpressionCount++;
         }
     }
+
+    void dumpSwitch(SwitchContext ctx)
+    {
+        out.printf("input: %s\n", ParseTreeUtil.getOriginalText(ctx, input));
+        out.printf("    %s %s\n", getRuleName(parser, ctx, true),
+                                  apr.prefixExpr.removeFrom(ctx));
+    }
+
+    @Override
+    public void exitSwitch(SwitchContext ctx)
+    {
+        sb.setLength(0);
+        sb.append("=== SWITCH ").append(ctx.id.getText());
+        if(ctx.addr != null) {
+            sb.append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
+            astroExpressionCount++; // weird, but the macro addr is an expr
+        }
+
+        out.printf("\n%s\n", sb.toString());
+        dumpSwitch(ctx);
+        astroExpressionCount++;
+    }
+
     
     }
     

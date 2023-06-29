@@ -168,7 +168,7 @@ public static void main(String[] args)
         terr.pw.close();
         removeLookup(terr);
     }
-    if(apr.errors() != 0)
+    if(apr.hasError())
         System.exit(1);
 }
 

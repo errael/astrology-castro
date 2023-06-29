@@ -5,6 +5,7 @@ package com.raelity.astrolog.castro;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -12,7 +13,8 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.raelity.astrolog.castro.Castro.CastroOut;
-import com.raelity.astrolog.castro.antlr.AstroBaseListener;
+import com.raelity.astrolog.castro.antlr.AstroLexer;
+import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
@@ -32,7 +34,7 @@ import static com.raelity.astrolog.castro.Util.lookup;
  * prefixCode string incorporating it's children. Repeat until only the
  * top level exprs have prefixCode.
  */
-public abstract class GenPrefixExpr extends AstroBaseListener
+public abstract class GenPrefixExpr extends AstroParserBaseListener
 {
 
 final AstroParseResult apr;
@@ -42,6 +44,9 @@ public GenPrefixExpr(AstroParseResult apr)
     this.apr = apr;
 }
 
+abstract String genSwitch(SwitchContext ctx,
+                          List<String> l, String joined,
+                          boolean hasQuote1, boolean hasQuote2);
 abstract String genIfOp(ExprIfOpContext ctx,
                         String condition, String if_true);
 abstract String genIfElseOp(ExprIfElseOpContext ctx,
@@ -253,5 +258,30 @@ public void exitLvalIndirect(LvalIndirectContext ctx)
     apr.prefixExpr.put(ctx, s);
 }
 
+@Override
+public void exitSwitch(SwitchContext ctx)
+{
+    List<String> l = new ArrayList<>(ctx.q.size());
+    boolean hasQuote1 = false;
+    boolean hasQuote2 = false;
+    for(int i = 0; i < ctx.q.size(); i++) {
+        Token token = ctx.q.get(i);
+        String s = token.getText();
+        if(token.getType() == AstroLexer.Stuff) {
+            s = s.replaceAll("[\n\r ]+", " ");
+            // get rid of any escape for including a '>'
+            s = s.replaceAll(Matcher.quoteReplacement("\\>"), ">");
+        } else {
+            if(s.startsWith("'"))
+                hasQuote1 = true;
+            else
+                hasQuote2 = true;
+        }
+        l.add(s);
+    }
+    String joined = String.join("", l).trim();
+    String s = genSwitch(ctx, l, joined, hasQuote1, hasQuote2);
+    apr.prefixExpr.put(ctx, s);
+}
 }
     

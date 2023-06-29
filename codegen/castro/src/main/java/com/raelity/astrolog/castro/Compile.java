@@ -14,9 +14,9 @@ import org.antlr.v4.runtime.tree.xpath.XPath;
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprStatementContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.LvalContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
@@ -55,9 +55,14 @@ static void compile()
         err.printf("Pass1: %d other errors\n", apr.errors());
     }
 
-    lookup(Registers.class).dumpLayout(out);
-    lookup(Macros.class).dumpLayout(out);
-    lookup(Switches.class).dumpLayout(out);
+    Registers registers = lookup(Registers.class);
+    Macros macros = lookup(Macros.class);
+    Switches switches = lookup(Switches.class);
+
+
+    registers.dumpLayout(out);
+    macros.dumpLayout(out);
+    switches.dumpLayout(out);
 
     applyLayoutsAndAllocate();
 
@@ -65,9 +70,9 @@ static void compile()
         err.printf("After Allocation: %d errors\n", apr.errors());
 
     //compile.registers.dumpAllocation(out, EnumSet.of(BUILTIN));
-    lookup(Registers.class).dumpVars(out, true, EnumSet.of(BUILTIN));
-    lookup(Macros.class).dumpVars(out, true, EnumSet.of(BUILTIN));
-    lookup(Switches.class).dumpVars(out, true, EnumSet.of(BUILTIN));
+    registers.dumpVars(out, true, EnumSet.of(BUILTIN));
+    macros.dumpVars(out, true, EnumSet.of(BUILTIN));
+    switches.dumpVars(out, true, EnumSet.of(BUILTIN));
 
     int pass1ErrorCount = apr.errors();
 
@@ -87,7 +92,7 @@ static void compile()
         List<AstroExprStatementContext> es = ctx.s;
 
         sb.setLength(0);
-        sb.append("// MACRO ").append(ctx.Identifier().getText());
+        sb.append("// MACRO ").append(ctx.id.getText());
         if(ctx.addr != null) {
             sb.append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
         }
@@ -97,6 +102,22 @@ static void compile()
         for(AstroExprStatementContext s : es) {
             out.printf("    %s\n", apr.prefixExpr.removeFrom(s.astroExpr.expr));
         }
+    }
+
+    sb.setLength(0);
+    for(ParseTree tree : XPath.findAll(apr.getProgram(), "//switch", apr.getParser())) {
+        SwitchContext ctx = (SwitchContext)tree;
+
+        sb.setLength(0);
+        sb.append("// SWITCH ").append(ctx.id.getText()).append(' ');
+
+        out.printf("\n%s\n", sb.toString());
+
+        sb.setLength(0);
+        sb.append("-M0 ")
+                .append(switches.getVar(ctx.id.getText()).getAddr()).append(' ')
+                .append(apr.prefixExpr.removeFrom(ctx));
+        out.printf("    %s\n", sb.toString());
     }
 
 }
