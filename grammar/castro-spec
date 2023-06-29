@@ -2,6 +2,14 @@ CONSIDER
 ========
 structs
 
+Cant' initialize builtin variables because can't do
+    var x {a + b};
+since can't redefine x. Could allow the re-definition of x, but can't allow
+    var x @100 {a + b};
+or
+    var x[3] {a + b};
+since that would change the location or size of x.
+
 asm instrinsic to copy verbatum, good for init
     asm(text);
 Lexer mode to facilitate literal copy?

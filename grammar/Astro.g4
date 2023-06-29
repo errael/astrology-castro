@@ -2,10 +2,12 @@
 
 grammar Astro;
 
+//tokens { STRING }
+
 // The restriction of layout before anything else is
 // implemented in code.
 program
-    : (layout | var | macro)+ EOF
+    : (layout | var | switch | macro)+ EOF
     ;
 
 layout
@@ -31,6 +33,12 @@ rsv_loc
     ;
 
 // TODO: also string array initialization
+
+switch
+    : 'switch' id=Identifier ('@' addr=integer)? QUOTE (String)* '>' ;
+    //: SWITCH_START ( String )* '}' ;
+    //: SWITCH_START ( STUFF | String )* '}' ;
+    //: 'switch' '{' ( STUFF | String )* '}' ;
 
 var
     : var1 | varArray | varArrayInit
@@ -89,7 +97,11 @@ paren_expr
    ;
 
 func_call
-    : Identifier '(' (args+=expr (',' args+=expr)*)? ')'
+    : func_name '(' (args+=expr (',' args+=expr)*)? ')'
+    ;
+
+func_name
+    : id=Identifier | id=AssignObj | id=AssignHouse
     ;
 
 // TODO: make '*' indirection in expr
@@ -130,10 +142,10 @@ term
    | '&' Identifier #termAddressOf
    ;
 
-lval
-    : Identifier '[' expr ']'   #lvalArray
-    | '*' Identifier            #lvalIndirect
-    | Identifier                #lvalMem
+lval locals[Token id]
+    : altid=Identifier '[' expr ']'   {$id = $altid;} #lvalArray
+    | '*' altid=Identifier            {$id = $altid;} #lvalIndirect
+    | altid=Identifier                {$id = $altid;} #lvalMem
     ;
 
 integer : IntegerConstant ;
@@ -158,6 +170,16 @@ constant
     |   CharacterConstant
     ;
 **************************************************************/
+
+//lexer grammar Astro;
+
+//tokens { STRING }
+
+QUOTE : 'quote<' ;
+
+// Handle these as functions
+AssignObj : '=' [Oo] [Bb] [Jj];
+AssignHouse : '=' [Hh] [Oo] [Uu] [Ss] [Ee];
 
 Layout : 'layout';
 Memory : 'memory';
@@ -233,6 +255,20 @@ NotEqual : '!=';
 Arrow : '->';           // not used
 Dot : '.';              // not used
 Ellipsis : '...';       // not used
+
+//SWITCH_START : 'switch' '{' ;
+
+String : DoubleQuoteString | SingleQuoteString ;
+
+fragment
+DoubleQuoteString
+    : '"' .*? '"'
+    ;
+
+fragment
+SingleQuoteString
+    : '\'' .*? '\''
+    ;
 
 //STRING
 //   : [a-z]+
@@ -432,3 +468,8 @@ LineComment
 //LINE_COMMENT
 //	: '//' ~[\r\n]* -> channel(HIDDEN)
 //	;
+
+// mode CAPTURE_SWITCH;
+// 
+// //STUFF : ~['"]*? ;
+// STUFF : ~['"}]* ;
