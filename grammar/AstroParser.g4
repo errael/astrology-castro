@@ -8,7 +8,8 @@ options { tokenVocab=AstroLexer; }
 // implemented in code.
 program
     : (layout | var
-            | switch | macro | assign_switch_addr | assign_macro_addr)+ EOF
+            | switch | macro | assign_switch_addr | assign_macro_addr)+
+        EOF
     ;
 
 layout
@@ -63,14 +64,38 @@ macro
     : 'macro' id=Identifier ('@' addr=integer)? '{' s+=astroExprStatement + '}'
     ;
 
+// Define/declare a "switch" command
+// which is a squence of astrolog command switches.
+// Note that "~M <index> 'expression'" and "~2[0] <index> 'vals'"
+// are not supported. Use macro definition and string initializes.
+// Can always do asm() to manually generate these.
+
 switch
-    : 'switch' id=Identifier ('@' addr=integer)?
-                START_VERBATIM (q+=Stuff | q+=CaptureString)* STOP_VERBATIM ;
+    : 'switch' id=Identifier ('@' addr=integer)? '{' sc+=switch_cmd+ '}'
+    ;
+
+switch_cmd
+    : expr_arg=SW_ARG bs+=astroExprStatement + '}'   // express arg to regular switch
+    | name=sw_name '{' bs+=astroExprStatement + '}'
+    | name=sw_name
+    | string=String
+    ;
+
+// No blanks in sw_name, check-report in code.
+// "-YYT" (not "- YYT"), "-80" (not "- 80"), "~FA" (not "~ FA"), ...
+
+sw_name
+    : pre=('-' | '=' | '_' )?
+            ( id=IdentifierDigitNondigit |  id=Identifier | id=IntegerConstant)
+    | pre=('-' | '=' | '_' )? tilde='~'
+            (id=IdentifierDigitNondigit |  id=Identifier | id=IntegerConstant)
+    | tilde='~'
+    ;
 
 /*
  * After top level '} allow optional ';' to avoid conusion.
  * "if(a){b;} *r = 2;" parses like "if(a){b;} * (r = 2);"
- * TODO: Give warning if line starts with '*', '+', '-':w
+ * TODO: Give warning if line starts with '*', '+', '-'
  */
 astroExprStatement
     : astroExpr opt_semi[($astroExpr.stop.getType() == Semi) ? 1 : 0]

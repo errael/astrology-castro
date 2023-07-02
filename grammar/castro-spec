@@ -72,6 +72,12 @@ Find expressions with no side effects, e.g. "a + b" is not assiged to anything.
 Give a warning for these.
 
 ==============================================================================
+Examples:
+    last example in AstroExpression, using expr as command argument.
+    =R "~=b 0 For %a 0 Objs If ObjOn @a Do =b @a =a Objs @b"
+    =R {~ b=0; for(a=0;Objs()) if(ObjOn(a)) { b=a; a=Objs(); } b; }
+
+==============================================================================
 
 
 Initial thoughts; preliminary spec

@@ -2,13 +2,12 @@
 
 lexer grammar AstroLexer;
 
-//tokens { STRING }
-
-START_VERBATIM : ('quote<' | 'q<') -> mode(CAPTURE_VERBATIM) ;
-
+// TODO: use AssignObj/AssignHouse instead of "=" ?
 // Handle these as functions
-AssignObj : '=' [Oo] [Bb] [Jj];
-AssignHouse : '=' [Hh] [Oo] [Uu] [Ss] [Ee];
+AssignObj : '=' [Oo] [Bb] [Jj] ~[a-zA-Z_0-9] ;
+AssignHouse : '=' [Hh] [Oo] [Uu] [Ss] [Ee] ~[a-zA-Z_0-9] ;
+
+SW_ARG : '{~' ;
 
 Layout : 'layout';
 Memory : 'memory';
@@ -85,7 +84,7 @@ Arrow : '->';           // not used
 Dot : '.';              // not used
 Ellipsis : '...';       // not used
 
-//SWITCH_START : 'switch' '{' ;
+UnderBar : '_' ;
 
 String : DoubleQuoteString | SingleQuoteString ;
 
@@ -110,6 +109,19 @@ Identifier
         )*
     ;
 
+// see IntegerConstant below
+IntegerConstant
+    //:   DecimalConstant
+    :   Digit+
+    ;
+
+IdentifierDigitNondigit
+    :   Digit
+        (   IdentifierNondigit
+        |   Digit
+        )*
+    ;
+
 fragment
 IdentifierNondigit
     :   Nondigit
@@ -128,13 +140,13 @@ Digit
     ;
 
 //fragment
-IntegerConstant
-    :   DecimalConstant
+//IntegerConstant
+//    :   DecimalConstant
 //    :   DecimalConstant IntegerSuffix?
 //    |   OctalConstant IntegerSuffix?
 //    |   HexadecimalConstant IntegerSuffix?
 //    |	BinaryConstant
-    ;
+//    ;
 
 fragment
 BinaryConstant
@@ -270,8 +282,6 @@ CChar
 //    |   UniversalCharacterName
 //    ;
 
-
-
 //INT
 //   : [0-9] +
 //   ;
@@ -297,21 +307,4 @@ LineComment
 //LINE_COMMENT
 //	: '//' ~[\r\n]* -> channel(HIDDEN)
 //	;
-
-mode CAPTURE_VERBATIM ;
-
-CaptureString : Quote2CaptureString | Quote1CaptureString ;
-
-fragment
-Quote2CaptureString : '"' .*? '"' ;
-
-fragment
-Quote1CaptureString : '\'' .*? '\'' ;
-
-fragment
-CAPTURE_ESC : '\\>' ;
-
-Stuff : (~['">]|CAPTURE_ESC)* ;
-
-STOP_VERBATIM : Greater -> mode(DEFAULT_MODE) ;
 
