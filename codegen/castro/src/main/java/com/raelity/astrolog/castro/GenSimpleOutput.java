@@ -71,7 +71,7 @@ static void genPrefixNotation()
 {
     GenSimpleOutput simpleOutput = new GenSimpleOutput();
     try {
-        simpleOutput.generateAndOutputExprsByMacro();
+        simpleOutput.generateAndOutputExprs();
     } catch (Exception ex) {
         getErr().printf("ABORT: %s\n", ex.getMessage());
         ex.printStackTrace(getErr());
@@ -80,7 +80,7 @@ static void genPrefixNotation()
 
 record DumpCounts(int walker, int statement){};
 
-void generateAndOutputExprsByMacro()
+void generateAndOutputExprs()
 {
     Pass1 pass1 = new Pass1(apr);
     walker.walk(pass1, program);
@@ -120,7 +120,7 @@ void generateAndOutputExprsByMacro()
                    dump.statement(), countExtra, dump.walker(), apr.prefixExpr.size());
 
     if(dump.walker() != dump.statement() + countExtra || apr.prefixExpr.size() != 0) {
-        out.printf("PARSE ERROR: statements %d, extra %d, found %d, prefixExpr left %d\n",
+        out.printf("genPrefixExpr ERROR: statements %d, extra %d, found %d, prefixExpr left %d\n",
                    dump.statement(), countExtra, dump.walker(), apr.prefixExpr.size());
         for(Entry<ParseTree, String> pt : apr.prefixExpr.getMap().entrySet()) {
             int line = pt.getKey() instanceof ParserRuleContext prc
@@ -140,16 +140,29 @@ void generateAndOutputExprsByMacro()
     }
 
     @Override
-    String genSwitch(SwitchContext ctx, List<String> l, String joined,
-                     boolean hasQuote1, boolean hasQuote2)
+    String genSw_cmdExpr_arg(Switch_cmdContext ctx, List<String> bs) 
     {
         sb.setLength(0);
-        sb.append("SWITCH ")
-                .append(joined);
+        sb.append("{~BLOCK(").append(bs.size()).append(") ");
+        for(String s : bs) {
+            sb.append(s).append(' ');
+        }
         return sb.toString();
     }
-    
-    
+
+    @Override
+    String genSw_cmdName(Switch_cmdContext ctx, String name, List<String> bs)
+    {
+        sb.setLength(0);
+        sb.append(name);
+        if(!bs.isEmpty()) {
+            sb.append(":BLOCK(").append(bs.size()).append(") ");
+            for(String s : bs) {
+                sb.append(s).append(' ');
+            }
+        }
+        return sb.toString();
+    }
 
     @Override
     String genIfOp(ExprIfOpContext ctx, String condition, String if_true)
@@ -225,7 +238,6 @@ void generateAndOutputExprsByMacro()
         sb.append("BLOCK(").append(statements.size()).append(") ");
         for(String s : statements) {
             sb.append(s).append(' ');
-            
         }
         return sb.toString();
     }
@@ -346,7 +358,7 @@ void generateAndOutputExprsByMacro()
         List<AstroExprStatementContext> es = ctx.s;
 
         sb.setLength(0);
-        sb.append("=== MACRO ").append(ctx.Identifier().getText());
+        sb.append("=== MACRO ").append(ctx.id.getText());
         if(ctx.addr != null) {
             sb.append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
             astroExpressionCount++; // weird, but the macro addr is an expr
@@ -360,7 +372,7 @@ void generateAndOutputExprsByMacro()
         }
     }
 
-    void dumpSwitch(SwitchContext ctx)
+    void dumpSwitch(Switch_cmdContext ctx)
     {
         out.printf("input: %s\n", ParseTreeUtil.getOriginalText(ctx, input));
         out.printf("    %s %s\n", getRuleName(parser, ctx, true),
@@ -370,19 +382,22 @@ void generateAndOutputExprsByMacro()
     @Override
     public void exitSwitch(SwitchContext ctx)
     {
+        List<Switch_cmdContext> sc = ctx.sc;
+
         sb.setLength(0);
         sb.append("=== SWITCH ").append(ctx.id.getText());
         if(ctx.addr != null) {
-            sb.append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
+            sb.append(" @").append(apr.prefixExpr.removeFrom(ctx.addr));
             astroExpressionCount++; // weird, but the macro addr is an expr
         }
 
         out.printf("\n%s\n", sb.toString());
-        dumpSwitch(ctx);
-        astroExpressionCount++;
+        for(Switch_cmdContext sc_ctx : sc) {
+            dumpSwitch(sc_ctx);
+            astroExpressionCount++;
+        }
     }
 
-    
     }
     
 }

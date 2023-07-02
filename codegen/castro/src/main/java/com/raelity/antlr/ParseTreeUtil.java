@@ -23,8 +23,14 @@ public final class ParseTreeUtil
 {
     private ParseTreeUtil() { }
 
+    //////////////////////////////////////
+    // TODO: move the text stuff into util???
+    //       or visa-versa.
+    //////////////////////////////////////
+
     /**
      * Return the text for the node as found in the input stream.
+     * NOTE: uses stop, so be aware in enter* rules.
      * @param ctx text for this node.
      * @param input extract the text from this stream
      * @return input text for node

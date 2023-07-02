@@ -3,6 +3,7 @@
 package com.raelity.astrolog.castro;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -15,8 +16,8 @@ import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprStatementContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
@@ -29,9 +30,12 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 
 /**
  * Run the passes. <br>
- * Pass1 - layout info, var/mem symbol tables, check func name/nargs.
- * Pass2 - check used variables are defined.
- * Pass3 - generate code.
+ * Pass1 - Layout info, var/mem symbol tables, check func name/nargs,
+ *         Build LineMap.
+ * Pass2 - Check used variables are defined.
+ *         Check no blanks in switch cmd, proper switch expression usage.
+ * Pass3 - Generate code.
+ * Pass4 - Output code. TODO: integrate into pass3?
  * @author err
  */
 public class Compile
@@ -42,10 +46,7 @@ static void compile()
 {
     AstroParseResult apr = lookup(AstroParseResult.class);
 
-    apr.getParser().addParseListener(new Pass1());
-    ProgramContext program = apr.getParser().program();
-    apr.setContext(program);
-
+    Pass1.pass1();
 
     PrintWriter out = lookup(CastroOut.class).pw;
     PrintWriter err = lookup(CastroErr.class).pw;
@@ -112,11 +113,55 @@ static void compile()
         sb.append("// SWITCH ").append(ctx.id.getText()).append(' ');
 
         out.printf("\n%s\n", sb.toString());
-
+        
+        boolean hasSingleQuote = false;
+        boolean hasDoubleQuote = false;
+        // TODO: this check could be done in pass2 or pass3
+        //       and save the results in a property assoc with SwitchContext.
+        // first check out the embedded strings for type of quote being used
+        for(int i = 0; i < ctx.sc.size(); i++) {
+            String s;
+            Switch_cmdContext sc_ctx = ctx.sc.get(i);
+            if(sc_ctx.string != null) {
+                s = sc_ctx.getText();
+                if(s.startsWith("'"))
+                    hasSingleQuote = true;
+                else
+                    hasDoubleQuote = true;
+            }
+        }
+        if(hasSingleQuote && hasDoubleQuote)
+            Util.reportError(ctx, "both \" and ' quotes used in switch %s", ctx.id.getText());
+        
+        
+        List<String> cmdPart = new ArrayList<>(ctx.sc.size());
+        char quote = hasSingleQuote ? '\'' : '"';
+        char outerQuote = hasSingleQuote ? '"' : '\'';
+        for(int i = 0; i < ctx.sc.size(); i++) {
+            String s;
+            Switch_cmdContext sc_ctx = ctx.sc.get(i);
+            if(sc_ctx.string != null) {
+                s = sc_ctx.getText();
+            } else {
+                String astroExpr = apr.prefixExpr.removeFrom(sc_ctx);
+                if(sc_ctx.name != null) {
+                    s = sc_ctx.name.getText() + ' ' + (!astroExpr.isEmpty()
+                                            ? quote + astroExpr + quote : "");
+                } else { // expr_arg
+                    s = quote + "~ " + astroExpr + quote;
+                }
+            }
+            cmdPart.add(s);
+        }
+        
         sb.setLength(0);
         sb.append("-M0 ")
                 .append(switches.getVar(ctx.id.getText()).getAddr()).append(' ')
-                .append(apr.prefixExpr.removeFrom(ctx));
+                .append(outerQuote).append("\\\n");
+        for(String s : cmdPart) {
+            sb.append("    ").append(s).append("\\\n");
+        }
+        sb.append(outerQuote);
         out.printf("    %s\n", sb.toString());
     }
 

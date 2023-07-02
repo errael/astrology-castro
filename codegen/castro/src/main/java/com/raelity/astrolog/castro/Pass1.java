@@ -27,6 +27,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.LayoutContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Layout_regionContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LimitContstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Rsv_locContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Var1Context;
@@ -43,10 +44,11 @@ import com.raelity.astrolog.castro.tables.Functions;
 
 import static com.raelity.astrolog.castro.Util.addLookup;
 import static com.raelity.astrolog.castro.Util.checkReport;
+import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
 
 
-/** During parse, handle variable declarations and layout
+/** During parse, handle variable declarations, layout, valid function name;
  * and build line index map to interval.
  * Publish {@link AstroMem}s and {@link LineMap} to lookup.
  */
@@ -58,6 +60,13 @@ private final Registers registers = new Registers();
 private final Macros macros = new Macros();
 private final Switches switches = new Switches();
 private Layout workingLayout;
+
+static void pass1() {
+    AstroParseResult apr = lookup(AstroParseResult.class);
+    apr.getParser().addParseListener(new Pass1());
+    ProgramContext program = apr.getParser().program();
+    apr.setContext(program);
+}
 
 public Pass1()
 {

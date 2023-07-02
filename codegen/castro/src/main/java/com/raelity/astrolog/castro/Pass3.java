@@ -23,9 +23,8 @@ import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.TermAddressOfContext;
-import com.raelity.astrolog.castro.mems.Switches;
 import com.raelity.astrolog.castro.tables.Ops;
 import com.raelity.astrolog.castro.tables.Ops.Flow;
 
@@ -34,8 +33,7 @@ import static com.raelity.astrolog.castro.antlr.AstroParser.Minus;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Plus;
 
 /**
- *
- * @author err
+ * Generate the code.
  */
 public class Pass3 extends GenPrefixExpr
 {
@@ -53,7 +51,6 @@ private Pass3(AstroParseResult apr)
     super(apr);
 }
 
-Switches switches = lookup(Switches.class);
 StringBuilder sb = new StringBuilder();
 
 private String astroControlOp(Flow op)
@@ -72,14 +69,23 @@ private String assignToLval(LvalContext ctx)
 }
 
 @Override
-String genSwitch(SwitchContext ctx, List<String> l, String joined,
-                 boolean hasQuote1, boolean hasQuote2)
+String genSw_cmdExpr_arg(Switch_cmdContext ctx, List<String> bs)
 {
-    if(hasQuote1 && hasQuote2)
-        Util.reportError(ctx, "Mixed quotes for '-M0' switch");
-    char quote = hasQuote1 ? '"' : '\'';
     sb.setLength(0);
-    sb.append(quote).append(joined).append(quote);
+    for(String s : bs) {
+        sb.append(s).append(' ');
+    }
+    return sb.toString();
+}
+
+@Override
+String genSw_cmdName(Switch_cmdContext ctx, String name, List<String> bs)
+{
+    // just return the expr, ignore the name
+    sb.setLength(0);
+    for(String s : bs) {
+        sb.append(s).append(' ');
+    }
     return sb.toString();
 }
 
@@ -185,6 +191,7 @@ String genBraceBlockOp(ExprBraceBlockOpContext ctx, List<String> statements)
 String genFuncCallOp(ExprFuncContext ctx, String funcName, List<String> args)
 {
     sb.setLength(0);
+    // TODO: CLEAN
     sb.append("FUNC(").append(args.size()).append(") ");
     sb.append(funcName).append(' ');
     for(String arg : args) {
@@ -209,10 +216,11 @@ String genQuestColonOp(ExprQuestOpContext ctx,
                        String condition, String if_true, String if_false)
 {
     sb.setLength(0);
-    sb.append("?: ")
+    // For "C" semantics, use if-else since Astro's "?:" evaluates both sides
+    sb.append(astroControlOp(Flow.IF_ELSE)).append(' ')
             .append(condition).append(' ')
             .append(if_true).append(' ')
-            .append(if_false).append(' ');
+            .append(if_false);
     return sb.toString();
 }
 

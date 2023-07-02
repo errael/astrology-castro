@@ -5,7 +5,6 @@ package com.raelity.astrolog.castro;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -13,11 +12,11 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.raelity.astrolog.castro.Castro.CastroOut;
-import com.raelity.astrolog.castro.antlr.AstroLexer;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
+import static com.raelity.antlr.ParseTreeUtil.hasErrorNode;
 import static com.raelity.astrolog.castro.Util.lookup;
 
 /**
@@ -31,7 +30,7 @@ import static com.raelity.astrolog.castro.Util.lookup;
  * node's expression; the children expr node data is removed.
  * <p>
  * The general strategy is that an exit listener sets an expr's
- * prefixCode string incorporating it's children. Repeat until only the
+ * prefixExpr string incorporating it's children. Repeat until only the
  * top level exprs have prefixCode.
  */
 public abstract class GenPrefixExpr extends AstroParserBaseListener
@@ -44,9 +43,12 @@ public GenPrefixExpr(AstroParseResult apr)
     this.apr = apr;
 }
 
-abstract String genSwitch(SwitchContext ctx,
-                          List<String> l, String joined,
-                          boolean hasQuote1, boolean hasQuote2);
+// There is "genSw_cmdString(Switch_cmdContext ctx)" which can be overriden
+abstract String genSw_cmdExpr_arg(Switch_cmdContext ctx,
+                                  List<String> bs);
+abstract String genSw_cmdName(Switch_cmdContext ctx,
+                              String name, List<String> bs);
+
 abstract String genIfOp(ExprIfOpContext ctx,
                         String condition, String if_true);
 abstract String genIfElseOp(ExprIfElseOpContext ctx,
@@ -206,35 +208,10 @@ public void exitExprAssOp(ExprAssOpContext ctx)
 }
 
 @Override
-public void exitExprTermOp(ExprTermOpContext ctx)
-{
-    apr.prefixExpr.put(ctx, apr.prefixExpr.removeFrom(ctx.term()));
-}
-
-@Override
-public void exitTermSingle(TermSingleContext ctx)
-{
-    apr.prefixExpr.put(ctx, apr.prefixExpr.removeFrom(ctx.getChild(0)));
-}
-
-@Override
-public void exitTermParen(TermParenContext ctx)
-{
-    apr.prefixExpr.put(ctx, apr.prefixExpr.removeFrom(ctx.paren_expr().expr()));
-}
-
-@Override
 public void exitTermAddressOf(TermAddressOfContext ctx)
 {
     String s = genAddr(ctx);
     apr.prefixExpr.put(ctx, s);
-}
-
-// TODO: tracked as an integer?
-@Override
-public void exitInteger(IntegerContext ctx)
-{
-    apr.prefixExpr.put(ctx, ctx.IntegerConstant().getText());
 }
 
 @Override
@@ -258,30 +235,64 @@ public void exitLvalIndirect(LvalIndirectContext ctx)
     apr.prefixExpr.put(ctx, s);
 }
 
+/** switch_cmd has 3 forms, string form just sets the name;
+ * the 2 others have abstract gen*().
+ */
 @Override
-public void exitSwitch(SwitchContext ctx)
+public void exitSwitch_cmd(Switch_cmdContext ctx)
 {
-    List<String> l = new ArrayList<>(ctx.q.size());
-    boolean hasQuote1 = false;
-    boolean hasQuote2 = false;
-    for(int i = 0; i < ctx.q.size(); i++) {
-        Token token = ctx.q.get(i);
-        String s = token.getText();
-        if(token.getType() == AstroLexer.Stuff) {
-            s = s.replaceAll("[\n\r ]+", " ");
-            // get rid of any escape for including a '>'
-            s = s.replaceAll(Matcher.quoteReplacement("\\>"), ">");
-        } else {
-            if(s.startsWith("'"))
-                hasQuote1 = true;
-            else
-                hasQuote2 = true;
-        }
-        l.add(s);
+    ArrayList<String> bs = ctx.bs.stream()
+            .map((bsctx) -> apr.prefixExpr.removeFrom(bsctx.astroExpr().expr()))
+            .collect(Collectors.toCollection(ArrayList::new));
+    String s = ctx.string != null ? genSw_cmdString(ctx)
+        : ctx.expr_arg != null ? genSw_cmdExpr_arg(ctx, bs)
+          : ctx.name != null ? genSw_cmdName(ctx, apr.prefixExpr.removeFrom(ctx.name), bs)
+            : null;
+    if(s == null) {
+        s = "#switch_cmdERROR#";
+        if(!hasErrorNode(ctx))
+            throw new IllegalArgumentException("#switch_cmdERROR#");
     }
-    String joined = String.join("", l).trim();
-    String s = genSwitch(ctx, l, joined, hasQuote1, hasQuote2);
     apr.prefixExpr.put(ctx, s);
+}
+
+protected String genSw_cmdString(Switch_cmdContext ctx)
+{
+    return ctx.getText();
+}
+
+// The following simply pull up strings, no transformation through gen*().
+
+@Override
+public void exitSw_name(Sw_nameContext ctx)
+{
+    apr.prefixExpr.put(ctx, ctx.getText());
+}
+
+
+@Override
+public void exitExprTermOp(ExprTermOpContext ctx)
+{
+    apr.prefixExpr.put(ctx, apr.prefixExpr.removeFrom(ctx.term()));
+}
+
+@Override
+public void exitTermSingle(TermSingleContext ctx)
+{
+    apr.prefixExpr.put(ctx, apr.prefixExpr.removeFrom(ctx.getChild(0)));
+}
+
+@Override
+public void exitTermParen(TermParenContext ctx)
+{
+    apr.prefixExpr.put(ctx, apr.prefixExpr.removeFrom(ctx.paren_expr().expr()));
+}
+
+// TODO: tracked as an integer?
+@Override
+public void exitInteger(IntegerContext ctx)
+{
+    apr.prefixExpr.put(ctx, ctx.IntegerConstant().getText());
 }
 }
     

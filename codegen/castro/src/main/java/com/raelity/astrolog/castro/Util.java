@@ -41,7 +41,6 @@ public static PrintWriter getErr()
     return lookup(CastroErr.class).pw;
 }
 
-// TODO: put the following in Util
 public static void reportError(ParserRuleContext ctx, Object... msg)
 {
     reportError(ctx.start, msg);
