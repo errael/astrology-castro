@@ -78,6 +78,17 @@ Examples:
     =R {~ b=0; for(a=0;Objs()) if(ObjOn(a)) { b=a; a=Objs(); } b; }
 
 ==============================================================================
+Warnings/Oddities:
+
+- The functions "=Obj" and "=Hou" can cause problems, for example
+  "a==Obj(...)" is parsed as "a == Obj(...)", write "a= =Obj(...)"
+  or use "a=AssignObj(...)"
+
+- "{~" introduces an AstroExpression whose result is used as a parameter to
+  a command switch, for example "=R {~ a+b; }". But "{ ~ a+b; }" is different,
+  it parses as "{ (~a) + b; }"
+
+==============================================================================
 
 
 Initial thoughts; preliminary spec

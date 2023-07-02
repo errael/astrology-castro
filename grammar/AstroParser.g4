@@ -7,7 +7,7 @@ options { tokenVocab=AstroLexer; }
 // The restriction of layout before anything else is
 // implemented in code.
 program
-    : (layout | var
+    : (layout | var | run
             | switch | macro | assign_switch_addr | assign_macro_addr)+
         EOF
     ;
@@ -57,6 +57,11 @@ varArrayInit
                                 '{' init+=expr (',' init+=expr)* '}' ';'
     ;
 
+run
+    : 'run' '{' sc+=switch_cmd+ '}'
+    ;
+
+// following like "extern"
 assign_macro_addr : 'macro' id=Identifier '@' addr=integer ';' ;
 assign_switch_addr : 'switch' id=Identifier '@' addr=integer ';' ;
 
@@ -107,7 +112,8 @@ opt_semi[int fHasSemi]
     ;
 
 astroExpr
-    : expr expr_semi[$expr.fBlock]
+    //: expr expr_semi[$expr.fBlock]
+    : expr expr_semi[$expr.stop.getType() == RightBrace ? 1 : 0]
     ;
 
 expr_semi[int fBlock]
@@ -124,19 +130,17 @@ paren_expr
    ;
 
 func_call
-    : func_name '(' (args+=expr (',' args+=expr)*)? ')'
-    ;
-
-func_name
-    : id=Identifier | id=AssignObj | id=AssignHouse
+    : id=Identifier '(' (args+=expr (',' args+=expr)*)? ')'
+    // Note no '(' in following rule, it's embedded in TrickyFunc
+    | id=TrickyFunc (args+=expr (',' args+=expr)*)? ')'
     ;
 
 // TODO: make '*' indirection in expr
 
 expr returns [int fBlock = 0]
-@after {
-    $fBlock = $stop.getType() == RightBrace ? 1 : 0;
-}
+//@after {
+//    $fBlock = $stop.getType() == RightBrace ? 1 : 0;
+//}
     : func_call                         #exprFunc
     | ('+'|'-'|'!'|'~') expr            #exprUnOp
     | expr ('*'|'/'|'%') expr               #exprBinOp

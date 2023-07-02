@@ -54,7 +54,7 @@ clean:
 
 # grun Astro program -gui
 run: $(NAME)
-	cd $(ANTLR_TEST_OUTPUT); grun Astro program -tree
+	cd $(ANTLR_TEST_OUTPUT); grun Astro program -tree -tokens
 
 grun: $(NAME)
 	cd $(ANTLR_TEST_OUTPUT); grun Astro program -gui

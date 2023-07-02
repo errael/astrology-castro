@@ -2,23 +2,37 @@
 
 lexer grammar AstroLexer;
 
+tokens { TrickyFunc }
+
+@lexer::members {
+    int braces = 0;
+}
+
+// for DEBUGGING
+REPORT : 'REPORT'   {System.out.printf("REPORT: braces: %d\n", braces);} -> skip ;
+REPORT1 : 'REPORT1' {System.out.printf("REPORT1: braces: %d\n", braces);} -> skip ;
+REPORT2 : 'REPORT2' {System.out.printf("REPORT2: braces: %d\n", braces);} -> skip ;
+REPORT3 : 'REPORT3' {System.out.printf("REPORT3: braces: %d\n", braces);} -> skip ;
+REPORT4 : 'REPORT4' {System.out.printf("REPORT4: braces: %d\n", braces);} -> skip ;
+
 // TODO: use AssignObj/AssignHouse instead of "=" ?
 // Handle these as functions
-AssignObj : '=' [Oo] [Bb] [Jj] ~[a-zA-Z_0-9] ;
-AssignHouse : '=' [Hh] [Oo] [Uu] [Ss] [Ee] ~[a-zA-Z_0-9] ;
+AssignObj : '=' [Oo] [Bb] [Jj] [ \t\r\n]* '(' {setText("=Obj");} -> type(TrickyFunc) ;
+AssignHouse : '=' [Hh] [Oo] [Uu] [ \t\r\n]* '(' {setText("=Hou");} -> type(TrickyFunc) ;
 
-SW_ARG : '{~' ;
+SW_ARG : '{~'       {braces++;} ;
 
 Layout : 'layout';
 Memory : 'memory';
-Switch : 'switch';
 Base : 'base';
 Stack : 'stack';
 Limit : 'limit';
 Reserve : 'reserve';
 
+Switch : 'switch' {if (braces != 0) setType(Identifier);} ;
+Macro : 'macro' {if (braces != 0) setType(Identifier);} ;
+Run : 'run' ;
 Var : 'var';
-Macro : 'macro';
 
 Do : 'do';
 Else : 'else';
@@ -33,8 +47,8 @@ LeftParen : '(';
 RightParen : ')';
 LeftBracket : '[';
 RightBracket : ']';
-LeftBrace : '{';
-RightBrace : '}';
+LeftBrace : '{'     {braces++;} ;
+RightBrace : '}'    {braces--;} ;
 
 Less : '<';
 LessEqual : '<=';
