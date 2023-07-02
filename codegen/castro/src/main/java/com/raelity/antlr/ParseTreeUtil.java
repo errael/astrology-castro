@@ -122,6 +122,17 @@ public final class ParseTreeUtil
         return false;
     }
 
+    public static boolean hasDescendant(ParseTree pt, Class<?> clazz)
+    {
+        for(int i = 0; i < pt.getChildCount(); i++) {
+            if(clazz.isInstance(pt.getChild(i)))
+                return true;
+            if(hasDescendant(pt.getChild(i), clazz))
+                return true;
+        }
+        return false;
+    }
+
 
     // ===================================================================
     // The following is from 

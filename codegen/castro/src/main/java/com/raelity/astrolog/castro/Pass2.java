@@ -6,21 +6,27 @@ package com.raelity.astrolog.castro;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import com.raelity.antlr.ParseTreeUtil;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprTermOpContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Sw_nameContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.TermSingleContext;
+import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 
+import static com.raelity.antlr.ParseTreeUtil.getNthParent;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUMMY;
@@ -31,9 +37,11 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUMMY;
 ////////////////////////////////////////////////////////////////////
 
 /**
- * Verification/validation pass; variables, switch commands.
- * Check that all lval's have been declared.
- * Check for well formed switch command name and switch expr usage.
+ * Verification/validation pass; variables, switch commands. <br>
+ * Check that all lval's have been declared. <br>
+ * Check for well formed switch command name and switch expr usage. <br>
+ * In expr, switch(), macro() function calls either have a switch/macro
+ * name or a general expression. <br>
  */
 class Pass2 extends AstroParserBaseListener
 {
@@ -58,11 +66,15 @@ private Pass2()
  * if not then report an error and give it a dummy declaration
  * to avoid further errors on the name.
  */
-private void checkReportUnknownVar(Token token)
+private void checkReportUnknownVar(ParserRuleContext ctx, Token token)
 {
     Var var = registers.getVar(token.getText());
     if(var != null)
         return;
+    if(getNthParent(ctx, 3) instanceof Func_callContext fc_ctx) {
+        if(checkReportMacroSwitchFuncArgs(fc_ctx))
+            return;
+    }
     Util.reportError(token, "unknown variable '%s' (first occurance)",
                      token.getText());
     registers.declare(token, 1, -1, DUMMY);
@@ -78,19 +90,19 @@ void useListener()
 @Override
 public void exitLvalMem(LvalMemContext ctx)
 {
-    checkReportUnknownVar(ctx.Identifier().getSymbol());
+    checkReportUnknownVar(ctx, ctx.Identifier().getSymbol());
 }
 
 @Override
 public void exitLvalIndirect(LvalIndirectContext ctx)
 {
-    checkReportUnknownVar(ctx.Identifier().getSymbol());
+    checkReportUnknownVar(ctx, ctx.Identifier().getSymbol());
 }
 
 @Override
 public void exitLvalArray(LvalArrayContext ctx)
 {
-    checkReportUnknownVar(ctx.Identifier().getSymbol());
+    checkReportUnknownVar(ctx, ctx.Identifier().getSymbol());
 }
 
 /** Check that only switch commands for astro expression hooks
@@ -127,6 +139,32 @@ private Matcher isEnaDisAstroExpr(String input)
         matcher.reset(input);
     }
     return matcher;
+}
+
+private boolean checkReportMacroSwitchFuncArgs(Func_callContext ctx)
+{
+    String funcName = ctx.id.getText();
+    AstroMem memSpace = "switch".equalsIgnoreCase(funcName) ? switches
+                   : "macro".equalsIgnoreCase(funcName) ? macros
+                     : null;
+    if(memSpace != null && ctx.args.size() == 1
+            && (ctx.expr instanceof ExprTermOpContext termOp)
+            && (termOp.term() instanceof TermSingleContext termSingle)
+            && (termSingle.lval() != null)
+            && memSpace.getVar(ctx.args.get(0).getText()) == null) {
+        reportError(ctx, "'%s' is not a defined %s",
+                             ctx.args.get(0).getText(),
+                             memSpace == switches ? "switch" : "macro");
+        return false;
+    }
+    return true;
+
+}
+
+@Override
+public void exitFunc_call(Func_callContext ctx)
+{
+    checkReportMacroSwitchFuncArgs(ctx);
 }
 
 

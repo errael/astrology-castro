@@ -372,7 +372,7 @@ void generateAndOutputExprs()
         }
     }
 
-    void dumpSwitch(Switch_cmdContext ctx)
+    void dumpSwitch_cmd(Switch_cmdContext ctx)
     {
         out.printf("input: %s\n", ParseTreeUtil.getOriginalText(ctx, input));
         out.printf("    %s %s\n", getRuleName(parser, ctx, true),
@@ -393,10 +393,27 @@ void generateAndOutputExprs()
 
         out.printf("\n%s\n", sb.toString());
         for(Switch_cmdContext sc_ctx : sc) {
-            dumpSwitch(sc_ctx);
+            dumpSwitch_cmd(sc_ctx);
             astroExpressionCount++;
         }
     }
+
+    @Override
+    public void exitRun(RunContext ctx)
+    {
+        List<Switch_cmdContext> sc = ctx.sc;
+
+        sb.setLength(0);
+        sb.append("=== RUN ");
+
+        out.printf("\n%s\n", sb.toString());
+        for(Switch_cmdContext sc_ctx : sc) {
+            dumpSwitch_cmd(sc_ctx);
+            astroExpressionCount++;
+        }
+    }
+
+    
 
     }
     

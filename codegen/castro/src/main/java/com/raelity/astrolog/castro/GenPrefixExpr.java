@@ -161,7 +161,7 @@ public void exitExprBraceBlockOp(ExprBraceBlockOpContext ctx)
 public void exitExprFunc(ExprFuncContext ctx)
 {
     String s = genFuncCallOp(ctx,
-                             ctx.func_call().func_name().getText(),
+                             ctx.func_call().id.getText(),
                              ctx.func_call().args.stream()
                                      .map((arg) -> apr.prefixExpr.removeFrom(arg))
                                      .collect(Collectors.toList()));

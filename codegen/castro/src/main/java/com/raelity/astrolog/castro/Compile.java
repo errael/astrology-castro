@@ -16,6 +16,7 @@ import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprStatementContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.RunContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
@@ -105,12 +106,14 @@ static void compile()
         }
     }
 
-    sb.setLength(0);
     for(ParseTree tree : XPath.findAll(apr.getProgram(), "//switch", apr.getParser())) {
         SwitchContext ctx = (SwitchContext)tree;
 
         sb.setLength(0);
         sb.append("// SWITCH ").append(ctx.id.getText()).append(' ');
+        if(ctx.addr != null) {
+            sb.append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
+        }
 
         out.printf("\n%s\n", sb.toString());
         
@@ -134,44 +137,77 @@ static void compile()
             Util.reportError(ctx, "both \" and ' quotes used in switch %s", ctx.id.getText());
         
         
-        List<String> cmdPart = new ArrayList<>(ctx.sc.size());
         char quote = hasSingleQuote ? '\'' : '"';
         char outerQuote = hasSingleQuote ? '"' : '\'';
-        for(int i = 0; i < ctx.sc.size(); i++) {
-            String s;
-            Switch_cmdContext sc_ctx = ctx.sc.get(i);
-            if(sc_ctx.string != null) {
-                s = sc_ctx.getText();
-            } else {
-                String astroExpr = apr.prefixExpr.removeFrom(sc_ctx);
-                if(sc_ctx.name != null) {
-                    s = sc_ctx.name.getText() + ' ' + (!astroExpr.isEmpty()
-                                            ? quote + astroExpr + quote : "");
-                } else { // expr_arg
-                    s = quote + "~ " + astroExpr + quote;
-                }
-            }
-            cmdPart.add(s);
-        }
         
         sb.setLength(0);
         sb.append("-M0 ")
                 .append(switches.getVar(ctx.id.getText()).getAddr()).append(' ')
                 .append(outerQuote).append("\\\n");
-        for(String s : cmdPart) {
-            sb.append("    ").append(s).append("\\\n");
-        }
+        collectSwitchCmds(sb, quote, apr, ctx.switch_cmd());
         sb.append(outerQuote);
-        out.printf("    %s\n", sb.toString());
+        out.printf("%s\n", sb.toString());
     }
 
+    for(ParseTree tree : XPath.findAll(apr.getProgram(), "//run", apr.getParser())) {
+        RunContext ctx = (RunContext)tree;
+
+        sb.setLength(0);
+        sb.append("// RUN ");
+
+        out.printf("\n%s\n", sb.toString());
+        
+        sb.setLength(0);
+        collectSwitchCmds(sb, '"', apr, ctx.switch_cmd());
+        out.printf("%s\n", sb.toString());
+    }
+
+}
+
+// Add the switch commands to sb
+static void collectSwitchCmds(StringBuilder sb, char quote,
+                              AstroParseResult apr, List<Switch_cmdContext> lsc)
+{
+    boolean indent = false;
+
+    List<String> cmdPart = new ArrayList<>(lsc.size());
+    for(int i = 0; i < lsc.size(); i++) {
+        String s;
+        Switch_cmdContext sc_ctx = lsc.get(i);
+        if(sc_ctx.string != null) {
+            s = sc_ctx.getText();
+        } else {
+            String astroExpr = apr.prefixExpr.removeFrom(sc_ctx);
+            if(sc_ctx.name != null) {
+                s = sc_ctx.name.getText() + ' ' + (!astroExpr.isEmpty()
+                                                       ? quote + astroExpr + quote : "");
+            } else { // expr_arg
+                s = quote + "~ " + astroExpr + quote;
+            }
+        }
+        cmdPart.add(s);
+    }
+    boolean first = true;
+    for(String s : cmdPart) {
+        if(s.startsWith("\"~"))
+            sb.append(" ").append(s);
+        else {
+            if(!first)
+                sb.append("\\\n");
+            if(indent)
+                sb.append("    ");
+            sb.append(s);
+        }
+        first = false;
+    }
+    sb.append('\n');
 }
 
 static void applyLayoutsAndAllocate()
 {
     for(AstroMem mem : lookupAll(AstroMem.class)) {
         if(mem == null)
-            return;
+            continue;
         // warn if ASSIGN in reserve area
         RangeSet<Integer> reserve = mem.getLayoutReserve();
         for(var e : mem.getAllocationMap().entrySet()) {

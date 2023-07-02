@@ -38,6 +38,7 @@ private Functions() {
     createEntries();
     // Provide "evaluate both sides" semantics for "?:" if wanted.
     add("QuestColon", 3, "E_IEE");
+    // TODO: add AssignObj and AssignHou
     funcs = Collections.unmodifiableMap(funcs);
 }
 
