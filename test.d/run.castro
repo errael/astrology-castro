@@ -1,0 +1,25 @@
+
+run {
+    J {~ a < b ? x : c < d ? y : z;}
+    K ~{ a + b;}
+    L ~ { a + b;}
+    M {~ b=0;
+        for(a=0;Objs())
+            if(ObjOn(a)) { b = a; a = Objs(); }
+        b; }
+    N {~ b=0; c =d ; } {~ c+d;}
+}
+
+run {
+    ~1 {b = x + y;}
+    ~1 {z = 30;}
+}
+
+var v1;
+var v2;
+run {
+    ~ {v1 = v2 + x;}
+    ~ {v2 = v1 + 30;}
+    // ~ {v3 = v1 + 30;}       // error
+}
+

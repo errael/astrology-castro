@@ -1,0 +1,37 @@
+switch CheckAllowedExpression {
+    // ena/dis does not take an expression
+    ~0
+    -~0
+    =~0
+    _~0
+
+    // error: does not take expression
+    ~0 {a;}
+    -~0 {a;}
+    =~0 {a;}
+    _~0 {a;}
+
+    // other tilde commands take an expression
+    ~cmd {a;}
+    -~cmd {a;}
+    =~cmd {a;}
+    _~cmd {a;}
+
+    // error: missing expression
+    ~cmd
+    -~cmd
+    =~cmd
+    _~cmd
+
+    // regular commands
+    cmd
+    -cmd
+    =cmd
+    _cmd
+
+    // error: regualr command does not take an expression
+    cmd {a;}
+    -cmd {a;}
+    =cmd {a;}
+    _cmd {a;}
+}

@@ -1,0 +1,49 @@
+var foo1;
+var foo2;
+switch sw1 { XXX }
+macro ma1 {
+    macro(ma1);
+    macro(ma1);
+    switch(sw1);
+
+    macro(+foo1);
+    switch(+foo1);
+
+    macro(3);
+
+    macro(foo1);    // error, not a macro
+
+    macro(bar);     // error, 
+    macro(+baz);    // error, 
+    macro(*foo1);   // error
+
+    //a = macro(c + switch(bar));
+
+//    cos(a);
+//    //switch(foo);
+//    =obj(a,b,c,d);
+//    a==obj(a,b,c,d);    // this is "a == obj(...)"  // unkown function "obj"
+//    a = =obj
+//    (a,b,c,d);
+//    //cos(b)
+//    //a=foo;
+//    a =objx;      // error unknown variable
+//    a =objx(a);
+//    a =objxxx();    // error unknown function
+//    //b;
+//    //macro(bar);
+//    //c;
+}
+//switch test {
+//    REPORT1
+//    -XXX {~ b; REPORT2 }
+//    REPORT3
+//}
+//REPORT
+
+
+//switch test {
+//    // ONE OR BOTH OF FOLLOWING CAUSE CRASH
+//    _~
+//    =~
+//}

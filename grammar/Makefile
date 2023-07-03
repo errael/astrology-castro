@@ -60,5 +60,5 @@ grun: $(NAME)
 	cd $(ANTLR_TEST_OUTPUT); grun Astro program -gui
 
 test: $(NAME)
-	castro --test test-in test-out
-	diff test-gold test-out
+	castro --test test.d/test-in test.d/test-out
+	diff test.d/test-gold test.d/test-out

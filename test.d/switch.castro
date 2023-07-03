@@ -1,0 +1,79 @@
+//var d1 {3};
+
+//switch one quote< "o<'n>e" st<u\>ff "two" >
+
+//macro aaa {
+//    a =Obj();
+//    b =hou();
+//}
+
+switch yyy {
+    R {~ a < b ? x : c < d ? y : z;}
+    R ~{ a + b;}
+    R ~ { a + b;}
+    R {~ a + b;}
+    /// R { ~ a + b;}
+
+    R ~{ a = 0;}
+    R ~ { a = 0;}
+    R {~ a = 0;}
+    /// R { ~ a = 0;}
+
+//                                                  V - beware "=Obj"
+//  R {~ b=0; for(a=0;Objs()) if(ObjOn(a)) { b=a; a=Objs(); } b; }
+    R {~ b=0;
+        for(a=0;Objs())
+            if(ObjOn(a)) { b = a; a = Objs(); }
+        b; }
+    R {~ a = 0;}
+    R {~ a = 0;}
+    R {~ b=0; c =d ; }
+
+}
+
+switch xxx @37 {
+    //0stuff {x;}
+    ~0stuff { x; }
+    ~0
+    _~0
+    =~0
+
+    /// =~ 0
+    /// ~ 0stuff { x; }
+    /// ~ 0
+    /// _ ~0
+
+    /// _~ 0
+
+    /// _~ FOO
+    /// =~ BAR
+
+    // one or both of following cause crash, not an issue
+    //_~
+    //=~
+
+    /// - stuff
+    /// ~ foo
+    /// ~foo
+    ~foo { x; }
+    ~ { a; }
+    /// bar { a; }
+}
+
+switch one {
+    "o<'n>e"
+    stuff
+    -stuff
+    _stuff
+    =stuff
+    3
+    -3
+    3stuff
+    ~ { y; }
+    ~1 { y; }
+    ~0stuff { x; }
+    ~stuff { c = a + b; { x +y; }; do { a; } while(b); }
+    ~3 { y; }
+    "two"
+}
+
