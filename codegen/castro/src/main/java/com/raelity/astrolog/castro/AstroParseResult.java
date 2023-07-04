@@ -148,7 +148,7 @@ public Props getPrefixExprProps()
 
     private PrintWriter err()
     {
-        return lookup(CastroErr.class).pw;
+        return lookup(CastroErr.class).pw();
     }
     }
 

@@ -28,18 +28,37 @@ public static String name(String funcName)
     return info != null ? info.name : null;
 }
 
+/** Convert castro function name to AstroExpression name.
+ * This is only used in cases where a name can be replaced without requiring
+ * a code rewrite.
+ * @return the astro name; if no replacement return the input funcName.
+ */
+public static String translate(String funcName)
+{
+    return functions.replaceFuncs.getOrDefault(funcName, funcName);
+}
+
 private static final Functions functions = new Functions();
 private Map<String, Info> funcs;
+private final Map<String,String> replaceFuncs = new HashMap<>();
 
 
 private Functions() {
     // ~500 items, 700 entries, load-factor .72
     funcs = new HashMap<>(700);
+    funcs = new HashMap<>(700);
     createEntries();
     // Provide "evaluate both sides" semantics for "?:" if wanted.
-    add("QuestColon", 3, "E_IEE");
-    // TODO: add AssignObj and AssignHou
+    addWithReplacement("QuestColon", "?:", 3, "E_IEE");
+    addWithReplacement("AssignObj", "=Obj", 4, "R_IIII");
+    addWithReplacement("AssignHou", "=Hou", 4, "R_IIII");
     funcs = Collections.unmodifiableMap(funcs);
+}
+
+private void addWithReplacement(String castroName, String astroName, int narg, String types)
+{
+    add(castroName, narg, types);
+    replaceFuncs.put(castroName, astroName);
 }
 
     private static class Info

@@ -57,14 +57,14 @@ private GenSimpleOutput()
     this.parser = apr.getParser();
     this.input = apr.getInput();
     this.program = apr.getProgram();
-    this.out = lookup(CastroOut.class).pw;
+    this.out = lookup(CastroOut.class).pw();
 }
 
 StringBuilder sb = new StringBuilder();
 
 private static PrintWriter getErr()
 {
-    return lookup(CastroErr.class).pw;
+    return lookup(CastroErr.class).pw();
 }
 
 static void genPrefixNotation()
@@ -355,18 +355,16 @@ void generateAndOutputExprs()
     @Override
     public void exitMacro(MacroContext ctx)
     {
-        List<AstroExprStatementContext> es = ctx.s;
-
         sb.setLength(0);
         sb.append("=== MACRO ").append(ctx.id.getText());
         if(ctx.addr != null) {
             sb.append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
             astroExpressionCount++; // weird, but the macro addr is an expr
         }
-        sb.append('(').append(es.size()).append(')');
+        sb.append('(').append(ctx.bs.size()).append(')');
 
         out.printf("\n%s\n", sb.toString());
-        for(AstroExprStatementContext s : es) {
+        for(AstroExprStatementContext s : ctx.bs) {
             dumpStatement(s);
             astroExpressionCount++;
         }

@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import gnu.getopt.Getopt;
@@ -44,18 +47,9 @@ private static CastroErr err = new CastroErr(new PrintWriter(System.err, true));
 private static CastroOut out;
 
 
-public static class CastroOut
-{
-    public final PrintWriter pw;
-    public CastroOut(PrintWriter pw) { this.pw = pw; }
-
-}
-public static class CastroErr
-{
-    public final PrintWriter pw;
-    public CastroErr(PrintWriter pw) { this.pw = pw; }
-}
-
+public static record CastroOut(PrintWriter pw){};
+public static record CastroErr(PrintWriter pw){};
+public static record CastroOutputOptions(Set<OutputOptions> outputOpts){};
 
 static final String cmdName = "castro";
 static final String IN_EXT = ".castro";
@@ -74,14 +68,23 @@ private static void usage(String note)
 {
     if(note != null)
         System.err.printf("%s: %s\n", cmdName, note);
-    String usage = """
-        Usage: {cmdName} [-h] [--test] [-v] [infile [outfile]]
-            infile/outfile default to stdin/stdout
-            infile/outfile may be '-' for stdin/stdout
-            -h      output this message
-            --test  output prefix parse data
-            -v      output more info
-        """.replace("{cmdName}", cmdName);
+    String usage =
+            """
+            Usage: {cmdName} [-h] [--test] [-v] [infile [outfile]]
+                infile/outfile default to stdin/stdout
+                infile/outfile may be '-' for stdin/stdout
+                --formatoutput=opt1,... # comma separated list of:
+                    1st two for switch and macro, next two for run
+                        bslash          - split into new-line/backslash lines
+                        indent          - indent lines
+                        run_nl          - split into lines
+                        run_indent      - indent lines
+                    Default is no options; switch/macro/run on a single line
+                    which is compatible with all Astrolog versions.
+                --test  output prefix parse data
+                -v      output more info
+                -h      output this message
+            """.replace("{cmdName}", cmdName);
     System.err.println(usage);
     System.exit(1);
 }
@@ -100,9 +103,11 @@ public static void main(String[] args)
     // https://www.gnu.org/software/gnuprologjava/api/gnu/getopt/Getopt.html
     LongOpt longOpts[] = new LongOpt[] {
         new LongOpt("test", LongOpt.OPTIONAL_ARGUMENT, null, 2),
+        new LongOpt("formatoutput", LongOpt.REQUIRED_ARGUMENT, null, 3),
     };
     Getopt g = new Getopt(cmdName, args, "hv", longOpts);
     
+    EnumSet<OutputOptions> oset = EnumSet.noneOf(OutputOptions.class);
     int c;
     while ((c = g.getopt()) != -1) {
         switch (c) {
@@ -113,11 +118,28 @@ public static void main(String[] args)
             case "test" -> { optTest = true; runOption = "test"; }
             }
         }
+        case 3 -> {
+            String optarg = g.getOptarg();
+            String[] opts = optarg.split(",");
+            for(String opt : opts) {
+                OutputOptions oo = switch(opt) {
+                case "bslash" -> OutputOptions.SM_BACKSLASH;
+                case "indent" -> OutputOptions.SM_INDENT;
+                case "run_nl" -> OutputOptions.RUN_NEW_LINES;
+                case "run_indent" -> OutputOptions.RUN_INDENT;
+                case null, default -> null;
+                };
+                if(oo == null)
+                    usage("Unknown output option '"+opt+"'");
+                oset.add(oo);
+            }
+        }
         default -> {
             usage();
         }
         }
     }
+    addLookup(new CastroOutputOptions(Collections.unmodifiableSet(oset)));
     if(optVerbose > 0)
         System.err.println(String.format("java:%s vm:%s date:%s os:%s",
                            System.getProperty("java.version"),
@@ -157,15 +179,15 @@ public static void main(String[] args)
     
 
     if(out != null) {
-        out.pw.close();
+        out.pw().close();
         removeLookup(out);
     }
     for(CastroOut tout : CentralLookup.getDefault().lookupAll(CastroOut.class)) {
-        tout.pw.close();
+        tout.pw().close();
         removeLookup(tout);
     }
     for(CastroErr terr : CentralLookup.getDefault().lookupAll(CastroErr.class)) {
-        terr.pw.close();
+        terr.pw().close();
         removeLookup(terr);
     }
     if(apr.hasError())
@@ -176,7 +198,7 @@ static void runCompilerTest()
 {
     AstroParseResult apr = lookup(AstroParseResult.class);
     // Have Err go to Out. Everything goes to the same place for tests
-    replaceLookup(new CastroErr(lookup(CastroOut.class).pw));
+    replaceLookup(new CastroErr(lookup(CastroOut.class).pw()));
     ProgramContext program = apr.getParser().program();
     apr.setContext(program);
     GenSimpleOutput.genPrefixNotation();
@@ -240,7 +262,7 @@ static void runCompilerTest()
             String msg = String.format(
                     "%s: %s\n", ex.getClass().getSimpleName(), ex.getMessage());
 
-            lookup(CastroErr.class).pw.print(msg);
+            lookup(CastroErr.class).pw().print(msg);
             //Castro.getErr().print(msg);
             doAbort = true;
             return null;

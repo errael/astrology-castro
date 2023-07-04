@@ -25,6 +25,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.TermAddressOfContext;
+import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Ops;
 import com.raelity.astrolog.castro.tables.Ops.Flow;
 
@@ -193,7 +194,7 @@ String genFuncCallOp(ExprFuncContext ctx, String funcName, List<String> args)
     sb.setLength(0);
     // TODO: CLEAN
     sb.append("FUNC(").append(args.size()).append(") ");
-    sb.append(funcName).append(' ');
+    sb.append(Functions.translate(funcName)).append(' ');
     for(String arg : args) {
         sb.append(arg).append(' ');
     }

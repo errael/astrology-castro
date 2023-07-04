@@ -79,7 +79,7 @@ abstract String genAddr(TermAddressOfContext ctx);
 
 private static PrintWriter getOut()
 {
-    return lookup(CastroOut.class).pw;
+    return lookup(CastroOut.class).pw();
 }
 
 @Override

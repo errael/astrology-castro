@@ -8,10 +8,11 @@ import java.util.regex.Pattern;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import org.antlr.v4.runtime.tree.xpath.XPath;
 
 import com.raelity.antlr.ParseTreeUtil;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprTermOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
@@ -19,7 +20,6 @@ import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Sw_nameContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.TermSingleContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
@@ -51,12 +51,15 @@ static void pass2()
     new Pass2().useListener();
 }
 
+private final AstroParseResult apr;
+
 private final Registers registers;
 private final Macros macros;
 private final Switches switches;
 
 private Pass2()
 {
+    this.apr = lookup(AstroParseResult.class);
     this.registers = lookup(Registers.class);
     this.macros = lookup(Macros.class);
     this.switches = lookup(Switches.class);
@@ -82,7 +85,6 @@ private void checkReportUnknownVar(ParserRuleContext ctx, Token token)
 
 void useListener()
 {
-    AstroParseResult apr = lookup(AstroParseResult.class);
     ParseTreeWalker walker = new ParseTreeWalker();
     walker.walk(this, apr.getProgram());
 }
@@ -141,24 +143,41 @@ private Matcher isEnaDisAstroExpr(String input)
     return matcher;
 }
 
+// Some support for checkReportMacroSwitchFuncArgs
+private XPath xpathFuncArgLval;
+private boolean isLvalExpr(ParseTree pt)
+{
+    if(xpathFuncArgLval == null)
+        xpathFuncArgLval = new XPath(apr.getParser(), "/expr/term/lval");
+    return !xpathFuncArgLval.evaluate(pt).isEmpty();
+}
+TreeProps<Boolean> func_callChecked = new TreeProps<>();
+
+/** Check switch()/macro() lval arg; it should be defined switch/macro.
+ * Note that expressions are ok, I guess like a jump table.
+ */
 private boolean checkReportMacroSwitchFuncArgs(Func_callContext ctx)
 {
+    // cache the result to avoid giving the same error twice.
+    Boolean  ok = func_callChecked.get(ctx);
+    if(ok != null)
+        return ok;
     String funcName = ctx.id.getText();
     AstroMem memSpace = "switch".equalsIgnoreCase(funcName) ? switches
                    : "macro".equalsIgnoreCase(funcName) ? macros
                      : null;
+
     if(memSpace != null && ctx.args.size() == 1
-            && (ctx.expr instanceof ExprTermOpContext termOp)
-            && (termOp.term() instanceof TermSingleContext termSingle)
-            && (termSingle.lval() != null)
+            && isLvalExpr(ctx.args.get(0))
             && memSpace.getVar(ctx.args.get(0).getText()) == null) {
         reportError(ctx, "'%s' is not a defined %s",
                              ctx.args.get(0).getText(),
                              memSpace == switches ? "switch" : "macro");
-        return false;
-    }
-    return true;
-
+        ok = false;
+    } else
+        ok = true;
+    func_callChecked.put(ctx, ok);
+    return ok;
 }
 
 @Override

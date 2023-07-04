@@ -38,7 +38,7 @@ private Util() { }
 
 public static PrintWriter getErr()
 {
-    return lookup(CastroErr.class).pw;
+    return lookup(CastroErr.class).pw();
 }
 
 public static void reportError(ParserRuleContext ctx, Object... msg)
