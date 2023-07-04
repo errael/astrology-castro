@@ -1,3 +1,80 @@
+MODEL/INTRO
+===========
+The model is that Astrolog's AstroExpression language is a machine language;
+it is a stack based, precedence/parenthesis free language.
+"castro" is a compiler that compiles a simplified "C" like language to
+AstroExpression; it's language definition is taylored to Astrolog and
+AstroExpression.
+For example, everything, including "while", "if", "for" is an expression
+that has a value.
+
+==============================================================================
+Examples:
+    last example in AstroExpression, using expr as command argument.
+    =R "~=b 0 For %a 0 Objs If ObjOn @a Do =b @a =a Objs @b"
+    =R {~ b=0; for(a=0;Objs()) if(ObjOn(a)) { b=a; a;=Objs(); } b; }
+
+==============================================================================
+QUESTIONS:
+
+Is the "{~" construct OK? Or should it simply be "{"?
+In this example
+
+    var yearA;
+    var yearB;
+
+    // between is inclusive
+    switch progressedAspectsBetweenYearsAB {
+        -dpY {~ yearA < yearB ? yearA : yearB; } {~ Abs(yearA - yearB) + 1; }
+    }
+
+    macro progressByYears {
+        yearA = 1973;
+        yearB = 1975;
+        Switch(progressedAspectsBetweenYearsAB);
+    }
+"switch progressedAspectsBetweenYearsAB" produces the code
+    ; SWITCH progressedAspectsBetweenYearsAB (3)
+    -M0 1 '-dpY  "~ IfElse Lt @27 @28  @27  @28" "~ Add Abs Sub @27 @28  1"'
+The use of "{-" mirrors the switch parameter as AstroExpression syntax.
+It might be possible to simply do "-dpY {...} {...}" (without the "~"),
+would this be better? This hasn't been explored, it might be too difficult.
+
+==============================================================================
+Warnings/Oddities:
+
+- The functions "=Obj" and "=Hou" can cause problems, for example
+  "a==Obj(...)" is parsed as "a == Obj(...)", write "a= =Obj(...)"
+  or use "a=AssignObj(...)"
+
+- "{~" introduces an AstroExpression whose result is used as a parameter to
+  a command switch, for example "=R {~ a+b; }". But "{ ~ a+b; }" has a space
+  between '{' and '~' and is different, it parses as "{ (~a) + b; }"
+
+- ';' ends an expression. A missing ';' may not be detected as a compilation
+  error. Consider
+    macro ex1 { a += 3; -3; }
+  and
+    macro ex2 { a += 3 -3; }
+  and
+    macro ex3 { (a += 3) -3; }
+
+  These are different. When ex1 is executed, it increments "a" by three and
+  then it returns -3; whereas ex2 increments "a" by zero, then retuns "a";
+  and ex3 increments "a" by 3 and return the original value of "a".
+  Use the "--parseoutput", producing a "*.parse"
+  file, to explicitly see how expressions are parsed
+
+  Here's a complex example.
+    macro ex4 { repeat(3) { a += 1; }; -3; }
+  and
+    macro ex5 { repeat(3) { a += 1; } -3; }
+  ex1 and ex4 are basically the same. ex4 
+
+  A predence/parenthesis free language can be nice:)
+
+==============================================================================
+
 CONSIDER
 ========
 structs
@@ -9,6 +86,7 @@ since can't redefine x. Could allow the re-definition of x, but can't allow
 or
     var x[3] {a + b};
 since that would change the location or size of x.
+Note: run { ~1 { x = a + b; } ~ { w = c + d; } }
 
 asm instrinsic to copy verbatum, good for init
     asm(text);
@@ -70,23 +148,6 @@ Grammar confusion because everything is an expressions
 
 Find expressions with no side effects, e.g. "a + b" is not assiged to anything.
 Give a warning for these.
-
-==============================================================================
-Examples:
-    last example in AstroExpression, using expr as command argument.
-    =R "~=b 0 For %a 0 Objs If ObjOn @a Do =b @a =a Objs @b"
-    =R {~ b=0; for(a=0;Objs()) if(ObjOn(a)) { b=a; a=Objs(); } b; }
-
-==============================================================================
-Warnings/Oddities:
-
-- The functions "=Obj" and "=Hou" can cause problems, for example
-  "a==Obj(...)" is parsed as "a == Obj(...)", write "a= =Obj(...)"
-  or use "a=AssignObj(...)"
-
-- "{~" introduces an AstroExpression whose result is used as a parameter to
-  a command switch, for example "=R {~ a+b; }". But "{ ~ a+b; }" is different,
-  it parses as "{ (~a) + b; }"
 
 ==============================================================================
 

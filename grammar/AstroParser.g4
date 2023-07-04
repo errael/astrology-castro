@@ -66,7 +66,7 @@ assign_macro_addr : 'macro' id=Identifier '@' addr=integer ';' ;
 assign_switch_addr : 'switch' id=Identifier '@' addr=integer ';' ;
 
 macro
-    : 'macro' id=Identifier ('@' addr=integer)? '{' s+=astroExprStatement + '}'
+    : 'macro' id=Identifier ('@' addr=integer)? '{' bs+=astroExprStatement + '}'
     ;
 
 // Define/declare a "switch" command
@@ -152,8 +152,8 @@ expr returns [int fBlock = 0]
     | expr ('^') expr                       #exprBinOp
     | expr ('|') expr                       #exprBinOp
     | <assoc=right> expr '?' expr ':' expr      #exprQuestOp
-    | lval ('='|'+='|'-='|'*='|'/='|'%='|'<<='|'>>='|'&='|'^='|'|=') expr
-                                                                #exprAssOp
+    | l=lval ao=('='|'+='|'-='|'*='|'/='|'%='|'<<='|'>>='|'&='|'^='|'|=')
+                                                        e=expr #exprAssOp
     | term                                  #exprTermOp
 
     | brace_block                           #exprBraceBlockOp
@@ -163,7 +163,7 @@ expr returns [int fBlock = 0]
     | 'repeat' paren_expr expr                      #exprRepeatOp
     | 'while' paren_expr expr                       #exprWhileOp
     | 'do' expr 'while' paren_expr                  #exprDowhileOp
-    | 'for' '(' lval '=' expr ';' expr ')' expr     #exprForOp
+    | 'for' '(' l=lval '=' expr ';' expr ')' expr   #exprForOp
     ;
 
 term
@@ -174,7 +174,7 @@ term
    ;
 
 lval locals[Token id]
-    : altid=Identifier '[' expr ']'   {$id = $altid;} #lvalArray
+    : altid=Identifier '[' idx=expr ']'   {$id = $altid;} #lvalArray
     | '*' altid=Identifier            {$id = $altid;} #lvalIndirect
     | altid=Identifier                {$id = $altid;} #lvalMem
     ;
