@@ -292,24 +292,28 @@ void generateAndOutputExprs()
         // NOTE: null in following is not used
         return genBinOp(null, opToken, lhs, rhs);
     }
-    
+
     @Override
-    String genLval(LvalContext ctx01, String... expr)
+    String genLval(LvalMemContext ctx)
+    {
+        return ctx.Identifier().getText();
+    }
+
+    @Override
+    String genLval(LvalIndirectContext ctx)
     {
         sb.setLength(0);
-        return switch(ctx01) {
-        case LvalMemContext ctx -> ctx.Identifier().getText();
-        case LvalArrayContext ctx -> {
-            sb.append("INDEX").append(' ').append(ctx.Identifier()).append(' ')
-                    .append(expr[0]);
-            yield sb.toString();
-        }
-        case LvalIndirectContext ctx -> {
-            sb.append("INDIR").append(' ').append(ctx.Identifier().getText());
-            yield sb.toString();
-        }
-        default -> throw new IllegalArgumentException("unknown class");
-        };
+        sb.append("INDIR").append(' ').append(ctx.Identifier().getText());
+        return sb.toString();
+    }
+
+    @Override
+    String genLval(LvalArrayContext ctx, String expr)
+    {
+        sb.setLength(0);
+        sb.append("INDEX").append(' ').append(ctx.Identifier()).append(' ')
+                .append(expr);
+        return sb.toString();
     }
     
     @Override

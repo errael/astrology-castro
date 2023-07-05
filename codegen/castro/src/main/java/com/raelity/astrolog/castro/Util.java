@@ -13,6 +13,8 @@ import org.antlr.v4.runtime.IntStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.xpath.XPath;
 
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.lib.CentralLookup;
@@ -35,6 +37,20 @@ private Util() { }
 // 
 //     return null;
 // }
+
+private static XPath xpathFuncArgLval;
+public static Collection<ParseTree> lvalExpr(AstroParseResult apr, ParseTree pt)
+{
+    if(xpathFuncArgLval == null)
+        xpathFuncArgLval = new XPath(apr.getParser(), "/expr/term/lval");
+    return xpathFuncArgLval.evaluate(pt);
+}
+public static boolean isLvalExpr(AstroParseResult apr, ParseTree pt)
+{
+    return !lvalExpr(apr, pt).isEmpty();
+}
+
+
 
 public static PrintWriter getErr()
 {

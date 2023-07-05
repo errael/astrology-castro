@@ -116,10 +116,11 @@ public Props getPrefixExprProps()
         assert node != null;
         // TODO: get line's text
         if(node instanceof ParserRuleContext ctx)
-            err().printf("%s '%s' not found for %s\n",
-                            tokenLoc(ctx), getLineText(ctx.start), tag);
+            err().printf("%s '%s' '%s' not found for %s\n",
+                            tokenLoc(ctx), getLineText(ctx.start), ctx.getText(), tag);
         else
             Objects.requireNonNull(null, String.format("%s '%s'", tag, node.getText()));
+        countError();
         return "#unknown#";
     }
     

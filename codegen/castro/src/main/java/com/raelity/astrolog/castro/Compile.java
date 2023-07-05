@@ -13,6 +13,7 @@ import com.google.common.collect.RangeSet;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.xpath.XPath;
 
+import com.raelity.antlr.ParseTreeUtil;
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.Castro.CastroOutputOptions;
@@ -27,6 +28,8 @@ import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 
+import static com.raelity.antlr.ParseTreeUtil.getOriginalText;
+import static com.raelity.astrolog.castro.OutputOptions.*;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.lookupAll;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
@@ -89,7 +92,7 @@ static void compile()
         return;
     out.printf("PROCEEDING TO CODE GENERATION\n");
 
-    Pass3.pass3();
+    Pass3 pass3 = Pass3.pass3();
 
     //////////////////////////////////////////////////////////////////////
     // pass3 generated the code and left it hanging on
@@ -105,8 +108,8 @@ static void compile()
     smOutputOpts.addAll(_outputOpts);
 
     // SM_BACKSLASH implies SM_NEW_LINE
-    if(_outputOpts.contains(OutputOptions.SM_BACKSLASH))
-        smOutputOpts.add(OutputOptions.SM_NEW_LINES);
+    if(_outputOpts.contains(SM_BACKSLASH))
+        smOutputOpts.add(SM_NEW_LINES);
 
     StringBuilder sb = new StringBuilder(100);
     for(ParseTree tree : XPath.findAll(apr.getProgram(), "//macro", apr.getParser())) {
@@ -182,16 +185,17 @@ static void compile()
 
         // TODO: Insert additional output info as comments.
         //       Some of the info may be produced by collect*Statements.
+        // TODO: annotations
 
         out.printf("%s\n", sb.toString());
     }
     
     // NOTE: the lowlevel routines use SM_ enums.
     EnumSet<OutputOptions> runOutputOpts = EnumSet.noneOf(OutputOptions.class);
-    if(_outputOpts.contains(OutputOptions.RUN_INDENT))
-        runOutputOpts.add(OutputOptions.SM_INDENT);
-    if(_outputOpts.contains(OutputOptions.RUN_NEW_LINES))
-        runOutputOpts.add(OutputOptions.SM_NEW_LINES);
+    if(_outputOpts.contains(RUN_INDENT))
+        runOutputOpts.add(SM_INDENT);
+    if(_outputOpts.contains(RUN_NEW_LINES))
+        runOutputOpts.add(SM_NEW_LINES);
 
     for(ParseTree tree : XPath.findAll(apr.getProgram(), "//run", apr.getParser())) {
         RunContext ctx = (RunContext)tree;
@@ -200,7 +204,7 @@ static void compile()
         sb.append("// RUN ");
 
         out.printf("\n%s", sb.toString());
-        if(!runOutputOpts.contains(OutputOptions.SM_NEW_LINES))
+        if(!runOutputOpts.contains(SM_NEW_LINES))
             out.printf("\n");
         
         sb.setLength(0);
@@ -213,7 +217,7 @@ private static StringBuilder nextLine(StringBuilder sb,
                               EnumSet<OutputOptions> opts)
 {
     endLine(sb, opts);
-    if(opts.contains(OutputOptions.SM_INDENT))
+    if(opts.contains(SM_INDENT))
         sb.append("    ");
     return sb;
 }
@@ -221,12 +225,12 @@ private static StringBuilder nextLine(StringBuilder sb,
 private static StringBuilder endLine(StringBuilder sb,
                               EnumSet<OutputOptions> opts)
 {
-    if(opts.contains(OutputOptions.SM_BACKSLASH)
-            || opts.contains(OutputOptions.SM_NEW_LINES))
+    if(opts.contains(SM_BACKSLASH)
+            || opts.contains(SM_NEW_LINES))
         sb.append(' ');
-    if(opts.contains(OutputOptions.SM_BACKSLASH))
+    if(opts.contains(SM_BACKSLASH))
         sb.append("\\");
-    if(opts.contains(OutputOptions.SM_NEW_LINES))
+    if(opts.contains(SM_NEW_LINES))
         sb.append("\n");
     return sb;
 }
@@ -241,6 +245,10 @@ private static void collectMacroStatements(StringBuilder sb, char quote,
         // TODO: option (or *.parse file) to see how it's parsed; where each 
         // AstroExpressionStatement has input/output displayed
         // Maybe even a truly verbose output
+        if(opts.contains(SM_DEBUG)) {
+            String originalText = getOriginalText(aes_ctx, apr.getInput());
+            nextLine(sb, opts).append("/// ").append(originalText);
+        }
         String s = apr.prefixExpr.removeFrom(aes_ctx.astroExpr.expr);
         nextLine(sb, opts).append(s);
     }

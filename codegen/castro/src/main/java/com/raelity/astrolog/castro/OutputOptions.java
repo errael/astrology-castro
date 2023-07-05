@@ -11,6 +11,7 @@ public enum OutputOptions
 SM_BACKSLASH,  // implies SM_NEW_LINES
 SM_NEW_LINES,
 SM_INDENT,
+SM_DEBUG,
 RUN_NEW_LINES,
 RUN_INDENT,
 }

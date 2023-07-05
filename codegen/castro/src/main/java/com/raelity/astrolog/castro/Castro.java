@@ -76,9 +76,11 @@ private static void usage(String note)
                 --formatoutput=opt1,... # comma separated list of:
                     1st two for switch and macro, next two for run
                         bslash          - split into new-line/backslash lines
+                        nl              - split into lines
                         indent          - indent lines
                         run_nl          - split into lines
                         run_indent      - indent lines
+                        debug           - precede macro output with original text
                     Default is no options; switch/macro/run on a single line
                     which is compatible with all Astrolog versions.
                 --test  output prefix parse data
@@ -124,9 +126,11 @@ public static void main(String[] args)
             for(String opt : opts) {
                 OutputOptions oo = switch(opt) {
                 case "bslash" -> OutputOptions.SM_BACKSLASH;
+                case "nl" -> OutputOptions.SM_NEW_LINES;
                 case "indent" -> OutputOptions.SM_INDENT;
                 case "run_nl" -> OutputOptions.RUN_NEW_LINES;
                 case "run_indent" -> OutputOptions.RUN_INDENT;
+                case "debug" -> OutputOptions.SM_DEBUG;
                 case null, default -> null;
                 };
                 if(oo == null)

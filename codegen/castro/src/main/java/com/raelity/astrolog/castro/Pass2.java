@@ -27,6 +27,7 @@ import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 
 import static com.raelity.antlr.ParseTreeUtil.getNthParent;
+import static com.raelity.astrolog.castro.Util.isLvalExpr;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUMMY;
@@ -143,22 +144,14 @@ private Matcher isEnaDisAstroExpr(String input)
     return matcher;
 }
 
-// Some support for checkReportMacroSwitchFuncArgs
-private XPath xpathFuncArgLval;
-private boolean isLvalExpr(ParseTree pt)
-{
-    if(xpathFuncArgLval == null)
-        xpathFuncArgLval = new XPath(apr.getParser(), "/expr/term/lval");
-    return !xpathFuncArgLval.evaluate(pt).isEmpty();
-}
-TreeProps<Boolean> func_callChecked = new TreeProps<>();
+// cache the result to avoid giving the same error twice.
+private TreeProps<Boolean> func_callChecked = new TreeProps<>();
 
 /** Check switch()/macro() lval arg; it should be defined switch/macro.
  * Note that expressions are ok, I guess like a jump table.
  */
 private boolean checkReportMacroSwitchFuncArgs(Func_callContext ctx)
 {
-    // cache the result to avoid giving the same error twice.
     Boolean  ok = func_callChecked.get(ctx);
     if(ok != null)
         return ok;
@@ -168,7 +161,7 @@ private boolean checkReportMacroSwitchFuncArgs(Func_callContext ctx)
                      : null;
 
     if(memSpace != null && ctx.args.size() == 1
-            && isLvalExpr(ctx.args.get(0))
+            && isLvalExpr(apr, ctx.args.get(0))
             && memSpace.getVar(ctx.args.get(0).getText()) == null) {
         reportError(ctx, "'%s' is not a defined %s",
                              ctx.args.get(0).getText(),

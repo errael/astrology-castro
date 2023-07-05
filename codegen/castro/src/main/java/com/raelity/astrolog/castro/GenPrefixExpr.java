@@ -37,6 +37,7 @@ public abstract class GenPrefixExpr extends AstroParserBaseListener
 {
 
 final AstroParseResult apr;
+final TreeProps<String> lvalArrayIndex = new TreeProps<>(); // OUCH
 
 public GenPrefixExpr(AstroParseResult apr)
 {
@@ -73,8 +74,11 @@ abstract String genBinOp(ExprBinOpContext ctx,
                          Token opToken, String lhs, String rhs);
 abstract String genAssOp(ExprAssOpContext ctx,
                          Token opToken, String lhs, String rhs);
-abstract String genLval(LvalContext ctx,
-                        String... expr);
+
+abstract String genLval(LvalMemContext ctx);
+abstract String genLval(LvalIndirectContext ctx);
+abstract String genLval(LvalArrayContext ctx, String expr);
+
 abstract String genAddr(TermAddressOfContext ctx);
 
 private static PrintWriter getOut()
@@ -224,7 +228,11 @@ public void exitLvalMem(LvalMemContext ctx)
 @Override
 public void exitLvalArray(LvalArrayContext ctx)
 {
-    String s = genLval(ctx, apr.prefixExpr.removeFrom(ctx.expr()));
+    // array index expr is needed more than once
+    // in the case where it is used as the target of an assignment
+    String expr = apr.prefixExpr.removeFrom(ctx.idx);
+    lvalArrayIndex.put(ctx, expr);
+    String s = genLval(ctx, expr);
     apr.prefixExpr.put(ctx, s);
 }
 
@@ -292,7 +300,7 @@ public void exitTermParen(TermParenContext ctx)
 @Override
 public void exitInteger(IntegerContext ctx)
 {
-    apr.prefixExpr.put(ctx, ctx.IntegerConstant().getText());
+    apr.prefixExpr.put(ctx, ctx.IntegerConstant().getText() + ' ');
 }
 }
     
