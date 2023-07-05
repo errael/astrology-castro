@@ -19,12 +19,14 @@ import com.raelity.astrolog.castro.antlr.AstroParser.ExprQuestOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprRepeatOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprUnOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprWhileOpContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.IntegerContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.TermAddressOfContext;
+import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Ops;
@@ -35,6 +37,7 @@ import static com.raelity.astrolog.castro.Util.report;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Assign;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Minus;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Plus;
+import static com.raelity.astrolog.castro.Util.lval2MacoSwitchSpace;
 
 /**
  * Generate the code.
@@ -112,8 +115,7 @@ String genIfOp(ExprIfOpContext ctx, String condition, String if_true)
 {
     sb.setLength(0);
     sb.append(astroControlOp(Flow.IF)).append(' ')
-            .append(condition).append(' ')
-            .append(if_true);
+            .append(condition).append(if_true);
     return sb.toString();
 }
         
@@ -123,9 +125,7 @@ String genIfElseOp(ExprIfElseOpContext ctx,
 {
     sb.setLength(0);
     sb.append(astroControlOp(Flow.IF_ELSE)).append(' ')
-            .append(condition).append(' ')
-            .append(if_true).append(' ')
-            .append(if_false);
+            .append(condition).append(if_true).append(if_false);
     return sb.toString();
 }
 
@@ -134,8 +134,7 @@ String genRepeatOp(ExprRepeatOpContext ctx, String count, String statement)
 {
     sb.setLength(0);
     sb.append(astroControlOp(Flow.REPEAT)).append(' ')
-            .append(count).append(' ')
-            .append(statement);
+            .append(count).append(statement);
     return sb.toString();
 }
 
@@ -144,8 +143,7 @@ String genWhileOp(ExprWhileOpContext ctx, String condition, String statement)
 {
     sb.setLength(0);
     sb.append(astroControlOp(Flow.WHILE)).append(' ')
-            .append(condition).append(' ')
-            .append(statement);
+            .append(condition).append(statement);
     return sb.toString();
     
 }
@@ -155,8 +153,7 @@ String genDoWhileOp(ExprDowhileOpContext ctx, String statement, String condition
 {
     sb.setLength(0);
     sb.append(astroControlOp(Flow.DO_WHILE)).append(' ')
-            .append(statement).append(' ')
-            .append(condition);
+            .append(statement).append(condition);
     return sb.toString();
 }
 
@@ -167,8 +164,8 @@ String genForOp(ExprForOpContext ctx,
     sb.setLength(0);
     sb.append(astroControlOp(Flow.FOR)).append(' ')
             .append(assignToLval(ctx.lval())).append(' ')
-            .append(begin).append(' ')
-            .append(end).append(' ')
+            .append(begin)
+            .append(end)
             .append(statement);
     return sb.toString();
 }
@@ -217,7 +214,7 @@ String genFuncCallOp(ExprFuncContext ctx, String _funcName, List<String> args)
         report(false, ctx.func_call().id, "using castro operator '%s' as a function", ctx.func_call().id.getText());
     sb.append(Functions.translate(funcName)).append(' ');
     for(String arg : args) {
-        sb.append(arg).append(' ');
+        sb.append(arg);
     }
     return sb.toString();
 }
@@ -240,9 +237,7 @@ String genQuestColonOp(ExprQuestOpContext ctx,
     sb.setLength(0);
     // For "C" semantics, use if-else since Astro's "?:" evaluates both sides
     sb.append(astroControlOp(Flow.IF_ELSE)).append(' ')
-            .append(condition).append(' ')
-            .append(if_true).append(' ')
-            .append(if_false);
+            .append(condition).append(if_true).append(if_false);
     return sb.toString();
 }
 
@@ -251,8 +246,7 @@ String genBinOp(ExprBinOpContext ctx, Token opToken, String lhs, String rhs)
 {
     sb.setLength(0);
     sb.append(astroOp(opToken.getType())).append(' ')
-            .append(lhs)
-            .append(rhs);
+            .append(lhs).append(rhs);
     return sb.toString();
 }
 
@@ -298,12 +292,10 @@ String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String rhs)
         // rewrite: Assign lvalAssign <op> lhs rhs
         lvalAssignment(sb, ctx.l)
                 .append(astroAssignOp(opToken.getType())).append(' ')
-                .append(lhs)
-                .append(rhs);
+                .append(lhs).append(rhs);
     }
     return sb.toString();
 }
-
 
 private String lvalReadVar(String lval)
 {
@@ -316,7 +308,12 @@ private String lvalReadVar(String lval)
 String genLval(LvalMemContext ctx)
 {
     sb.setLength(0);
-    sb.append('@').append(lvalReadVar(ctx.id.getText())).append(' ');
+    
+    AstroMem space = lval2MacoSwitchSpace(ctx);
+    if(space != null)
+        sb.append(String.valueOf(space.getVar(ctx.id.getText()).getAddr())).append(' ');
+    else
+        sb.append('@').append(lvalReadVar(ctx.id.getText())).append(' ');
     return sb.toString();
 }
 
@@ -339,6 +336,14 @@ String genLval(LvalArrayContext ctx, String expr)
     else
         sb.append(registers.getVar(lval).getAddr());
     sb.append(' ').append(expr);
+    return sb.toString();
+}
+
+@Override
+String genInteger(IntegerContext ctx)
+{
+    sb.setLength(0);
+    sb.append(ctx.IntegerConstant().getText()).append(' ');
     return sb.toString();
 }
 

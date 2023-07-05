@@ -6,14 +6,12 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 import com.google.common.collect.RangeSet;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.xpath.XPath;
 
-import com.raelity.antlr.ParseTreeUtil;
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.Castro.CastroOutputOptions;
@@ -97,8 +95,7 @@ static void compile()
     //////////////////////////////////////////////////////////////////////
     // pass3 generated the code and left it hanging on
     // the related tree node: macro, switch, run
-
-    Set<OutputOptions> _outputOpts = lookup(CastroOutputOptions.class).outputOpts();
+    EnumSet<OutputOptions> _outputOpts = lookup(CastroOutputOptions.class).outputOpts();
 
     // TODO: if(!backslash && new_lines) apply width limit
 
@@ -132,7 +129,7 @@ static void compile()
                 .append(outerQuote);
         collectMacroStatements(sb, quote, smOutputOpts, apr, ctx.bs);
         endLine(sb, smOutputOpts);
-        sb.append(outerQuote);
+        removeTrailingBlanks(sb).append(outerQuote);
 
         // TODO: Insert additional output info as comments.
         //       Some of the info may be produced by collect*Statements.
@@ -181,7 +178,7 @@ static void compile()
                 .append(outerQuote);
         collectSwitchCmds(sb, quote, smOutputOpts, apr, ctx.switch_cmd());
         endLine(sb, smOutputOpts);
-        sb.append(outerQuote);
+        removeTrailingBlanks(sb).append(outerQuote);
 
         // TODO: Insert additional output info as comments.
         //       Some of the info may be produced by collect*Statements.
@@ -235,6 +232,16 @@ private static StringBuilder endLine(StringBuilder sb,
     return sb;
 }
 
+private static StringBuilder removeTrailingBlanks(StringBuilder sb)
+{
+    // Remove trailing blanks to avoid parse errors seen in Astrolog 7.60.
+    // There's typically only one blank.
+    int i;
+    while((i = sb.length() - 1) >= 0 && sb.charAt(i) == ' ')
+        sb.setLength(i);
+    return sb;
+}
+
 /** Add the macro commands to sb */
 private static void collectMacroStatements(StringBuilder sb, char quote,
                               EnumSet<OutputOptions> opts,
@@ -247,7 +254,7 @@ private static void collectMacroStatements(StringBuilder sb, char quote,
         // Maybe even a truly verbose output
         if(opts.contains(SM_DEBUG)) {
             String originalText = getOriginalText(aes_ctx, apr.getInput());
-            nextLine(sb, opts).append("/// ").append(originalText);
+            nextLine(sb, opts).append("/// ").append(originalText).append(" \\\\\\");
         }
         String s = apr.prefixExpr.removeFrom(aes_ctx.astroExpr.expr);
         nextLine(sb, opts).append(s);
@@ -259,28 +266,34 @@ private static void collectSwitchCmds(StringBuilder sb, char quote,
                               EnumSet<OutputOptions> opts,
                               AstroParseResult apr, List<Switch_cmdContext> lsc)
 {
+    StringBuilder lsb = new StringBuilder();
     List<String> cmdPart = new ArrayList<>(lsc.size());
     for(int i = 0; i < lsc.size(); i++) {
-        String s;
+        lsb.setLength(0);
         Switch_cmdContext sc_ctx = lsc.get(i);
         if(sc_ctx.string != null) {
-            s = sc_ctx.getText();
+            lsb.append(sc_ctx.getText());
         } else {
             String astroExpr = apr.prefixExpr.removeFrom(sc_ctx);
             if(sc_ctx.name != null) {
-                s = sc_ctx.name.getText() + ' ' + (!astroExpr.isEmpty()
-                                                       ? quote + astroExpr + quote : "");
+                lsb.append(sc_ctx.name.getText()).append(' ');
+                if(!astroExpr.isEmpty()) {
+                    lsb.append(quote).append(astroExpr);
+                    removeTrailingBlanks(lsb).append(quote);
+                }
             } else { // expr_arg
-                s = quote + "~ " + astroExpr + quote;
+                lsb.append(quote).append("~ ").append(astroExpr);
+                removeTrailingBlanks(lsb).append(quote);
             }
         }
-        cmdPart.add(s);
+        cmdPart.add(lsb.toString());
     }
     for(String s : cmdPart) {
+        // Don't put -- "~ AstroExpression " -- on new line
         if(s.startsWith("\"~"))
-            sb.append(" ").append(s);
+            sb.append(s).append(' ');
         else {
-            nextLine(sb, opts).append(s);
+            nextLine(sb, opts).append(s).append(' ');
         }
     }
 }

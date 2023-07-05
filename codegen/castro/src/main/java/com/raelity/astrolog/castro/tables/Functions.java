@@ -35,7 +35,7 @@ public static String name(String funcName)
  */
 public static String translate(String funcName)
 {
-    return functions.replaceFuncs.getOrDefault(funcName, funcName);
+    return functions.replaceFuncs.getOrDefault(funcName, name(funcName));
 }
 
 private static final Functions functions = new Functions();

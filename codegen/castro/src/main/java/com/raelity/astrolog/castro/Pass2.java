@@ -6,16 +6,14 @@ package com.raelity.astrolog.castro;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import org.antlr.v4.runtime.tree.xpath.XPath;
 
 import com.raelity.antlr.ParseTreeUtil;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.LvalContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Sw_nameContext;
@@ -26,11 +24,12 @@ import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 
-import static com.raelity.antlr.ParseTreeUtil.getNthParent;
 import static com.raelity.astrolog.castro.Util.isLvalExpr;
 import static com.raelity.astrolog.castro.Util.lookup;
+import static com.raelity.astrolog.castro.Util.lvalArg2Func;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUMMY;
+import static com.raelity.astrolog.castro.Util.func_call2MacoSwitchSpace;
 
 ////////////////////////////////////////////////////////////////////
 // TODO: In addition to vars, check switch/macro
@@ -70,15 +69,15 @@ private Pass2()
  * if not then report an error and give it a dummy declaration
  * to avoid further errors on the name.
  */
-private void checkReportUnknownVar(ParserRuleContext ctx, Token token)
+private void checkReportUnknownVar(LvalContext ctx, Token token)
 {
     Var var = registers.getVar(token.getText());
     if(var != null)
         return;
-    if(getNthParent(ctx, 3) instanceof Func_callContext fc_ctx) {
+    Func_callContext fc_ctx = lvalArg2Func(ctx);
+    if(fc_ctx != null)
         if(checkReportMacroSwitchFuncArgs(fc_ctx))
             return;
-    }
     Util.reportError(token, "unknown variable '%s' (first occurance)",
                      token.getText());
     registers.declare(token, 1, -1, DUMMY);
@@ -145,22 +144,19 @@ private Matcher isEnaDisAstroExpr(String input)
 }
 
 // cache the result to avoid giving the same error twice.
-private TreeProps<Boolean> func_callChecked = new TreeProps<>();
+private TreeProps<Boolean> macroSwitch_func_callChecked = new TreeProps<>();
 
 /** Check switch()/macro() lval arg; it should be defined switch/macro.
- * Note that expressions are ok, I guess like a jump table.
+ * Note that expressions are ok, for like a jump table.
  */
 private boolean checkReportMacroSwitchFuncArgs(Func_callContext ctx)
 {
-    Boolean  ok = func_callChecked.get(ctx);
+    Boolean  ok = macroSwitch_func_callChecked.get(ctx);
     if(ok != null)
         return ok;
-    String funcName = ctx.id.getText();
-    AstroMem memSpace = "switch".equalsIgnoreCase(funcName) ? switches
-                   : "macro".equalsIgnoreCase(funcName) ? macros
-                     : null;
+    AstroMem memSpace = func_call2MacoSwitchSpace(ctx);
 
-    if(memSpace != null && ctx.args.size() == 1
+    if(memSpace != null
             && isLvalExpr(apr, ctx.args.get(0))
             && memSpace.getVar(ctx.args.get(0).getText()) == null) {
         reportError(ctx, "'%s' is not a defined %s",
@@ -169,7 +165,7 @@ private boolean checkReportMacroSwitchFuncArgs(Func_callContext ctx)
         ok = false;
     } else
         ok = true;
-    func_callChecked.put(ctx, ok);
+    macroSwitch_func_callChecked.put(ctx, ok);
     return ok;
 }
 

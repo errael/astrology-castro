@@ -7,9 +7,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import gnu.getopt.Getopt;
@@ -49,7 +47,12 @@ private static CastroOut out;
 
 public static record CastroOut(PrintWriter pw){};
 public static record CastroErr(PrintWriter pw){};
-public static record CastroOutputOptions(Set<OutputOptions> outputOpts){};
+public static record CastroOutputOptions(EnumSet<OutputOptions> outputOpts) {
+    public CastroOutputOptions(EnumSet<OutputOptions> outputOpts)
+        { this.outputOpts = EnumSet.copyOf(outputOpts); }
+    public EnumSet<OutputOptions> outputOpts()
+        { return EnumSet.copyOf(this.outputOpts); }
+    };
 
 static final String cmdName = "castro";
 static final String IN_EXT = ".castro";
@@ -143,7 +146,7 @@ public static void main(String[] args)
         }
         }
     }
-    addLookup(new CastroOutputOptions(Collections.unmodifiableSet(oset)));
+    addLookup(new CastroOutputOptions(oset));
     if(optVerbose > 0)
         System.err.println(String.format("java:%s vm:%s date:%s os:%s",
                            System.getProperty("java.version"),

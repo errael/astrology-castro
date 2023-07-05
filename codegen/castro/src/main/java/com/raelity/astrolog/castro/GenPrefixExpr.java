@@ -78,6 +78,7 @@ abstract String genAssOp(ExprAssOpContext ctx,
 abstract String genLval(LvalMemContext ctx);
 abstract String genLval(LvalIndirectContext ctx);
 abstract String genLval(LvalArrayContext ctx, String expr);
+abstract String genInteger(IntegerContext ctx);
 
 abstract String genAddr(TermAddressOfContext ctx);
 
@@ -243,6 +244,14 @@ public void exitLvalIndirect(LvalIndirectContext ctx)
     apr.prefixExpr.put(ctx, s);
 }
 
+// TODO: tracked as an integer?
+@Override
+public void exitInteger(IntegerContext ctx)
+{
+    String s = genInteger(ctx);
+    apr.prefixExpr.put(ctx, s);
+}
+
 /** switch_cmd has 3 forms, string form just sets the name;
  * the 2 others have abstract gen*().
  */
@@ -294,13 +303,6 @@ public void exitTermSingle(TermSingleContext ctx)
 public void exitTermParen(TermParenContext ctx)
 {
     apr.prefixExpr.put(ctx, apr.prefixExpr.removeFrom(ctx.paren_expr().expr()));
-}
-
-// TODO: tracked as an integer?
-@Override
-public void exitInteger(IntegerContext ctx)
-{
-    apr.prefixExpr.put(ctx, ctx.IntegerConstant().getText() + ' ');
 }
 }
     

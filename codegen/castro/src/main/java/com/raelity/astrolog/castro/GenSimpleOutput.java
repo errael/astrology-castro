@@ -315,6 +315,12 @@ void generateAndOutputExprs()
                 .append(expr);
         return sb.toString();
     }
+
+    @Override
+    String genInteger(IntegerContext ctx)
+    {
+        return ctx.IntegerConstant().getText();
+    }
     
     @Override
     String genAddr(TermAddressOfContext ctx)

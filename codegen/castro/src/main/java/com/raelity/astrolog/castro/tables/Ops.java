@@ -85,8 +85,8 @@ private void createEntries(ImmutableBiMap.Builder<Integer,String> builder)
             .put(Flow.XDO.key(), "Do")
             .put(Flow.XDO2.key(), "Do2")
             .put(Flow.XDO3.key(), "Do3")
-            .put(Macro, "Macro")
-            .put(Switch, "Switch")
+            // .put(Macro, "Macro")         NOT USED FOR CODE GENERATION
+            // .put(Switch, "Switch")       NOT USED FOR CODE GENERATION
             .put(Flow.ASSIGN.key(), "Assign")
 
             // Operators use the token to pick up the AstroExpr function
