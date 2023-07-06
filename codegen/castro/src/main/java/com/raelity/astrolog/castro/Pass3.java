@@ -2,10 +2,13 @@
 
 package com.raelity.astrolog.castro;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import org.antlr.v4.runtime.tree.xpath.XPath;
 
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprAssOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprBinOpContext;
@@ -38,6 +41,11 @@ import static com.raelity.astrolog.castro.antlr.AstroParser.Assign;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Minus;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Plus;
 import static com.raelity.astrolog.castro.Util.lval2MacoSwitchSpace;
+import static com.raelity.astrolog.castro.antlr.AstroLexer.Not;
+import static com.raelity.astrolog.castro.antlr.AstroLexer.PlusAssign;
+import static com.raelity.astrolog.castro.antlr.AstroLexer.Tilde;
+import static com.raelity.astrolog.castro.antlr.AstroParser.MinusAssign;
+import static com.raelity.astrolog.castro.tables.Ops.astroCode;
 
 /**
  * Generate the code.
@@ -82,11 +90,6 @@ private String astroAssignOp(int token)
     // remove the trailing '='
     String assOp = Ops.astroCode(token);
     return assOp.substring(0, assOp.length() - 1);
-}
-
-private String assignToLval(LvalContext ctx)
-{
-    return "#LVAL#" + ctx.id.getText();
 }
 
 @Override
@@ -157,13 +160,14 @@ String genDoWhileOp(ExprDowhileOpContext ctx, String statement, String condition
     return sb.toString();
 }
 
+
 @Override
 String genForOp(ExprForOpContext ctx,
                 String counter, String begin, String end, String statement)
 {
     sb.setLength(0);
-    sb.append(astroControlOp(Flow.FOR)).append(' ')
-            .append(assignToLval(ctx.lval())).append(' ')
+    sb.append(astroControlOp(Flow.FOR)).append(' ');
+            lvalWriteVar(sb, ctx.l, false)
             .append(begin)
             .append(end)
             .append(statement);
@@ -174,11 +178,9 @@ String genForOp(ExprForOpContext ctx,
 private void appendSubBlock(StringBuilder sb, Flow doOp,
                                               int n, List<String> statements)
 {
-    //if(doOp != null)
-    //    sb.append(astroControlOp(doOp)).append(' ');
     sb.append(astroControlOp(doOp)).append(' ');
     for(int i = 0; i < n; i++)
-        sb.append(statements.remove(0)).append(' ');
+        sb.append(statements.remove(0));
 }
 
 @Override
@@ -224,9 +226,13 @@ String genUnOp(ExprUnOpContext ctx, Token opToken, String expr)
 {
     sb.setLength(0);
     int opType = opToken.getType();
-    String text = opType == Minus ? "u-" : opType == Plus ? "u+"
-                                   :opToken.getText();
-    sb.append(text).append(' ').append(expr);
+    switch(opType) {
+    case Minus -> sb.append("Neg ");
+    case Tilde, Not -> sb.append(astroCode(opType)).append(' ');
+    case Plus -> { break; }
+    default -> sb.append("#getUnOp_InternalError");
+    }
+    sb.append(expr);
     return sb.toString();
 }
 
@@ -250,21 +256,23 @@ String genBinOp(ExprBinOpContext ctx, Token opToken, String lhs, String rhs)
     return sb.toString();
 }
 
-private StringBuilder lvalAssignment(StringBuilder lsb, LvalContext lval_ctx)
+private StringBuilder lvalWriteVar(StringBuilder lsb, LvalContext lval_ctx,
+                                    boolean varForAssignment)
 {
     switch(lval_ctx) {
     case LvalMemContext ctx -> {
         String lvalVar = ctx.id.getText();
-        if(lvalVar.length() == 1)
-            lsb.append('=').append(lvalVar).append(' ');
-        else
-            lsb.append("= ").append(registers.getVar(lvalVar).getAddr())
-                    .append(' ');
+        if(lvalVar.length() == 1) {
+            if(!varForAssignment)
+                lsb.append('%');
+            lsb.append(lvalVar).append(' ');
+        }else
+            lsb.append(registers.getVar(lvalVar).getAddr()).append(' ');
     }
     case LvalIndirectContext ctx ->
-        lsb.append("= @").append(lvalReadVar(ctx.id.getText())).append(' ');
+        lsb.append("@").append(lvalReadVar(ctx.id.getText())).append(' ');
     case LvalArrayContext ctx -> {
-        lsb.append("= Add ");
+        lsb.append("Add ");
         String lvalVar = ctx.id.getText();
         if(lvalVar.length() == 1)
             lsb.append('%').append(lvalVar);
@@ -277,22 +285,51 @@ private StringBuilder lvalAssignment(StringBuilder lsb, LvalContext lval_ctx)
     return lsb;
 }
 
+private StringBuilder lvalAssignment(StringBuilder lsb, LvalContext lval_ctx)
+{
+    lsb.append('=');
+    // In the case of "a = 3" ==> "=a 3".
+    // All the other cases have a space after the "=".
+    if(!(lval_ctx instanceof LvalMemContext) || lval_ctx.id.getText().length() != 1)
+        lsb.append(' ');
+    lvalWriteVar(lsb, lval_ctx, true);
+    return lsb;
+}
+
+private static XPath xpathConst;
+
 @Override
 String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String rhs)
 {
     sb.setLength(0);
-    if(opToken.getType() == Assign) {
+    int opType = opToken.getType();
+    if(opType == Assign) {
         // Just a simple assign
         // Ignore the lhs, it is an lvalRead.
         // Need an assign target.
         lvalAssignment(sb, ctx.l)
                 .append(rhs);
     } else {
+        boolean canOptim = false;
+        if(opType == PlusAssign || opType == MinusAssign) {
+            if( xpathConst == null)
+                xpathConst = new XPath(apr.getParser(), "/expr/term/integer");
+            Collection<ParseTree> constVal = xpathConst.evaluate(ctx.e);
+            if(constVal.size() == 1 && "1".equals(ctx.e.getText())) {
+                canOptim = true;
+            }
+        }
         // actual assign op
         // rewrite: Assign lvalAssign <op> lhs rhs
-        lvalAssignment(sb, ctx.l)
-                .append(astroAssignOp(opToken.getType())).append(' ')
-                .append(lhs).append(rhs);
+        lvalAssignment(sb, ctx.l);
+        if(!canOptim)
+            sb.append(astroAssignOp(opType)).append(' ')
+                    .append(lhs).append(rhs);
+        else {
+            // "a += 1" to "=a Inc @a"; instead of "=a Add @a 1"
+            String op = opType == PlusAssign ? "Inc " : "Dec ";
+            sb.append(op).append(lhs);
+        }
     }
     return sb.toString();
 }
