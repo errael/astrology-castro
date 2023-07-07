@@ -118,8 +118,7 @@ public void exitSwitch_cmd(Switch_cmdContext ctx)
     if(ctx.name != null) {
         // check command have/not-have an expression
         if(ctx.name.tilde != null) {
-            boolean isEnaDisAstroExpr
-                    = isEnaDisAstroExpr(ctx.name.getText()).matches();
+            boolean isEnaDisAstroExpr = enaDisMatcher(ctx.name.getText()).matches();
             if(isEnaDisAstroExpr && !ctx.bs.isEmpty())
                 errMsg = "'%s' enable/disable AstroExpression does not take an expression";
             else if(!isEnaDisAstroExpr && ctx.bs.isEmpty())
@@ -132,7 +131,7 @@ public void exitSwitch_cmd(Switch_cmdContext ctx)
     }
 }
 private Matcher matcher;
-private Matcher isEnaDisAstroExpr(String input)
+private Matcher enaDisMatcher(String input)
 {
     if(matcher == null) {
         Pattern p = Pattern.compile("[=_-]?~0");
