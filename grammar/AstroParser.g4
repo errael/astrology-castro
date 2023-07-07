@@ -7,7 +7,7 @@ options { tokenVocab=AstroLexer; }
 // The restriction of layout before anything else is
 // implemented in code.
 program
-    : (layout | var | run
+    : (layout | var | copy | run
             | switch | macro | assign_switch_addr | assign_macro_addr)+
         EOF
     ;
@@ -57,9 +57,8 @@ varArrayInit
                                 '{' init+=expr (',' init+=expr)* '}' ';'
     ;
 
-run
-    : 'run' '{' sc+=switch_cmd+ '}'
-    ;
+/** copy stuff verbatim to output */
+copy : COPY_START COPY_STUFF COPY_STOP ;
 
 // following like "extern"
 assign_macro_addr : 'macro' id=Identifier '@' addr=integer ';' ;
@@ -73,10 +72,15 @@ macro
 // which is a squence of astrolog command switches.
 // Note that "~M <index> 'expression'" and "~2[0] <index> 'vals'"
 // are not supported. Use macro definition and string initializes.
-// Can always do asm() to manually generate these.
+// Can always do copy { ... } to manually generate these.
 
 switch
     : 'switch' id=Identifier ('@' addr=integer)? '{' sc+=switch_cmd+ '}'
+    ;
+
+/** top level switch commands (not part of switch/macro). */
+run
+    : 'run' '{' sc+=switch_cmd+ '}'
     ;
 
 switch_cmd

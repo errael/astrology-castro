@@ -1,0 +1,192 @@
+
+==============================================================================
+
+Initial thoughts; preliminary spec
+==================================
+
+- Simple "C" like language tailored to AstroExpression.
+- Everything has a value, e.g. "if", "while", "for", "repeat", "{}".
+- No semi-colons before "else" or before while in "do while()". (easy to add)
+- No '||' or '&&', only '|','&'.
+- Can automatically assign variables to memory, or can specify the address of a variable.
+- Outputs memory map, can be included on subsequent run to preserve locations.
+- Error if multiple uses of same location, or out of bounds.
+- A block of memory can be defined as an array.
+
+
+Implementation issues and notes
+===============================
+
+- The variables 'a' through 'z' are predefined.
+- '*p' and '&p' are handled, '**p', &expr or any other variations are not.
+- There is no runtime array bounds checking, could be added; if added then the the VM probably needs an "exception" instruction.
+- Should there be a "var *p" declaration, or let anything be a pointer?
+- I haven't considered the semantics of situations where '%v' versus '@v' are used. I'm guessing which to use will be obvious (famous last words).
+- Could recognize '||' and such, and generate what's needed; is it worth it? Are there other constructs that could/should be recognized?
+
+AstroExpression functions are accessed like "DMS(deg, min, sec)". Functions that implement castro basics, "Add" ("+"), Assign ("="), Gte (">="), are not accessible as functions.
+
+Is some kind of checking for int vs real in function arg expression advisable/required? Haven't examined how AstroExpression handles that. Maybe give a warning if using real where int is expected? Does AstroExpression automatically truncate if needed?
+
+Meaningful error reporting; antlr has support for customizing error handling.
+
+Thinking about it, I'm pretty sure a stack and subroutines could be implemented but I'm not sure it's worth it.
+
+==============================================================================
+QUESTIONS:
+
+Is the "{~" construct OK? Or should it simply be "{"?
+In this example
+
+    var yearA;
+    var yearB;
+
+    // between is inclusive
+    switch progressedAspectsBetweenYearsAB {
+        -dpY {~ yearA < yearB ? yearA : yearB; } {~ Abs(yearA - yearB) + 1; }
+    }
+
+    macro progressByYears {
+        yearA = 1973;
+        yearB = 1975;
+        Switch(progressedAspectsBetweenYearsAB);
+    }
+"switch progressedAspectsBetweenYearsAB" produces the code
+    ; SWITCH progressedAspectsBetweenYearsAB (3)
+    -M0 1 '-dpY  "~ IfElse Lt @27 @28  @27  @28" "~ Add Abs Sub @27 @28  1"'
+The use of "{-" mirrors the switch parameter as AstroExpression syntax.
+It might be possible to simply do "-dpY {...} {...}" (without the "~"),
+would this be better? This hasn't been explored, it might be too difficult.
+
+
+==============================================================================
+
+CONSIDER
+========
+structs
+
+Cant' initialize builtin variables because can't do
+    var x {a + b};
+since can't redefine x. Could allow the re-definition of x, but can't allow
+    var x @100 {a + b};
+or
+    var x[3] {a + b};
+since that would change the location or size of x.
+Note: run { ~1 { x = a + b; } ~ { w = c + d; } }
+
+asm instrinsic to copy verbatum, good for init
+    asm(text);
+Lexer mode to facilitate literal copy?
+
+Verbose initialization "~" vs "~1"
+- Could have a compiler option so all init is verbose; ugh.
+- Could have "Identifier(:v)?", or "varv".
+- Could have a control "option verbose {varName (, varName)+}"
+- Could use "asm(...);" but that's a hack
+varv seems preferable rather than some arcane syntax.
+Work around is to edit the output file
+
+Allow local variables in a macro; makes the stack meaningful.
+    allocate memory { stack <addr>; }
+Since macros can invoke themselves directly or indirectly, this
+requires adjusting the stackpoint on entry/exit.
+Use 'var'; could introduce 'local', but seems no advantage.
+
+A textual copy/value for later use/substitution
+    define lhs exression;
+then later
+    v = $lhs + foo + bar;
+So if "$lhs" is used in an expression, it is copied.
+Not much bang for the buck. Requires a trick to get the code
+inserted at the right spot. Could either fake out the scanner
+and insert string, or compile the string and insert the result.
+
+sizeof(var) as a constant during parse, counts number items in array.
+Would probably want to support some simple constant arithmetic.
+
+==============================================================================
+
+PROBLEMS
+========
+
+Grammar confusion because everything is an expressions
+
+    It's natural, at first glance, to expect these two lines
+        if(a){b;} *r;
+        if(a)b; *r;
+    to be equivalent. But they are not because "if(a){b;}" is an expression
+    and *r is parsed as multiplication.
+
+    Need to issue a warning. The warning can be fixed with
+        - parenthesis such as (*r)
+        - ';' after '}'
+
+    Looking at these statements
+        input: if(a){b;}
+        *r;
+        [astroExprStatement] IF a * BLOCK(1) b  r
+
+        input: if(a)b;
+        [astroExprStatement] IF a b
+
+        input: *r;
+        [astroExprStatement] INDIR r
+
+Find expressions with no side effects, e.g. "a + b" is not assiged to anything.
+Give a warning for these.
+
+
+==============================================================================
+
+Some example output of the expression parser
+============================================
+
+input: p = q;
+[statement] = p q
+
+input: p = &q + 7;
+[statement] = p + ADDR q 7
+
+input: a = *p;
+[statement] = a INDIR p
+
+input: a = q[7];
+[statement] = a INDEX q 7
+
+input: a = q[3] + b * c;
+[statement] = a + INDEX q 3 * b c
+
+input: a = q[3] + b * - c;
+[statement] = a + INDEX q 3 * b - c
+
+input: repeat(x + y) {a; b;}
+[statement] REPEAT + x y BLOCK(2) a b 
+
+input: while({a; b;}) {c; d;}
+[statement] WHILE BLOCK(2) a b  BLOCK(2) c d 
+
+input: if (!(a1 & a2)) {b; b2; b3;} else { if (c) {d; e;} }
+[statement] IF ! & a1 a2 BLOCK(3) b b2 b3  ELSE BLOCK(1) IF c BLOCK(2) d e  
+
+input: q = while(a[3] < x) b += c + for (p=3; 5) h;
+[statement] = q WHILE < INDEX a 3 x += b + c FOR p <== 3 UNTIL 5 h
+
+input: q = (while(a[3] < x) b += c) + for (p=3; 5) h;
+[statement] = q + WHILE < INDEX a 3 x += b c FOR p <== 3 UNTIL 5 h
+
+input: q = b += c + for (p=3; 5) h;
+[statement] = q += b + c FOR p <== 3 UNTIL 5 h
+
+input: func(a, b+c, d);
+[statement] FUNC(3) a + b c d 
+
+
+==============================================================================
+
+=== Started from mail-castro-1 ===
+
+Ever since I've heard about antlr, in particular antlr4, I've wanted to take it for a spin; but without a concrete goal I wouldn't get deep enough into it. Did some yacc around 25 years ago. So I'm looking at doing a compiler that compiles to AstroExpression. My immediate goal is a standalone tool that generates a file used with "-i <filename>".
+
+All I've done at this point is the expression parser; at the end of this message there is output of translating "C" like expressions to prefix notation similar to an AstroExpression. I'm hoping you have the bandwidth and are willing to comment and suggest what feels right for its purpose.
+
+

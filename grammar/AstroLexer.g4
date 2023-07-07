@@ -22,6 +22,9 @@ AssignHouse : '=' [Hh] [Oo] [Uu] [ \t\r\n]* '(' {setText("=Hou");} -> type(Trick
 
 SW_ARG : '{~'       {braces++;} ;
 
+// Note: no need to increment braces in the following
+COPY_START : 'copy' [ \t\r\n]* '{' -> mode(COPY_CAPTURE) ;
+
 Layout : 'layout';
 Memory : 'memory';
 Base : 'base';
@@ -322,3 +325,11 @@ LineComment
 //	: '//' ~[\r\n]* -> channel(HIDDEN)
 //	;
 
+mode COPY_CAPTURE;
+
+fragment
+COPY_CAPTURE_ESC : '\\}' ;
+
+COPY_STUFF : (~[}]|COPY_CAPTURE_ESC)+ ;
+
+COPY_STOP : RightBrace -> mode(DEFAULT_MODE) ;
