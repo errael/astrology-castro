@@ -4,6 +4,9 @@ package com.raelity.astrolog.castro.mems;
 
 import java.io.PrintWriter;
 
+import com.raelity.astrolog.castro.Castro.RegistersAccum;
+
+import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 
 /**
@@ -14,7 +17,7 @@ public class Registers extends AstroMem
 {
 public Registers()
 {
-    super("Registers");
+    super("Registers", lookup(RegistersAccum.class));
     for(char c = 'a'; c <= 'z'; c++)
         declare(String.valueOf(c), 1, c - 'a' + 1, BUILTIN);
 }

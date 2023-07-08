@@ -2,7 +2,10 @@
 
 package com.raelity.astrolog.castro;
 
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.EnumSet;
 
 import com.google.common.collect.RangeSet;
@@ -14,6 +17,10 @@ import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
+
+import static java.nio.file.StandardOpenOption.CREATE;
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.lookupAll;
@@ -36,7 +43,6 @@ private Compile() { }
 static void compile()
 {
     AstroParseResult apr = lookup(AstroParseResult.class);
-    PrintWriter out = lookup(CastroOut.class).pw();
     PrintWriter err = lookup(CastroErr.class).pw();
 
     Pass1.pass1();
@@ -48,26 +54,14 @@ static void compile()
         currentErrorCount = apr.errors();
     }
 
-    Registers registers = lookup(Registers.class);
-    Macros macros = lookup(Macros.class);
-    Switches switches = lookup(Switches.class);
-
-
-    registers.dumpLayout(out);
-    macros.dumpLayout(out);
-    switches.dumpLayout(out);
-
     applyLayoutsAndAllocate();
+
+    createDef();
 
     if(apr.errors() > currentErrorCount) {
         err.printf("Allocation: %d errors\n", apr.errors() - currentErrorCount);
         currentErrorCount = apr.errors();
     }
-
-    //compile.registers.dumpAllocation(out, EnumSet.of(BUILTIN));
-    registers.dumpVars(out, true, EnumSet.of(BUILTIN));
-    macros.dumpVars(out, true, EnumSet.of(BUILTIN));
-    switches.dumpVars(out, true, EnumSet.of(BUILTIN));
 
     Pass2.pass2();
     if(apr.errors() > currentErrorCount) {
@@ -84,11 +78,52 @@ static void compile()
     }
 
     PassOutput.passOutput();
-    if(apr.errors() > currentErrorCount) {
+    if(apr.errors() > currentErrorCount)
         err.printf("Code output: %d errors\n", apr.errors() - currentErrorCount);
-        return;
-    }
 
+    // Copy this pass' variables to defined
+    for(AstroMem mem : lookupAll(AstroMem.class)) {
+        mem.updateDefined();
+    }
+}
+
+/** Create and output the .def file containing allocations/definitions.
+ * It con
+ */
+private static void createDef()
+{
+    CastroOut castroOut = lookup(CastroOut.class);
+    if(castroOut.outDir() == null)
+        return;
+    Path defPath = castroOut.outDir().resolve(castroOut.baseName() + Castro.DEF_EXT);
+    try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(
+            defPath, WRITE, TRUNCATE_EXISTING, CREATE))) {
+        Castro.outputFileHeader(out, "//");
+
+        Registers registers = lookup(Registers.class);
+        Macros macros = lookup(Macros.class);
+        Switches switches = lookup(Switches.class);
+        out.println();
+
+        // TODO: output options
+        registers.dumpLayout(out);
+        macros.dumpLayout(out);
+        switches.dumpLayout(out);
+        out.println();
+
+        // TODO: output options
+        //compile.registers.dumpAllocation(out, EnumSet.of(BUILTIN));
+        registers.dumpVars(out, true, EnumSet.of(BUILTIN, EXTERN));
+        out.println();
+        macros.dumpVars(out, true, EnumSet.of(BUILTIN, EXTERN));
+        out.println();
+        switches.dumpVars(out, true, EnumSet.of(BUILTIN, EXTERN));
+        out.println();
+    } catch(IOException ex) {
+        lookup(AstroParseResult.class).countError();
+        lookup(CastroErr.class).pw().printf("Error: '%s' Problem writing %s\n",
+                                            ex.getClass().getSimpleName(), defPath);
+    }
 }
 
 private static void applyLayoutsAndAllocate()

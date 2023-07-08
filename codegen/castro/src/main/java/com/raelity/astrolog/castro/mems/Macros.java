@@ -4,6 +4,10 @@ package com.raelity.astrolog.castro.mems;
 
 import java.io.PrintWriter;
 
+import com.raelity.astrolog.castro.Castro.MacrosAccum;
+
+import static com.raelity.astrolog.castro.Util.lookup;
+
 /**
  *
  * @author err
@@ -12,7 +16,7 @@ public class Macros extends AstroMem
 {
 public Macros()
 {
-    super("Macros");
+    super("Macros", lookup(MacrosAccum.class));
 }
 
 @Override

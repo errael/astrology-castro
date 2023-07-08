@@ -7,11 +7,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
@@ -26,6 +28,9 @@ import com.google.common.collect.TreeRangeSet;
 import org.antlr.v4.runtime.Token;
 
 import com.raelity.astrolog.castro.AstroParseResult;
+import com.raelity.astrolog.castro.Castro.CastroOut;
+import com.raelity.astrolog.castro.Castro.MemAccum;
+import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.lib.collect.ValueHashMap;
 import com.raelity.lib.collect.ValueMap;
 
@@ -35,8 +40,13 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 import static com.raelity.lib.collect.Util.intersection;
 import static com.raelity.lib.collect.Util.intersects;
 
+// TODO: use common method names?
+//       getVarCount --> size
+//       getVars --> iterator, implement Iterable
+//       getVar --> get
+
 /**
- * AstroExpression register/memory space: layout, allocation;
+ * AstroExpression register/macro/switch memory space: layout, allocation;
  * an allocated variable has an addres {@literal >= 0}.
  * <p>
  * With declare() first build a set of all variables,
@@ -49,9 +59,19 @@ import static com.raelity.lib.collect.Util.intersects;
  * <br>3 - declare remaining variables; some may require allocation
  * <br>4 - set limits; may cover locations from step 2 and 3
  * <br>5 - allocate
+ * <p>
+ * Variable declarations can be read at the beginning,
+ * before any files are compiled, they are marked as EXTERN. 
+ * A variable can be declared as EXTERN more than once as long as
+ * the size is the same. When multiple files are compiled together,
+ * any variables defined in a file are added to a defined cache.
+ * When a variable is declared, if it appears in the defined cache
  */
-public abstract class AstroMem
+public abstract class AstroMem implements Iterable<Var>
 {
+final AstroMem defined;
+final AstroMem extern;
+final String fileName;
 public final String memSpaceName;
 /** Allocated memory; value is the variable name.
  * Any key is a closed range. non-empty? Non-assigne/unallocated var could be empty.
@@ -66,18 +86,35 @@ int nLimit; // use to label limit ranges (may be disjoint)
 // probably don't need/want this. Maybe some kind of allocation lock?
 //private boolean declarationsDone;
 
-public AstroMem(String name, int min, int max)
+public AstroMem(String name, int min, int max, MemAccum accum)
 {
+    if(accum != null) {
+        defined = accum.defined();
+        extern = accum.extern();
+    } else {
+        defined = null;
+        extern = null;
+    }
+    CastroOut out = lookup(CastroOut.class);
+    fileName = out != null ? out.inFile() : null;
     memSpaceName = name;
     layout.put(Range.lessThan(min),
                new Var("#created_min", -1, min, INTERNAL));
     layout.put(Range.atLeast(Integer.MAX_VALUE),
                new Var("#created_max", -1, Integer.MAX_VALUE, INTERNAL));
+
+    // TODO: copy in the externs and then the defined.
+    if(defined != null) {
+        for(Var var : defined) {
+            if(!var.getState().contains(BUILTIN))
+                declare(var.getId(), var.getSize(), var.getAddr(), DEFINED);
+        }
+    }
 }
 
-public AstroMem(String name)
+public AstroMem(String name, MemAccum accum)
 {
-    this(name, 1, Integer.MAX_VALUE);
+    this(name, 1, Integer.MAX_VALUE, accum);
 }
 
 boolean check()
@@ -92,6 +129,14 @@ boolean check()
             ok = false;
     }
     return ok;
+}
+
+public void updateDefined()
+{
+    for(Var var : this) {
+        if(!var.getState().contains(BUILTIN))
+            defined.declare(var.getId(), var.getSize(), var.getAddr(), DEFINED);
+    }
 }
 
 private Layout layoutRestrictions;
@@ -141,7 +186,9 @@ public int getVarCount()
 }
 
 /** @return an iterator of the active variables */
-public Iterator<Var> getVars()
+//public Iterator<Var> getVars()
+@Override
+public Iterator<Var> iterator()
 {
     return new VarIter(vars.values().iterator());
 }
@@ -190,7 +237,7 @@ public void allocate()
     //System.out.printf("free mem: %s\n", free.toString());
 
     // Sort by name for easily reproducable results
-    List<Var> values = Lists.newArrayList(getVars());
+    List<Var> values = Lists.newArrayList(iterator());
     Collections.sort(values);
     for(Var var : values) {
         if(var.hasError())
@@ -231,14 +278,14 @@ OutOfMemory(Var var, RangeSet<Integer> free)
 }
 }
 
-public Var declare(Token id, int size, int addr, VarState... a_state)
+public final Var declare(Token id, int size, int addr, VarState... a_state)
 {
     Var var = declare(id.getText(), size, addr, a_state);
     var.setId(id);
     return var;
 }
 
-public Var declare(Token id, int size)
+public final Var declare(Token id, int size)
 {
     Var var = declare(id.getText(), size);
     var.setId(id);
@@ -248,7 +295,7 @@ public Var declare(Token id, int size)
 /** Add the variable without allocating it.
  * @return Var, may have error state.
  */
-public Var declare(String name, int size)
+public final Var declare(String name, int size)
 {
     return declare(name, size, -1);
 }
@@ -256,7 +303,7 @@ public Var declare(String name, int size)
 /** Allocate the variable at the specified address.
  * @return Var, may have error state.
  */
-public Var declare(String name, int size, int addr, VarState... a_state)
+public final Var declare(String name, int size, int addr, VarState... a_state)
 {
     if(name == null || name.isEmpty())
         throw new IllegalArgumentException("Var name null or empty");
@@ -275,13 +322,13 @@ public Var declare(String name, int size, int addr, VarState... a_state)
         if(addedToVars)
             vars.put(var);
         else
-            var.addState(DUP_NAME_ERR);
+            var.addState(DUP_NAME_ERR, vars.get(var.getName()));
         // Can still check range unless size issue
         if(var.hasState(SIZE_ERR) || !var.isAllocated())
             break setup_var;
         r = varToRange(var);
         if(!layout.subRangeMap(r).asMapOfRanges().isEmpty())
-            var.addState(OVERLAP_ERR);
+            var.addState(OVERLAP_ERR, r);
     }
     // Some variables shouldn't be in the list of variables.
     if(var.hasState(LIMIT) || var.hasState(INTERNAL))
@@ -291,7 +338,7 @@ public Var declare(String name, int size, int addr, VarState... a_state)
     if(!var.hasError()) {
         if(var.isAllocated()) {
             layout.put(r, var);
-            if(!var.hasState(BUILTIN) && !var.hasState(PRE_ASSIGN))
+            if(!var.hasState(BUILTIN) && !var.hasState(EXTERN))
                 var.addState(ASSIGN);
         }
     } else {
@@ -385,7 +432,7 @@ public void dumpVars(PrintWriter out, boolean byAddr, EnumSet<VarState> skip)
     out.printf("// Space: %s\n// used %s\n// free %s\n// errors: %d\n",
                memSpaceName, used, free, varsInError.size());
 
-    List<Var> varList = Lists.newArrayList(getVars());
+    List<Var> varList = Lists.newArrayList(iterator());
     if(byAddr)
         Collections.sort(varList, (v1, v2) -> v1.getAddr() - v2.getAddr());
     else
@@ -499,7 +546,10 @@ public void dumpLayout(PrintWriter out)
     private final EnumSet<VarState> state;
     /** Where the variable is defined */
     private Token id;
-    private VarInfo info; // Could have map of var:info, if not used much
+    ///// private int line;
+    ///// private int col;
+    ///// private VarInfo info; // Could have map of var:info, if not used much
+    private Set<Var> conflicts = Collections.emptySet();
     
     private Var(String name, int size, int addr, VarState... a_state)
     {
@@ -519,8 +569,9 @@ public void dumpLayout(PrintWriter out)
     public enum VarState
     {
     BUILTIN,    // like [a-z] for variables
-    PRE_ASSIGN, // like from an include, by default should not be output
-    ASSIGN,     // var addr at declaration, not BUILTIN or PRE_ASSIGN
+    DEFINED,    // defined in another file
+    EXTERN,     // like from an include, by default should not be output
+    ASSIGN,     // var addr at declaration, not BUILTIN or EXTERN
     ALLOC,      // var allocated an addr automatically
     DUMMY,      // e.g. for an undeclared variable found in an expression
     //NOT_ALLOC,  // variable not yet allocated
@@ -535,20 +586,46 @@ public void dumpLayout(PrintWriter out)
             anyError = EnumSet.of(DUP_NAME_ERR, SIZE_ERR, OVERLAP_ERR);
     /** State that can be specified as part of a declaration. */
     private static final EnumSet<VarState>
-            canSpecify = EnumSet.of(BUILTIN, PRE_ASSIGN, INTERNAL, LIMIT, DUMMY);
+            canSpecify = EnumSet.of(BUILTIN, DEFINED, EXTERN, INTERNAL, LIMIT, DUMMY);
     /** Var/range that requires a manually specified address. */
     private static final EnumSet<VarState>
-            requiresAddr = EnumSet.of(BUILTIN, PRE_ASSIGN, LIMIT);
+            requiresAddr = EnumSet.of(BUILTIN, DEFINED, EXTERN, LIMIT);
     /** Var manually assigned an address (not automatically allocated). */
     private static final EnumSet<VarState>
-            manualAddr = EnumSet.of(BUILTIN, PRE_ASSIGN, ASSIGN);
+            manualAddr = EnumSet.of(BUILTIN, DEFINED, EXTERN, ASSIGN);
     /** Var not specified in the compilation unit. */
     private static final EnumSet<VarState>
-            externalSpecify = EnumSet.of(BUILTIN, PRE_ASSIGN);
+            externalSpecify = EnumSet.of(BUILTIN, DEFINED, EXTERN);
 
     private void addState(VarState s)
     {
         state.add(s);
+    }
+
+    private void addState(VarState s, Var conflicting)
+    {
+        state.add(s);
+        addConflict(conflicting);
+    }
+
+    private void addState(VarState s, Range<Integer> conflicting)
+    {
+        state.add(s);
+        for(Var overlap : layout.subRangeMap(conflicting).asMapOfRanges().values()) {
+            addConflict(overlap);
+        }
+    }
+
+    private void addConflict(Var conflicting)
+    {
+        if(conflicts.isEmpty())
+            conflicts = new HashSet<>();
+        conflicts.add(conflicting);
+    }
+
+    public Set<Var> getConflicts()
+    {
+        return Collections.unmodifiableSet(conflicts);
     }
     
     /** @return true if any error */
@@ -604,17 +681,34 @@ public void dumpLayout(PrintWriter out)
             throw new IllegalStateException(String.format(
                     "var '%s' already has id; new %s", getName(), id.getText()));
         this.id = id;
+        ///// this.line = id.getLine();
+        ///// this.col = id.getCharPositionInLine();
     }
+
+    ///// public String getFileName()
+    ///// {
+    /////     return fileName;
+    ///// }
+
+    ///// public int getLine()
+    ///// {
+    /////     return line;
+    ///// }
+
+    ///// public int getCol()
+    ///// {
+    /////     return col;
+    ///// }
     
-    public VarInfo getInfo()
-    {
-        return info;
-    }
-    
-    public void setInfo(VarInfo info)
-    {
-        this.info = info;
-    }
+    ///// public VarInfo getInfo()
+    ///// {
+    /////     return info;
+    ///// }
+    ///// 
+    ///// public void setInfo(VarInfo info)
+    ///// {
+    /////     this.info = info;
+    ///// }
     
     @Override
     public String toString()

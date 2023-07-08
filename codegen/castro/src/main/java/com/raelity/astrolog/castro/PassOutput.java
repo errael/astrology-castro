@@ -12,8 +12,8 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.Castro.CastroOutputOptions;
-import com.raelity.astrolog.castro.antlr.AstroParser.AsmContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprStatementContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.CopyContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.RunContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
@@ -88,7 +88,7 @@ public void exitMacro(MacroContext ctx)
     if(ctx.addr != null) {
         sb.append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
     }
-    sb.append('(').append(ctx.bs.size()).append(')');
+    //sb.append('(').append(ctx.bs.size()).append(')');
     out.printf("\n%s\n", sb.toString());
     
     char quote = '"';
@@ -116,7 +116,7 @@ public void exitSwitch(SwitchContext ctx)
     if(ctx.addr != null) {
         sb.append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
     }
-    sb.append('(').append(ctx.sc.size()).append(')');
+    //sb.append('(').append(ctx.sc.size()).append(')');
     out.printf("\n%s\n", sb.toString());
     
     boolean hasSingleQuote = false;
@@ -176,9 +176,9 @@ public void exitRun(RunContext ctx)
 }
 
 @Override
-public void exitAsm(AsmContext ctx)
+public void exitCopy(CopyContext ctx)
 {
-    out.printf("\n; ASM\n");
+    out.printf("\n; COPY\n");
     String s = ctx.getChild(1).getText();
     s = s.replace("\\}", "}");
     out.printf("%s\n", s);

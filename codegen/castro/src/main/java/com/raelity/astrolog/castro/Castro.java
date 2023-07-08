@@ -2,7 +2,6 @@
 
 package com.raelity.astrolog.castro;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -10,7 +9,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.logging.Logger;
 
 import gnu.getopt.Getopt;
@@ -23,6 +25,10 @@ import com.raelity.astrolog.castro.antlr.AstroLexer;
 import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 import com.raelity.astrolog.castro.lib.CentralLookup;
+import com.raelity.astrolog.castro.mems.AstroMem;
+import com.raelity.astrolog.castro.mems.Macros;
+import com.raelity.astrolog.castro.mems.Registers;
+import com.raelity.astrolog.castro.mems.Switches;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
@@ -48,7 +54,8 @@ private static CastroErr err = new CastroErr(new PrintWriter(System.err, true));
 private static CastroOut out;
 
 
-public static record CastroOut(PrintWriter pw){};
+public static record CastroOut(PrintWriter pw, String baseName, Path outDir,
+                                                                String inFile){};
 public static record CastroErr(PrintWriter pw){};
 public static record CastroOutputOptions(EnumSet<OutputOptions> outputOpts) {
     public CastroOutputOptions(EnumSet<OutputOptions> outputOpts)
@@ -57,10 +64,20 @@ public static record CastroOutputOptions(EnumSet<OutputOptions> outputOpts) {
         { return EnumSet.copyOf(this.outputOpts); }
     };
 
+// Keep track of definitions, externs that are read.
+public static interface MemAccum {AstroMem defined();AstroMem extern();}
+public static record RegistersAccum(Registers defined, Registers extern)
+        implements MemAccum {};
+public static record SwitchesAccum(Switches defined, Switches extern) 
+        implements MemAccum {};
+public static record MacrosAccum(Macros defined, Macros extern) 
+        implements MemAccum {};
+
 static final String cmdName = "castro";
 static final String IN_EXT = ".castro";
-static final String OUT_EXT = ".macro.as";
-static final String OUT_TEST_EXT = ".macro.test";
+static final String OUT_EXT = ".as";
+static final String DEF_EXT = ".def";
+static final String OUT_TEST_EXT = ".castro.test";
 
 private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 
@@ -76,9 +93,10 @@ private static void usage(String note)
         System.err.printf("%s: %s\n", cmdName, note);
     String usage =
             """
-            Usage: {cmdName} [-h] [--test] [-v] [infile [outfile]]
-                infile/outfile default to stdin/stdout
-                infile/outfile may be '-' for stdin/stdout
+            Usage: {cmdName} [-h] [--test] [-v] [-o outfile] infile+
+                infile may be '-' for stdin.
+                if outfile not specified, it is derived from infile.
+                -o outfile      allowed if exactly one infile, '-' is stdout
                 --formatoutput=opt1,... # comma separated list of:
                     1st two for switch and macro, next two for run
                         bslash          - split into new-line/backslash lines
@@ -105,6 +123,8 @@ public static int getVerbose()
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 public static void main(String[] args)
 {
+    String outName = null;
+
     LOG.getLevel(); // So now it's used.
     addLookup(err);
     
@@ -113,12 +133,13 @@ public static void main(String[] args)
         new LongOpt("test", LongOpt.OPTIONAL_ARGUMENT, null, 2),
         new LongOpt("formatoutput", LongOpt.REQUIRED_ARGUMENT, null, 3),
     };
-    Getopt g = new Getopt(cmdName, args, "hv", longOpts);
+    Getopt g = new Getopt(cmdName, args, "o:hv", longOpts);
     
     EnumSet<OutputOptions> oset = EnumSet.noneOf(OutputOptions.class);
     int c;
     while ((c = g.getopt()) != -1) {
         switch (c) {
+        case 'o' -> outName = g.getOptarg();
         case 'h' -> usage();
         case 'v' -> optVerbose++;
         case 2 -> {
@@ -149,6 +170,10 @@ public static void main(String[] args)
         }
         }
     }
+
+    if(outName != null && args.length - g.getOptind() > 1)
+        usage("If '-o' specified, then at most one input file allowed");
+
     addLookup(new CastroOutputOptions(oset));
     if(optVerbose > 0)
         System.err.println(String.format("java:%s vm:%s date:%s os:%s",
@@ -157,50 +182,56 @@ public static void main(String[] args)
                            System.getProperty("java.version.date"),
                            System.getProperty("os.name")));
 
-    String inName = null;
-    String outName = null;
+    addLookup(new RegistersAccum(new Registers(), new Registers()));
+    addLookup(new MacrosAccum(new Macros(), new Macros()));
+    addLookup(new SwitchesAccum(new Switches(), new Switches()));
 
-    int i = g.getOptind();
-    if (i != args.length) {
-        // There are positional arguemnts.
-        inName = args[i++];
-        if (i != args.length)
-            outName = args[i++];
-        if(i != args.length)
-            usage("At most two arguments");
-    }
-
-    CastroIO castroIO = new CastroIO(inName, outName);
-    if(castroIO.status != null)
-        usage(castroIO.status);
-    if(castroIO.doAbort)
-        System.exit(1);
-
-    out = new CastroOut(castroIO.outputWriter);
-    addLookup(out);
-
-    // Output a header to the output.
-    // Leave space for a "@", written if no compiler errors.
-    out.pw().printf("    ; compiled for Astrolog v7.60\n");
-    out.pw().printf("    ; Generated by castro %s on %s\n", "v0.5",
-                    ZonedDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME));
-                    //ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
-                    //LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+    List<String> inputFiles = new ArrayList<>(Arrays.asList(args).subList(g.getOptind(), args.length));
     
-    AstroParseResult apr = castroIO.apr;
-    addLookup(apr);
-
-    switch(runOption) {
-    case "test" -> runCompilerTest();
-    case null, default -> Compile.compile();
+    for(String inputFile : inputFiles) {
+        
+        CastroIO castroIO = new CastroIO(inputFile, outName);
+        if(castroIO.status != null)
+            usage(castroIO.status);
+        if(castroIO.doAbort)
+            System.exit(1);
+        
+        out = new CastroOut(castroIO.outputWriter, castroIO.baseName,
+                castroIO.outDir, inputFile);
+        replaceLookup(out);
+        
+        if(!optTest)
+            outputFileHeader(out.pw(), ";");
+        
+        AstroParseResult apr = castroIO.apr;
+        replaceLookup(apr);
+        
+        switch(runOption) {
+        case "test" -> runCompilerTest();
+        case null, default -> Compile.compile();
+        }
+        
+        
+        if(out != null) {
+            out.pw().close();
+            removeLookup(out);
+        }
+        
+        if(apr.hasError())
+            System.exit(1);
+        
+        // re-open the output file and write the "@" marker indicating no errors
+        if(!optTest && castroIO.isDiskFile) {
+            try (OutputStream ch = Files.newOutputStream(castroIO.outPath, WRITE)) {
+                ch.write('@');
+            } catch(IOException ex) {
+                ex.printStackTrace(System.err);
+            }
+        }
     }
-    
 
-    if(out != null) {
-        out.pw().close();
-        removeLookup(out);
-    }
     for(CastroOut tout : CentralLookup.getDefault().lookupAll(CastroOut.class)) {
+        // ERROR
         tout.pw().close();
         removeLookup(tout);
     }
@@ -208,17 +239,19 @@ public static void main(String[] args)
         terr.pw().close();
         removeLookup(terr);
     }
-    if(apr.hasError())
-        System.exit(1);
-    
-    // re-open the output file and write the "@" marker indicating no errors
-    if(castroIO.isDiskFile) {
-        try (OutputStream ch = Files.newOutputStream(castroIO.outPath, WRITE)) {
-            ch.write('@');
-        } catch(IOException ex) {
-            ex.printStackTrace(System.err);
-        }
-    }
+}
+
+private static String runDate;
+/** All output files from this run have the same header. */
+static void outputFileHeader(PrintWriter out, String commentLeader)
+{
+    if(runDate == null)
+        runDate = ZonedDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME);
+                //ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+                //LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
+    // Leave space for a "@", written if no compiler errors.
+    out.printf("    %s Compiled for Astrolog v7.60\n", commentLeader);
+    out.printf("    %s Generated by castro %s on %s\n", commentLeader, "v0.5", runDate);
 }
 
 static void runCompilerTest()
@@ -242,7 +275,10 @@ static void runCompilerTest()
     private AstroParser parser = new AstroParser(null);
     private AstroLexer lexer;
 
+    private Path outDir = null;
     private Path outPath = null;
+    private String baseName = null;
+
     private PrintWriter outputWriter;
     private CharStream input;
     private boolean doAbort;
@@ -272,25 +308,28 @@ static void runCompilerTest()
             if(inFileName.endsWith(IN_EXT))
                 base = inFileName.substring(0, inFileName.lastIndexOf(IN_EXT));
             outFileName = base + (optTest ? OUT_TEST_EXT : OUT_EXT);
+            baseName = base;
         }
 
         try {
             Path tinPath = null;
             if(inFileName != null) {
-                tinPath = new File(inFileName).toPath();
+                tinPath = Path.of(inFileName);
                 if(!Files.exists(tinPath))
                     return String.format("input file '%s' does not exist", inFileName);
             }
 
             if(outFileName != null)
-                outPath = new File(outFileName).toPath();
+                outPath = Path.of(outFileName);
 
             outputWriter = outPath == null
                     ? new PrintWriter(System.out, true)   // TODO: true/false option
                     : new PrintWriter(Files.newBufferedWriter(outPath,
                                       WRITE, TRUNCATE_EXISTING, CREATE));
-            if(outPath != null && Files.isRegularFile(outPath))
+            if(outPath != null && Files.isRegularFile(outPath)) {
                 isDiskFile = true;
+                outDir = outPath.getParent();
+            }
 
             input = tinPath != null ? fromPath(tinPath) : fromStream(System.in);
         } catch(IOException ex) {

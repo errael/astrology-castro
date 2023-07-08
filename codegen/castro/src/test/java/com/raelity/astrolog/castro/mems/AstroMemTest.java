@@ -60,7 +60,7 @@ public void tearDown()
     {
     public AstroMemForTest()
     {
-        super("TestingMemorySpace");
+        super("TestingMemorySpace", null);
     }
 
         @Override
@@ -78,7 +78,7 @@ public void testRegistersMem()
     System.out.println("RegistersMem");
     Registers mem = new Registers();
 
-    mem.declare("var0", 1, 30, PRE_ASSIGN);
+    mem.declare("var0", 1, 30, EXTERN);
     mem.declare("var1", 10, 41);
     mem.declare("var2", 10, 95);
     mem.declare("var3", 10, 195);
@@ -124,11 +124,11 @@ public void testVarConstruction()
     assertThrows(IllegalArgumentException.class,
                  () -> mem.declare("var2", 1, -1, BUILTIN));
     assertThrows(IllegalArgumentException.class,
-                 () -> mem.declare("var2", 1, -1, PRE_ASSIGN));
+                 () -> mem.declare("var2", 1, -1, EXTERN));
     assertThrows(IllegalArgumentException.class,
                  () -> mem.declare("var2", 1, -1, LIMIT));
     mem.declare("var2", 1, 102, BUILTIN);
-    mem.declare("var3", 1, 103, PRE_ASSIGN);
+    mem.declare("var3", 1, 103, EXTERN);
     mem.declare("var4", 1, 104, LIMIT);
 }
 

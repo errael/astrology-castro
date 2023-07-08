@@ -173,6 +173,14 @@ public static void checkReport(Var var, Object... msg)
         return;
     String optMsg = msg.length == 0 ? "" : String.format(
             (String)msg[0], Arrays.copyOfRange(msg, 1, msg.length));
+    if(!var.getConflicts().isEmpty()) {
+        StringBuilder sb = new StringBuilder(optMsg)
+                .append(" conflicts with");
+        for(Var conflict : var.getConflicts()) {
+            sb.append(' ').append(tokenLoc(conflict.getId()));
+        }
+        optMsg = sb.toString();
+    }
     reportError(var.getId(), "%s %s %s", var.getName(), var.getState(), optMsg);
 }
 

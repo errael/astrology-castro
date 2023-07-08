@@ -42,9 +42,9 @@ import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 import com.raelity.astrolog.castro.tables.Functions;
 
-import static com.raelity.astrolog.castro.Util.addLookup;
 import static com.raelity.astrolog.castro.Util.checkReport;
 import static com.raelity.astrolog.castro.Util.lookup;
+import static com.raelity.astrolog.castro.Util.replaceLookup;
 import static com.raelity.astrolog.castro.Util.reportError;
 
 
@@ -72,10 +72,10 @@ public Pass1()
 {
     // TODO: check if there's already a linemap
     this.wLineMap = new WriteableLineMap(new ArrayList<>(100));
-    addLookup(wLineMap.getLineMap());
-    addLookup(registers);
-    addLookup(macros);
-    addLookup(switches);
+    replaceLookup(wLineMap.getLineMap());
+    replaceLookup(registers);
+    replaceLookup(macros);
+    replaceLookup(switches);
 }
 
 void declareVar(ParserRuleContext _ctx)

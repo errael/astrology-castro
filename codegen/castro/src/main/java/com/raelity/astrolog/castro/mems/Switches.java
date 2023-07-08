@@ -4,6 +4,10 @@ package com.raelity.astrolog.castro.mems;
 
 import java.io.PrintWriter;
 
+import com.raelity.astrolog.castro.Castro.SwitchesAccum;
+
+import static com.raelity.astrolog.castro.Util.lookup;
+
 /**
  *
  * @author err
@@ -12,7 +16,7 @@ public class Switches extends AstroMem
 {
 public Switches()
 {
-    super("Switches");
+    super("Switches", lookup(SwitchesAccum.class));
 }
 
 @Override
