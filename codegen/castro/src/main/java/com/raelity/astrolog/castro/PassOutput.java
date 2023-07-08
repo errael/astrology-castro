@@ -86,7 +86,7 @@ public void exitMacro(MacroContext ctx)
     sb.setLength(0);
     sb.append("; MACRO ").append(ctx.id.getText());
     if(ctx.addr != null) {
-        sb.append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
+        sb.append(' ').append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
     }
     //sb.append('(').append(ctx.bs.size()).append(')');
     out.printf("\n%s\n", sb.toString());
@@ -112,9 +112,9 @@ public void exitMacro(MacroContext ctx)
 public void exitSwitch(SwitchContext ctx)
 {
     sb.setLength(0);
-    sb.append("; SWITCH ").append(ctx.id.getText()).append(' ');
+    sb.append("; SWITCH ").append(ctx.id.getText());
     if(ctx.addr != null) {
-        sb.append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
+        sb.append(' ').append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
     }
     //sb.append('(').append(ctx.sc.size()).append(')');
     out.printf("\n%s\n", sb.toString());

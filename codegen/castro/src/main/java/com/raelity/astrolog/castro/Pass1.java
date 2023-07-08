@@ -56,15 +56,18 @@ class Pass1 extends AstroParserBaseListener
 {
 /** use line number as index, first entry is null. */
 private final WriteableLineMap wLineMap;
-private final Registers registers = new Registers();
-private final Macros macros = new Macros();
-private final Switches switches = new Switches();
+private final Registers registers;
+private final Macros macros;
+private final Switches switches;
 private Layout workingLayout;
 
 static void pass1() {
     AstroParseResult apr = lookup(AstroParseResult.class);
     apr.getParser().addParseListener(new Pass1());
+
+    // parse the file/program
     ProgramContext program = apr.getParser().program();
+    // save result
     apr.setContext(program);
 }
 
@@ -73,9 +76,10 @@ public Pass1()
     // TODO: check if there's already a linemap
     this.wLineMap = new WriteableLineMap(new ArrayList<>(100));
     replaceLookup(wLineMap.getLineMap());
-    replaceLookup(registers);
-    replaceLookup(macros);
-    replaceLookup(switches);
+
+    this.registers = lookup(Registers.class);
+    this.macros = lookup(Macros.class);
+    this.switches = lookup(Switches.class);
 }
 
 void declareVar(ParserRuleContext _ctx)

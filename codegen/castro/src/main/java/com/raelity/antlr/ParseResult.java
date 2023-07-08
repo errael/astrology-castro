@@ -8,8 +8,7 @@ import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 /**
- * This class contains the setup information for a active parse
- * using the AstroParser.
+ * This class contains the setup information for a parser.
  * It includes the parser, input, parser result.
  * Note: once the context/parse-result is set to non null, it can not be changed.
  */
@@ -27,8 +26,7 @@ private ParserRuleContext context;
  * @param input
  * @param context 
  */
-public ParseResult(T parser, U lexer, CharStream input,
-                                           ParserRuleContext context)
+public ParseResult(T parser, U lexer, CharStream input, ParserRuleContext context)
 {
     this.parser = parser;
     this.lexer = lexer;

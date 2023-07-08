@@ -2,13 +2,8 @@
 
 package com.raelity.astrolog.castro;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -18,23 +13,12 @@ import java.util.logging.Logger;
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
-import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-
-import com.raelity.astrolog.castro.antlr.AstroLexer;
-import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 import com.raelity.astrolog.castro.lib.CentralLookup;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
-
-import static java.nio.file.StandardOpenOption.CREATE;
-import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
-import static java.nio.file.StandardOpenOption.WRITE;
-import static org.antlr.v4.runtime.CharStreams.fromPath;
-import static org.antlr.v4.runtime.CharStreams.fromStream;
 
 import static com.raelity.astrolog.castro.Util.addLookup;
 import static com.raelity.astrolog.castro.Util.lookup;
@@ -82,12 +66,10 @@ static final String OUT_TEST_EXT = ".castro.test";
 private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 
 private static int optVerbose;
-private static boolean optTest;
-private static String runOption = "compile";
 
-private static void usage() { usage(null); }
+static void usage() { usage(null); }
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
-private static void usage(String note)
+static void usage(String note)
 {
     if(note != null)
         System.err.printf("%s: %s\n", cmdName, note);
@@ -123,6 +105,7 @@ public static int getVerbose()
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 public static void main(String[] args)
 {
+    boolean optTest = false;
     String outName = null;
 
     LOG.getLevel(); // So now it's used.
@@ -144,7 +127,7 @@ public static void main(String[] args)
         case 'v' -> optVerbose++;
         case 2 -> {
             switch(longOpts[g.getLongind()].getName()) {
-            case "test" -> { optTest = true; runOption = "test"; }
+            case "test" -> { optTest = true; }
             }
         }
         case 3 -> {
@@ -182,54 +165,27 @@ public static void main(String[] args)
                            System.getProperty("java.version.date"),
                            System.getProperty("os.name")));
 
-    addLookup(new RegistersAccum(new Registers(), new Registers()));
-    addLookup(new MacrosAccum(new Macros(), new Macros()));
-    addLookup(new SwitchesAccum(new Switches(), new Switches()));
-
     List<String> inputFiles = new ArrayList<>(Arrays.asList(args).subList(g.getOptind(), args.length));
-    
-    for(String inputFile : inputFiles) {
-        
-        CastroIO castroIO = new CastroIO(inputFile, outName);
-        if(castroIO.status != null)
-            usage(castroIO.status);
-        if(castroIO.doAbort)
+
+    if(optTest) {
+        runCompilerTest(inputFiles.get(0), outName);
+
+        AstroParseResult apr = lookup(AstroParseResult.class);
+
+        CastroOut testOut = lookup(CastroOut.class);
+        if(testOut != null) {
+            testOut.pw().close();
+            removeLookup(testOut);
+        }
+
+        if(apr == null || apr.hasError())
             System.exit(1);
-        
-        out = new CastroOut(castroIO.outputWriter, castroIO.baseName,
-                castroIO.outDir, inputFile);
-        replaceLookup(out);
-        
-        if(!optTest)
-            outputFileHeader(out.pw(), ";");
-        
-        AstroParseResult apr = castroIO.apr;
-        replaceLookup(apr);
-        
-        switch(runOption) {
-        case "test" -> runCompilerTest();
-        case null, default -> Compile.compile();
-        }
-        
-        
-        if(out != null) {
-            out.pw().close();
-            removeLookup(out);
-        }
-        
-        if(apr.hasError())
-            System.exit(1);
-        
-        // re-open the output file and write the "@" marker indicating no errors
-        if(!optTest && castroIO.isDiskFile) {
-            try (OutputStream ch = Files.newOutputStream(castroIO.outPath, WRITE)) {
-                ch.write('@');
-            } catch(IOException ex) {
-                ex.printStackTrace(System.err);
-            }
-        }
+        return;
     }
 
+    // Note that outName can only be non-null if inputFiles is size 1.
+    boolean success = Compile.compile(inputFiles, outName);
+    
     for(CastroOut tout : CentralLookup.getDefault().lookupAll(CastroOut.class)) {
         // ERROR
         tout.pw().close();
@@ -239,114 +195,33 @@ public static void main(String[] args)
         terr.pw().close();
         removeLookup(terr);
     }
+        
+    if(!success) {
+        System.exit(1);
+    }
 }
 
-private static String runDate;
-/** All output files from this run have the same header. */
-static void outputFileHeader(PrintWriter out, String commentLeader)
+static void runCompilerTest(String inputFile, String outName)
 {
-    if(runDate == null)
-        runDate = ZonedDateTime.now().format(DateTimeFormatter.RFC_1123_DATE_TIME);
-                //ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
-                //LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME));
-    // Leave space for a "@", written if no compiler errors.
-    out.printf("    %s Compiled for Astrolog v7.60\n", commentLeader);
-    out.printf("    %s Generated by castro %s on %s\n", commentLeader, "v0.5", runDate);
-}
+    CastroIO castroIO = new CastroIO(inputFile, outName, true);
+    if(castroIO.getErrorMsg() != null)
+        usage(castroIO.getErrorMsg());
+    if(castroIO.isAbort())
+        return;
+    
+    out = new CastroOut(castroIO.getOutputWriter(), castroIO.getBaseName(),
+            castroIO.getOutDir(), inputFile);
+    replaceLookup(out);
+    
+    AstroParseResult apr = castroIO.getApr();
+    replaceLookup(apr);
 
-static void runCompilerTest()
-{
-    AstroParseResult apr = lookup(AstroParseResult.class);
     // Have Err go to Out. Everything goes to the same place for tests
     replaceLookup(new CastroErr(lookup(CastroOut.class).pw()));
+
     ProgramContext program = apr.getParser().program();
     apr.setContext(program);
     GenSimpleOutput.genPrefixNotation();
 }
-
-    /** Given an input and output file name,
-     * check/setup paths/files; setup parser with inputFile's stream.
-     * @return null if OK, else error message.
-     */
-    static class CastroIO
-    {
-    private String status;
-
-    private AstroParser parser = new AstroParser(null);
-    private AstroLexer lexer;
-
-    private Path outDir = null;
-    private Path outPath = null;
-    private String baseName = null;
-
-    private PrintWriter outputWriter;
-    private CharStream input;
-    private boolean doAbort;
-    private boolean isDiskFile;
-    AstroParseResult apr;
-
-    public CastroIO(String inFileName, String outFileName)
-    {
-        status = setupIO(inFileName, outFileName);
-    }
-    @SuppressWarnings("UseOfSystemOutOrSystemErr")
-    private String setupIO(String inFileName, String outFileName)
-    {
-        if("-".equals(inFileName))
-            inFileName = null;
-
-        // TODO: check for identical files (not just name)
-        if(inFileName != null && inFileName.equals(outFileName))
-            return "infile and outfile can not be the same file";
-        
-        // TODO: if inName not found, try inName.castro
-        if("-".equals(outFileName))
-            outFileName = null;
-        else if(outFileName == null && inFileName != null) {
-            // Pick outFile built from inFile
-            String base = inFileName;
-            if(inFileName.endsWith(IN_EXT))
-                base = inFileName.substring(0, inFileName.lastIndexOf(IN_EXT));
-            outFileName = base + (optTest ? OUT_TEST_EXT : OUT_EXT);
-            baseName = base;
-        }
-
-        try {
-            Path tinPath = null;
-            if(inFileName != null) {
-                tinPath = Path.of(inFileName);
-                if(!Files.exists(tinPath))
-                    return String.format("input file '%s' does not exist", inFileName);
-            }
-
-            if(outFileName != null)
-                outPath = Path.of(outFileName);
-
-            outputWriter = outPath == null
-                    ? new PrintWriter(System.out, true)   // TODO: true/false option
-                    : new PrintWriter(Files.newBufferedWriter(outPath,
-                                      WRITE, TRUNCATE_EXISTING, CREATE));
-            if(outPath != null && Files.isRegularFile(outPath)) {
-                isDiskFile = true;
-                outDir = outPath.getParent();
-            }
-
-            input = tinPath != null ? fromPath(tinPath) : fromStream(System.in);
-        } catch(IOException ex) {
-            String msg = String.format(
-                    "%s: %s\n", ex.getClass().getSimpleName(), ex.getMessage());
-
-            lookup(CastroErr.class).pw().print(msg);
-            doAbort = true;
-            return null;
-        }
-
-        lexer = new AstroLexer(input);
-        parser.setTokenStream(new CommonTokenStream(lexer));
-        apr = AstroParseResult.get(parser, lexer, input);
-
-        return null;
-    }
-    }
 
 }

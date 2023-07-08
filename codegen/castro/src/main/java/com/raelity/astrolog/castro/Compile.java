@@ -7,11 +7,15 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
+import java.util.List;
 
 import com.google.common.collect.RangeSet;
 
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroOut;
+import com.raelity.astrolog.castro.Castro.MacrosAccum;
+import com.raelity.astrolog.castro.Castro.RegistersAccum;
+import com.raelity.astrolog.castro.Castro.SwitchesAccum;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
@@ -22,8 +26,11 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 
+import static com.raelity.astrolog.castro.Util.addLookup;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.lookupAll;
+import static com.raelity.astrolog.castro.Util.removeLookup;
+import static com.raelity.astrolog.castro.Util.replaceLookup;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 
 /**
@@ -38,12 +45,73 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
  */
 public class Compile
 {
+private static CastroOut out;
 private Compile() { }
 
-static void compile()
+/** @return false if there is an error */
+static boolean compile(List<String> inputFiles, String outName)
 {
+    // the Accum have info for all the files
+    addLookup(new RegistersAccum(new Registers(), new Registers()));
+    addLookup(new MacrosAccum(new Macros(), new Macros()));
+    addLookup(new SwitchesAccum(new Switches(), new Switches()));
+
+    // First parse the input files, setup file parse IO
+    // and record declarations.
+
+    boolean someError = false;
+    for(String inputFile : inputFiles) {
+
+        CastroIO castroIO = new CastroIO(inputFile, outName, false);
+        if(castroIO.getErrorMsg() != null)
+            Castro.usage(castroIO.getErrorMsg());
+        if(castroIO.isAbort()) {
+            someError = true;
+            continue;
+        }
+        
+        out = new CastroOut(castroIO.getOutputWriter(), castroIO.getBaseName(),
+                castroIO.getOutDir(), inputFile);
+        replaceLookup(out);
+        
+        CastroIO.outputFileHeader(out.pw(), ";");
+        
+        AstroParseResult apr = castroIO.getApr();
+        replaceLookup(apr);
+
+        Compile.compileOneFile();
+
+        if(out != null) {
+            out.pw().close();
+            removeLookup(out);
+        }
+        
+        if(apr.hasError()) {
+            someError = true;
+            continue;
+        }
+        
+        castroIO.markSuccess();
+    }
+    
+    return !someError;
+}
+
+static void compileOneFile()
+{
+    // Setup things associated with input file for the duration.
+    Registers registers = new Registers();
+    Macros macros = new Macros();
+    Switches switches = new Switches();
+
+    replaceLookup(registers);
+    replaceLookup(macros);
+    replaceLookup(switches);
+
     AstroParseResult apr = lookup(AstroParseResult.class);
     PrintWriter err = lookup(CastroErr.class).pw();
+
+
 
     Pass1.pass1();
 
@@ -98,7 +166,7 @@ private static void createDef()
     Path defPath = castroOut.outDir().resolve(castroOut.baseName() + Castro.DEF_EXT);
     try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(
             defPath, WRITE, TRUNCATE_EXISTING, CREATE))) {
-        Castro.outputFileHeader(out, "//");
+        CastroIO.outputFileHeader(out, "//");
 
         Registers registers = lookup(Registers.class);
         Macros macros = lookup(Macros.class);
