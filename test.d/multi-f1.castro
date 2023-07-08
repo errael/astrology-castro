@@ -1,0 +1,14 @@
+var xx1a @112;
+var xx1b @113;
+var xx1c[4] @120;
+
+var xx1;
+
+macro m1 @100 {
+    xx1a + xx1b;
+    Int(xx3);   // forward reference
+    xx3;
+}
+macro m1a { a+b; }
+
+switch s1 @100 { -XXX }

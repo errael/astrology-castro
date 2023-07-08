@@ -1,0 +1,11 @@
+
+
+//var xx3a @122;
+//var xx3b @232;
+var xx3c @310;
+
+var xx3;
+
+//macro m2 @300 { a+b; }
+macro m3 @300 { a+b; }
+macro m3a { a+b; }

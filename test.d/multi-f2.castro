@@ -1,0 +1,10 @@
+//var xx2a[4] @111;
+
+//var xx1b @220;
+var xx2c[4] @230;
+
+var xx2;
+var xx2i @27;
+
+//macro m2 @100 { a+b; }
+macro m2 @200 { a+b; }

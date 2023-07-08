@@ -1,0 +1,12 @@
+
+macro UnOps {
+    a = +z;
+    a = -z;
+    a = ~z;
+    a = !z;
+
+    a = b & ~c;
+    a &= ~c;
+    a &= ~9;
+}
+

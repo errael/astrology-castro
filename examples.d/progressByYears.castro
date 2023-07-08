@@ -1,0 +1,23 @@
+var yearA;
+var yearB;
+
+// yearA/yearB inclusive
+switch progressedAspectsBetweenYearsAB @77 {
+    -dpY {~ yearA < yearB ? yearA : yearB; } {~ Abs(yearA - yearB) + 1; }
+}
+
+macro progressByYears @99 {
+    yearA = 1973;
+    yearB = 1975;
+    Switch(progressedAspectsBetweenYearsAB);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// 
+// 
+// ; SWITCH progressedAspectsBetweenYearsAB @77 (3)
+// -M0 77 '-dpY  "~ IfElse Lt @27 @28 @27 @28" "~ Add Abs Sub @27 @28 1"'
+// 
+// ; MACRO progressedByYears@99 (3)
+// ~M 99 '= 27 1973 = 28 1975 switch 77'
+//

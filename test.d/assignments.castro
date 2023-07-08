@@ -1,0 +1,95 @@
+var xxx @97;
+macro lval_read {
+    a = z;
+    b = *z;
+    c = z[3];
+    a = xxx;
+    b = *xxx;
+    c = xxx[3];
+    a = z + 7;
+    b = *z + 7;
+    c = z[3] + 7;
+}
+
+macro lval_write {
+    a = z;
+    *a = z;
+    a[3] = z;
+    xxx = z;
+    *xxx = z;
+    xxx[3] = z;
+}
+
+macro assign_array {
+    a[3] |= z;
+    xxx[3] |= z;
+
+    a[b + c] |= z;
+    a[b + 3] |= z;
+    a[3 + b] |= z;
+
+    xxx[b + c] |= z;
+    xxx[b + 3] |= z;
+    xxx[3 + b] |= z;
+}
+
+macro assign_op {
+    a |= z;
+    *a |= z;
+    a[3] |= z;
+    xxx |= z;
+    *xxx |= z;
+    xxx[3] |= z;
+}
+
+macro assign_op_extra_1 {
+    a <<= z + x;
+    *a <<= z + x;
+    a[3] <<= z + x;
+}
+
+macro assign_op_extra_2 {
+    (a <<= z) + x;
+    (*a <<= z) + x;
+    (a[3] <<= z) + x;
+}
+
+macro assign_op_extra_3 {
+    (a <<= z) + 7;
+    (*a <<= z) + 7;
+    (a[3] <<= z) + 7;
+}
+
+macro assign_op_extra_4 {
+    (a <<= z) + *x;
+    (*a <<= z) + *x;
+    (a[3] <<= z) + *x;
+}
+
+
+macro t1 {
+    for(a = 3; 7) d += 1;
+    for(*a = 3; 7) d += 1;
+    for(a[13] = 3; 7) d += 1;
+}
+macro t2 {
+    for(xxx = 3; 7) d += 1;
+    for(*xxx = 3; 7) d += 1;
+    for(xxx[13] = 3; 7) d += 1;
+}
+macro t3 {
+    a = 3;
+    *a = 3;
+    a[7] = 3;
+    xxx = 3;
+    *xxx = 3;
+    xxx[7] = 3;
+}
+macro t4 {
+    a += 3;
+    *a += 3;
+    a[7] += 3;
+    xxx += 3;
+    *xxx += 3;
+    xxx[7] += 3;
+}

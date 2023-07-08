@@ -62,5 +62,5 @@ grun: $(NAME)
 # This is convenient to have here,
 # but note that it uses "castro" which is not built as part of this Makefile.
 test: $(NAME)
-	castro --test test.d/test-in test.d/test-out
+	castro --test test.d/test-in -o test.d/test-out
 	diff test.d/test-gold test.d/test-out

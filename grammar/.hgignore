@@ -4,6 +4,7 @@ syntax: glob
 syntax: rootglob
 Astro
 grout/*
+play/*
 
 syntax: glob
 *~

@@ -1,0 +1,19 @@
+
+macro Block1 {
+    {a;}
+}
+macro Block2 {
+    {a;b;}
+}
+macro Block3 {
+    {a;b;c;}
+}
+macro Block4 {
+    {a;b;c;d;}
+}
+macro Block5 {
+    {a;b;c;d;e;}
+}
+macro BlockMany {
+    {a;b;c;d;e;f;g;h;i;}
+}
