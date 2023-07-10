@@ -35,11 +35,7 @@ public class Castro
 // until we figure it out, put some common things here up front
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 private static CastroErr err = new CastroErr(new PrintWriter(System.err, true));
-private static CastroOut out;
 
-
-public static record CastroOut(PrintWriter pw, String baseName, Path outDir,
-                                                                String inFile){};
 public static record CastroErr(PrintWriter pw){};
 public static record CastroOutputOptions(EnumSet<OutputOptions> outputOpts) {
     public CastroOutputOptions(EnumSet<OutputOptions> outputOpts)
@@ -49,12 +45,15 @@ public static record CastroOutputOptions(EnumSet<OutputOptions> outputOpts) {
     };
 
 // Keep track of definitions, externs that are read.
-public static interface MemAccum {AstroMem defined();AstroMem extern();}
-public static record RegistersAccum(Registers defined, Registers extern)
+public static interface MemAccum {AstroMem defined();AstroMem alloc(); AstroMem extern(); AstroMem global();}
+public static record RegistersAccum(Registers defined, Registers alloc,
+                                    Registers extern, Registers global)
         implements MemAccum {};
-public static record SwitchesAccum(Switches defined, Switches extern) 
+public static record MacrosAccum(Macros defined, Macros alloc,
+                                 Macros extern, Macros global) 
         implements MemAccum {};
-public static record MacrosAccum(Macros defined, Macros extern) 
+public static record SwitchesAccum(Switches defined, Switches alloc,
+                                   Switches extern, Switches global) 
         implements MemAccum {};
 
 static final String cmdName = "castro";
@@ -172,7 +171,7 @@ public static void main(String[] args)
 
         AstroParseResult apr = lookup(AstroParseResult.class);
 
-        CastroOut testOut = lookup(CastroOut.class);
+        CastroIO testOut = lookup(CastroIO.class);
         if(testOut != null) {
             testOut.pw().close();
             removeLookup(testOut);
@@ -186,7 +185,7 @@ public static void main(String[] args)
     // Note that outName can only be non-null if inputFiles is size 1.
     boolean success = Compile.compile(inputFiles, outName);
     
-    for(CastroOut tout : CentralLookup.getDefault().lookupAll(CastroOut.class)) {
+    for(CastroIO tout : CentralLookup.getDefault().lookupAll(CastroIO.class)) {
         // ERROR
         tout.pw().close();
         removeLookup(tout);
@@ -209,15 +208,13 @@ static void runCompilerTest(String inputFile, String outName)
     if(castroIO.isAbort())
         return;
     
-    out = new CastroOut(castroIO.getOutputWriter(), castroIO.getBaseName(),
-            castroIO.getOutDir(), inputFile);
-    replaceLookup(out);
+    replaceLookup(castroIO);
     
     AstroParseResult apr = castroIO.getApr();
     replaceLookup(apr);
 
     // Have Err go to Out. Everything goes to the same place for tests
-    replaceLookup(new CastroErr(lookup(CastroOut.class).pw()));
+    replaceLookup(new CastroErr(lookup(CastroIO.class).pw()));
 
     ProgramContext program = apr.getParser().program();
     apr.setContext(program);

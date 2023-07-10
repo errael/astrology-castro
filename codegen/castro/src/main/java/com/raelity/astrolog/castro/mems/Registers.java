@@ -26,12 +26,13 @@ public Registers()
 @Override
 void dumpVar(PrintWriter out, Var var)
 {
+    String f = Boolean.FALSE ? var.getFileName() : "";
     if(var.getSize() == 1)
-        out.printf("var %s @%d;    // %s\n", var.getName(),
-                   var.getAddr(), var.getState());
+        out.printf("var %s @%d;    // %s %s\n", var.getName(),
+                   var.getAddr(), var.getState(), f);
     else
-        out.printf("var %s[%d] @%d;    // %s\n", var.getName(),
-                   var.getSize(), var.getAddr(), var.getState());
+        out.printf("var %s[%d] @%d;    // %s %s\n", var.getName(),
+                   var.getSize(), var.getAddr(), var.getState(), f);
 }
             
 }

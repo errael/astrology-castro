@@ -28,8 +28,8 @@ import com.google.common.collect.TreeRangeSet;
 import org.antlr.v4.runtime.Token;
 
 import com.raelity.astrolog.castro.AstroParseResult;
-import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.Castro.MemAccum;
+import com.raelity.astrolog.castro.CastroIO;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.lib.collect.ValueHashMap;
 import com.raelity.lib.collect.ValueMap;
@@ -60,6 +60,16 @@ import static com.raelity.lib.collect.Util.intersects;
  * <br>4 - set limits; may cover locations from step 2 and 3
  * <br>5 - allocate
  * <p>
+ * When the space is created, the defined (memory defined in spaces
+ * already created) are copied into this space. In this fashion
+ * name/address conflict are detected. Allocation occurs at the end of
+ * the first pass; when a variable is allocated it is added to the global
+ * alloc. At the begining of the allocation routine, the vars in alloc are
+ * copied in to avoid conflicts. In addition, at the begining of allocate
+ * spin through defined and anything not already in this space is copied in
+ * (this accounts for stuff added to defined during pass1 after this
+ * compiliation unit was processed).
+ * <p>
  * Variable declarations can be read at the beginning,
  * before any files are compiled, they are marked as EXTERN. 
  * A variable can be declared as EXTERN more than once as long as
@@ -69,10 +79,13 @@ import static com.raelity.lib.collect.Util.intersects;
  */
 public abstract class AstroMem implements Iterable<Var>
 {
-final AstroMem defined;
-final AstroMem extern;
+private AstroMem defined;
+private AstroMem alloc;
+private MemAccum accum;
 final String fileName;
 public final String memSpaceName;
+static final String ALLOC_TAG = "#alloc#";
+boolean isTest;
 /** Allocated memory; value is the variable name.
  * Any key is a closed range. non-empty? Non-assigne/unallocated var could be empty.
  * 
@@ -84,18 +97,17 @@ private final ValueMap<String, Var> vars = new ValueHashMap<>((var) -> var.getNa
 private final List<Var> varsError = new ArrayList<>();
 int nLimit; // use to label limit ranges (may be disjoint)
 // probably don't need/want this. Maybe some kind of allocation lock?
-//private boolean declarationsDone;
+private boolean lockMemory;
 
 public AstroMem(String name, int min, int max, MemAccum accum)
 {
     if(accum != null) {
+        this.accum = accum;
         defined = accum.defined();
-        extern = accum.extern();
-    } else {
-        defined = null;
-        extern = null;
+        alloc = accum.alloc();
+        //extern = accum.extern();
     }
-    CastroOut out = lookup(CastroOut.class);
+    CastroIO out = lookup(CastroIO.class);
     fileName = out != null ? out.inFile() : null;
     memSpaceName = name;
     layout.put(Range.lessThan(min),
@@ -110,6 +122,43 @@ public AstroMem(String name, int min, int max, MemAccum accum)
                 declare(var.getId(), var.getSize(), var.getAddr(), DEFINED);
         }
     }
+}
+
+/** Take the variables from this and add them to the gloabal defined pool.
+ * Typically done at the end of pass 1 for a file. The next file's pass1
+ * copies these into it's memory pool to check against them.
+ */
+public void addToDefined()
+{
+    for(Var var : this) {
+        if(!var.getState().contains(BUILTIN))
+            defined.declare(var.getId(), var.getSize(), var.getAddr(), DEFINED);
+    }
+}
+
+public void addToGlobal()
+{
+    EnumSet<VarState> skip = EnumSet.of(BUILTIN, DEFINED);
+    for(Var var : this) {
+        if(!intersects(var.getState(), skip))
+            accum.global().declare(var.getId(), var.getSize(), var.getAddr(), DEFINED);
+    }
+}
+
+public void lockMemory()
+{
+    lockMemory = true;
+}
+
+public MemAccum getAccum()
+{
+    return accum;
+}
+public void clearExtraMems()
+{
+    defined = null;
+    alloc = null;
+    accum = null;
 }
 
 public AstroMem(String name, MemAccum accum)
@@ -129,14 +178,6 @@ boolean check()
             ok = false;
     }
     return ok;
-}
-
-public void updateDefined()
-{
-    for(Var var : this) {
-        if(!var.getState().contains(BUILTIN))
-            defined.declare(var.getId(), var.getSize(), var.getAddr(), DEFINED);
-    }
 }
 
 private Layout layoutRestrictions;
@@ -194,6 +235,12 @@ public Iterator<Var> iterator()
 }
 
 /** @return an iterator of the variables with errors */
+public int getErrorVarsCount()
+{
+    return varsError.size();
+}
+
+/** @return an iterator of the variables with errors */
 public Iterator<Var> getErrorVars()
 {
     return new VarIter(varsError.iterator());
@@ -223,6 +270,22 @@ public void allocate()
                 throw new IllegalStateException("Var errors found in layout");
         }
 
+    if(defined != null) {
+        // add stuff defined in pass1 after this compilation unit's pass1.
+        for(Var var : defined) {
+            if(!var.getState().contains(BUILTIN)
+                    && !vars.containsKey(var.getName()))
+                declare(var.getName(), var.getSize(), var.getAddr(), DEFINED);
+        }
+    }
+    if(alloc != null) {
+        // copy in any vars allocated by previous compilation units
+        for(Var var : alloc) {
+            if(!var.getState().contains(BUILTIN))
+                declare(var.getName(), var.getSize(), var.getAddr(), DEFINED);
+        }
+    }
+
     if(layoutRestrictions != null) {
         if(layoutRestrictions.base >= 0)
             lowerLimit(layoutRestrictions.base - 1);
@@ -244,6 +307,8 @@ public void allocate()
             throw new IllegalStateException("Can't allocate variable with errors");
         if(var.isAllocated())
             continue;
+        if(var.hasState(DEFINED))
+            continue; // Don't try to allocate things from another file
         found: {
             for(Range<Integer> rfree : free.asRanges()) {
                 ContiguousSet<Integer> cs = ContiguousSet.create(rfree, DiscreteDomain.integers());
@@ -255,6 +320,9 @@ public void allocate()
                     layout.put(r, var);
                     used.add(r);
                     var.addState(ALLOC);
+                    if(!isTest)
+                        declare(alloc, ALLOC_TAG, var.getId(),
+                                var.getSize(), var.getAddr());
                     //System.err.printf("allocate var: %s %s\n", var.name, r.toString());
                     break found;
                 }
@@ -276,6 +344,20 @@ OutOfMemory(Var var, RangeSet<Integer> free)
                         AstroMem.this.getClass().getSimpleName(),
                         var.getName(), var.getSize(), free));
 }
+}
+
+/** Some HACKery to add a variable to a tracking pool with a different name.
+ * This is probably only used to put stuff into the alloc pool.
+ * The original name is already in a compilation unit's space, but not
+ * allocated. So put it into the shared pool with a diffent name. Then it can
+ * simply be added to the target without mucking around with
+ * the data structures.
+ */
+private static void declare(AstroMem mem, String tag, Token id, int size, int addr)
+{
+    String text = tag + id.getText();
+    Var var = mem.declare(text, size, addr, DEFINED);
+    var.setId(id);
 }
 
 public final Var declare(Token id, int size, int addr, VarState... a_state)
@@ -307,8 +389,8 @@ public final Var declare(String name, int size, int addr, VarState... a_state)
 {
     if(name == null || name.isEmpty())
         throw new IllegalArgumentException("Var name null or empty");
-    //if(declarationsDone) // TODO: get rid of this
-    //    throw new IllegalStateException("Var declaration after allocation");
+    if(lockMemory)
+        throw new IllegalStateException("Var declaration after memory locked");
 
     Var var = new Var(name, size, addr, a_state);
     if(intersects(Var.requiresAddr, var.getState()) && !var.isAllocated())
@@ -403,8 +485,8 @@ public void dumpAllocation(PrintWriter out, EnumSet<VarState> skip)
     Map<Range<Integer>, Var> allocationMap = getAllocationMap();
     RangeSet<Integer> used = TreeRangeSet.create(allocationMap.keySet());
     RangeSet<Integer> free = used.complement();
-    out.printf("// memSpace: %s\n// used %s\n// free %s\n",
-               memSpaceName, used, free);
+    out.printf("// memSpace: %s %s\n// used %s\n// free %s\n",
+               memSpaceName, fileName, used, free);
     for(Entry<Range<Integer>, Var> entry : allocationMap.entrySet()) {
         if(intersects(entry.getValue().getState(), skip))
                 continue;
@@ -419,7 +501,7 @@ public void dumpAllocation(PrintWriter out, EnumSet<VarState> skip)
  */
 public void dumpVars(PrintWriter out, boolean byAddr)
 {
-    dumpVars(out, byAddr, EnumSet.noneOf(VarState.class));
+    dumpVars(out, byAddr, EnumSet.of(BUILTIN));
 }
 
 public void dumpVars(PrintWriter out, boolean byAddr, EnumSet<VarState> skip)
@@ -429,8 +511,8 @@ public void dumpVars(PrintWriter out, boolean byAddr, EnumSet<VarState> skip)
     RangeSet<Integer> used = TreeRangeSet.create(allocationMap.keySet());
     RangeSet<Integer> free = used.complement();
 
-    out.printf("// Space: %s\n// used %s\n// free %s\n// errors: %d\n",
-               memSpaceName, used, free, varsInError.size());
+    out.printf("// Space: %s %s\n// used %s\n// free %s\n// errors: %d\n",
+               memSpaceName, fileName, used, free, varsInError.size());
 
     List<Var> varList = Lists.newArrayList(iterator());
     if(byAddr)
@@ -589,7 +671,8 @@ public void dumpLayout(PrintWriter out)
             canSpecify = EnumSet.of(BUILTIN, DEFINED, EXTERN, INTERNAL, LIMIT, DUMMY);
     /** Var/range that requires a manually specified address. */
     private static final EnumSet<VarState>
-            requiresAddr = EnumSet.of(BUILTIN, DEFINED, EXTERN, LIMIT);
+            //requiresAddr = EnumSet.of(BUILTIN, DEFINED, EXTERN, LIMIT);
+            requiresAddr = EnumSet.of(BUILTIN, EXTERN, LIMIT);
     /** Var manually assigned an address (not automatically allocated). */
     private static final EnumSet<VarState>
             manualAddr = EnumSet.of(BUILTIN, DEFINED, EXTERN, ASSIGN);
@@ -685,10 +768,10 @@ public void dumpLayout(PrintWriter out)
         ///// this.col = id.getCharPositionInLine();
     }
 
-    ///// public String getFileName()
-    ///// {
-    /////     return fileName;
-    ///// }
+    public String getFileName()
+    {
+        return fileName;
+    }
 
     ///// public int getLine()
     ///// {

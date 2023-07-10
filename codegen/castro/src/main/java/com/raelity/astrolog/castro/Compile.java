@@ -7,17 +7,19 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.google.common.collect.RangeSet;
 
 import com.raelity.astrolog.castro.Castro.CastroErr;
-import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.Castro.MacrosAccum;
 import com.raelity.astrolog.castro.Castro.RegistersAccum;
 import com.raelity.astrolog.castro.Castro.SwitchesAccum;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
+import com.raelity.astrolog.castro.mems.AstroMem.Var.VarState;
 import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
@@ -29,7 +31,6 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import static com.raelity.astrolog.castro.Util.addLookup;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.lookupAll;
-import static com.raelity.astrolog.castro.Util.removeLookup;
 import static com.raelity.astrolog.castro.Util.replaceLookup;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 
@@ -45,21 +46,29 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
  */
 public class Compile
 {
-private static CastroOut out;
 private Compile() { }
+
+private record FileData(CastroIO castroIO,
+        Registers registers, Macros macros, Switches switches){};
+private static Map<String,FileData> fileData = new HashMap<>();
+private static boolean memoryLocked;
 
 /** @return false if there is an error */
 static boolean compile(List<String> inputFiles, String outName)
 {
     // the Accum have info for all the files
-    addLookup(new RegistersAccum(new Registers(), new Registers()));
-    addLookup(new MacrosAccum(new Macros(), new Macros()));
-    addLookup(new SwitchesAccum(new Switches(), new Switches()));
-
-    // First parse the input files, setup file parse IO
-    // and record declarations.
+    addLookup(new RegistersAccum(new Registers(), new Registers(), new Registers(), new Registers()));
+    addLookup(new MacrosAccum(new Macros(), new Macros(), new Macros(), new Macros()));
+    addLookup(new SwitchesAccum(new Switches(), new Switches(), new Switches(), new Switches()));
 
     boolean someError = false;
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // First parse the input files, setup file parse IO
+    // and record declarations.
+    //
+
     for(String inputFile : inputFiles) {
 
         CastroIO castroIO = new CastroIO(inputFile, outName, false);
@@ -69,60 +78,156 @@ static boolean compile(List<String> inputFiles, String outName)
             someError = true;
             continue;
         }
+
+        // Setup things associated with input file for the duration.
+
+        // need castroIO for mem space creation
+        replaceLookup(castroIO);
+        FileData data = new FileData(castroIO, new Registers(),
+                                     new Macros(), new Switches());
+        fileData.put(inputFile, data);
+        AstroParseResult apr = initLookup(data);
         
-        out = new CastroOut(castroIO.getOutputWriter(), castroIO.getBaseName(),
-                castroIO.getOutDir(), inputFile);
-        replaceLookup(out);
+        CastroIO.outputFileHeader(castroIO.pw(), ";");
+
+        parseOneFile();
         
-        CastroIO.outputFileHeader(out.pw(), ";");
-        
-        AstroParseResult apr = castroIO.getApr();
-        replaceLookup(apr);
+        if(apr.hasError())
+            someError = true;
+    }
+
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // Do the allocations for each file, supplying the defined
+    // from all files except the one being allocated.
+    //
+
+    //debugDumpAllvars(inputFiles, false);
+    for(String inputFile : inputFiles) {
+        FileData data = fileData.get(inputFile);
+        if(data == null)
+            continue;
+        initLookup(data);
+
+        applyLayoutsAndAllocate();
+    }
+
+    // Collect all the variables into "global" containers
+    for(String inputFile : inputFiles) {
+        FileData data = fileData.get(inputFile);
+        if(data == null)
+            continue;
+        initLookup(data);
+
+        for(AstroMem mem : lookupAll(AstroMem.class)) {
+            mem.addToGlobal();
+        }
+    }
+
+    Registers globalRegisters = lookup(RegistersAccum.class).global();
+    Macros globalMacros = lookup(MacrosAccum.class).global();
+    Switches globalSwitches = lookup(SwitchesAccum.class).global();
+
+    globalRegisters.lockMemory();
+    globalMacros.lockMemory();
+    globalSwitches.lockMemory();
+    memoryLocked = true;
+
+    for(AstroMem mem : lookupAll(AstroMem.class)) {
+        AstroMem memGlobal = mem.getAccum().global();
+        if(memGlobal.getErrorVarsCount() > 0) {
+            lookup(CastroErr.class).pw().printf("Internal Error: globals allocation problem\n");
+            someError = true;
+        }
+        if(memGlobal.getErrorVarsCount() > 0) {
+            lookup(CastroErr.class).pw().printf("\nGLOBAL check %s, errors %d\n",
+                                            mem.memSpaceName,
+                                            memGlobal.getErrorVarsCount());
+            // TODO: put these output into above error case
+            memGlobal.dumpVars(lookup(CastroErr.class).pw(), true);
+            lookup(CastroErr.class).pw().println();
+            memGlobal.dumpErrors(lookup(CastroErr.class).pw());
+        }
+    }
+
+    // These remain for the duration
+    replaceLookup(globalRegisters);
+    replaceLookup(globalMacros);
+    replaceLookup(globalSwitches);
+
+
+    //////////////////////////////////////////////////////////////////////
+    //
+    // Now that the variables are allocated, proceed with compilation
+    //
+
+    for(String inputFile : inputFiles) {
+        FileData data = fileData.get(inputFile);
+        if(data == null)
+            continue;
+        AstroParseResult apr = initLookup(data);
 
         Compile.compileOneFile();
 
-        if(out != null) {
-            out.pw().close();
-            removeLookup(out);
-        }
+        data.castroIO.pw().close();
         
         if(apr.hasError()) {
             someError = true;
             continue;
         }
         
-        castroIO.markSuccess();
+        data.castroIO.markSuccess();
     }
-    
+
+    //FileData data = fileData.get(inputFiles.get(inputFiles.size()-1));
+    //data.registers.dumpVars(lookup(CastroErr.class).pw(), true);
+    if(Boolean.FALSE) {
+        lookup(CastroErr.class).pw().println("\nDUMP defined");
+        lookup(RegistersAccum.class).defined()
+                .dumpVars(lookup(CastroErr.class).pw(), true);
+        lookup(CastroErr.class).pw().println("\nDUMP alloc");
+        lookup(RegistersAccum.class).alloc()
+                .dumpVars(lookup(CastroErr.class).pw(), true);
+    }
+
+    //debugDumpAllvars(inputFiles, true);
+
     return !someError;
 }
 
-static void compileOneFile()
+/** Run the parser, collect declarations... */
+private static void parseOneFile()
 {
-    // Setup things associated with input file for the duration.
-    Registers registers = new Registers();
-    Macros macros = new Macros();
-    Switches switches = new Switches();
+    AstroParseResult apr = lookup(AstroParseResult.class);
+    PrintWriter err = lookup(CastroErr.class).pw();
 
-    replaceLookup(registers);
-    replaceLookup(macros);
-    replaceLookup(switches);
+    Pass1.pass1();
+
+    if(apr.hasError()) {
+        err.printf("Pass1: %d syntax errors\n", apr.getParser().getNumberOfSyntaxErrors());
+        err.printf("Pass1: %d other errors\n", apr.errors());
+    }
+
+    // Copy this pass' variables to defined accumulation of variables;
+    // some may not have addresses.
+    // The next file that is parsed will check it's
+    // names and addresses against the accumulated defines.
+    for(AstroMem mem : lookupAll(AstroMem.class)) {
+        mem.addToDefined();
+    }
+}
+
+private static void compileOneFile()
+{
 
     AstroParseResult apr = lookup(AstroParseResult.class);
     PrintWriter err = lookup(CastroErr.class).pw();
 
-
-
-    Pass1.pass1();
-
     int currentErrorCount = 0;
-    if(apr.hasError()) {
-        err.printf("Pass1: %d syntax errors\n", apr.getParser().getNumberOfSyntaxErrors());
-        err.printf("Pass1: %d other errors\n", apr.errors() - currentErrorCount);
-        currentErrorCount = apr.errors();
-    }
+    currentErrorCount = apr.errors();
 
-    applyLayoutsAndAllocate();
+    //applyLayoutsAndAllocate();
 
     createDef();
 
@@ -148,10 +253,39 @@ static void compileOneFile()
     PassOutput.passOutput();
     if(apr.errors() > currentErrorCount)
         err.printf("Code output: %d errors\n", apr.errors() - currentErrorCount);
+}
 
-    // Copy this pass' variables to defined
-    for(AstroMem mem : lookupAll(AstroMem.class)) {
-        mem.updateDefined();
+private static AstroParseResult initLookup(FileData data)
+{
+    if(!memoryLocked) {
+        replaceLookup(data.registers);
+        replaceLookup(data.macros);
+        replaceLookup(data.switches);
+    }
+
+    CastroIO castroIO = data.castroIO;
+    replaceLookup(castroIO);
+    
+    AstroParseResult apr = castroIO.getApr();
+    replaceLookup(apr);
+    return apr;
+    
+}
+
+private static void debugDumpAllvars(List<String> inputFiles, boolean includeDefined)
+{
+    for(String inputFile : inputFiles) {
+        FileData data = fileData.get(inputFile);
+        if(data == null)
+            continue;
+        AstroParseResult apr = initLookup(data);
+
+        PrintWriter err = lookup(CastroErr.class).pw();
+        err.println();
+        EnumSet<VarState> skip = includeDefined
+                                 ? EnumSet.of(BUILTIN)
+                                 : EnumSet.of(BUILTIN, DEFINED);
+        data.registers.dumpVars(err, true, skip);
     }
 }
 
@@ -160,10 +294,10 @@ static void compileOneFile()
  */
 private static void createDef()
 {
-    CastroOut castroOut = lookup(CastroOut.class);
-    if(castroOut.outDir() == null)
+    CastroIO castroIO = lookup(CastroIO.class);
+    if(castroIO.outDir() == null)
         return;
-    Path defPath = castroOut.outDir().resolve(castroOut.baseName() + Castro.DEF_EXT);
+    Path defPath = castroIO.outDir().resolve(castroIO.baseName() + Castro.DEF_EXT);
     try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(
             defPath, WRITE, TRUNCATE_EXISTING, CREATE))) {
         CastroIO.outputFileHeader(out, "//");
@@ -180,7 +314,7 @@ private static void createDef()
         out.println();
 
         // TODO: output options
-        //compile.registers.dumpAllocation(out, EnumSet.of(BUILTIN));
+        //compile.registers.dumpAllocation(castroIO, EnumSet.of(BUILTIN));
         registers.dumpVars(out, true, EnumSet.of(BUILTIN, EXTERN));
         out.println();
         macros.dumpVars(out, true, EnumSet.of(BUILTIN, EXTERN));

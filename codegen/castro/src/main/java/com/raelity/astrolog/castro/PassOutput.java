@@ -10,7 +10,6 @@ import java.util.Objects;
 
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.Castro.CastroOutputOptions;
 import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprStatementContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.CopyContext;
@@ -58,7 +57,7 @@ public PassOutput(AstroParseResult apr)
     //this.registers = lookup(Registers.class);
     this.macros = lookup(Macros.class);
     this.switches = lookup(Switches.class);
-    this.out = lookup(CastroOut.class).pw();
+    this.out = lookup(CastroIO.class).pw();
     //this.err = lookup(CastroErr.class).pw();
 
     EnumSet<OutputOptions> outputOpts = lookup(CastroOutputOptions.class).outputOpts();

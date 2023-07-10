@@ -11,7 +11,6 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 
@@ -84,7 +83,7 @@ abstract String genAddr(TermAddressOfContext ctx);
 
 private static PrintWriter getOut()
 {
-    return lookup(CastroOut.class).pw();
+    return lookup(CastroIO.class).pw();
 }
 
 @Override

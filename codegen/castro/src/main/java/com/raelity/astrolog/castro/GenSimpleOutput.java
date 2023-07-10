@@ -15,7 +15,6 @@ import org.antlr.v4.runtime.tree.xpath.XPath;
 
 import com.raelity.antlr.ParseTreeUtil;
 import com.raelity.astrolog.castro.Castro.CastroErr;
-import com.raelity.astrolog.castro.Castro.CastroOut;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
@@ -57,7 +56,7 @@ private GenSimpleOutput()
     this.parser = apr.getParser();
     this.input = apr.getInput();
     this.program = apr.getProgram();
-    this.out = lookup(CastroOut.class).pw();
+    this.out = lookup(CastroIO.class).pw();
 }
 
 StringBuilder sb = new StringBuilder();

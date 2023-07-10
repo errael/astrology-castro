@@ -177,7 +177,8 @@ public static void checkReport(Var var, Object... msg)
         StringBuilder sb = new StringBuilder(optMsg)
                 .append(" conflicts with");
         for(Var conflict : var.getConflicts()) {
-            sb.append(' ').append(tokenLoc(conflict.getId()));
+            sb.append(' ').append(tokenLoc(conflict.getId())).append(' ')
+                    .append('\'').append(conflict.getName()).append('\'');
         }
         optMsg = sb.toString();
     }

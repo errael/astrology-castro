@@ -61,6 +61,7 @@ public void tearDown()
     public AstroMemForTest()
     {
         super("TestingMemorySpace", null);
+        isTest = true;
     }
 
         @Override
@@ -77,6 +78,7 @@ public void testRegistersMem()
 {
     System.out.println("RegistersMem");
     Registers mem = new Registers();
+    mem.isTest = true;
 
     mem.declare("var0", 1, 30, EXTERN);
     mem.declare("var1", 10, 41);
