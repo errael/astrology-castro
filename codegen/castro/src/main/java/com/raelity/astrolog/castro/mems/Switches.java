@@ -14,16 +14,18 @@ import static com.raelity.astrolog.castro.Util.lookup;
  */
 public class Switches extends AstroMem
 {
+public static final String MEM_SWITCHES = "Switches";
 public Switches()
 {
-    super("Switches", lookup(SwitchesAccum.class));
+    super(MEM_SWITCHES, lookup(SwitchesAccum.class));
 }
 
 @Override
-void dumpVar(PrintWriter out, Var var)
+void dumpVar(PrintWriter out, Var var, boolean includeFileName)
 {
-    out.printf("switch %s @%d;    // %s\n", var.getName(),
-               var.getAddr(), var.getState());
+    String f = includeFileName ? var.getFileName() : "";
+    out.printf("switch %s @%d;    // %s %s\n", var.getName(),
+               var.getAddr(), var.getState(), f);
 }
             
 }

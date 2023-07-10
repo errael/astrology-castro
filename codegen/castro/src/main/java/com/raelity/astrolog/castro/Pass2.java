@@ -20,9 +20,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.Sw_nameContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
-import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
-import com.raelity.astrolog.castro.mems.Switches;
 
 import static com.raelity.astrolog.castro.Util.isLvalExpr;
 import static com.raelity.astrolog.castro.Util.lookup;
@@ -30,6 +28,7 @@ import static com.raelity.astrolog.castro.Util.lvalArg2Func;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUMMY;
 import static com.raelity.astrolog.castro.Util.func_call2MacoSwitchSpace;
+import static com.raelity.astrolog.castro.mems.Switches.MEM_SWITCHES;
 
 ////////////////////////////////////////////////////////////////////
 // TODO: In addition to vars, check switch/macro
@@ -54,15 +53,11 @@ static void pass2()
 private final AstroParseResult apr;
 
 private final Registers registers;
-private final Macros macros;
-private final Switches switches;
 
 private Pass2()
 {
     this.apr = lookup(AstroParseResult.class);
     this.registers = lookup(Registers.class);
-    this.macros = lookup(Macros.class);
-    this.switches = lookup(Switches.class);
 }
 
 /** Check that the referenced variable has been declared;
@@ -158,9 +153,9 @@ private boolean checkReportMacroSwitchFuncArgs(Func_callContext ctx)
     if(memSpace != null
             && isLvalExpr(apr, ctx.args.get(0))
             && memSpace.getVar(ctx.args.get(0).getText()) == null) {
-        reportError(ctx, "'%s' is not a defined %s",
-                             ctx.args.get(0).getText(),
-                             memSpace == switches ? "switch" : "macro");
+        reportError(ctx, "'%s' is not a defined %s", ctx.args.get(0).getText(),
+                             memSpace.memSpaceName.equals(MEM_SWITCHES)
+                             ? "switch" : "macro");
         ok = false;
     } else
         ok = true;

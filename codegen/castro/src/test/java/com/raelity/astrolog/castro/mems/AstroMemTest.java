@@ -65,7 +65,7 @@ public void tearDown()
     }
 
         @Override
-        void dumpVar(PrintWriter out, Var var)
+        void dumpVar(PrintWriter out, Var var, boolean includeFileName)
         {
             out.printf("Var dump: %s", var);
         }

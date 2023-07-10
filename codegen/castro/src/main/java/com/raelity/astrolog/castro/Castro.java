@@ -3,11 +3,11 @@
 package com.raelity.astrolog.castro;
 
 import java.io.PrintWriter;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import gnu.getopt.Getopt;
@@ -37,12 +37,14 @@ public class Castro
 private static CastroErr err = new CastroErr(new PrintWriter(System.err, true));
 
 public static record CastroErr(PrintWriter pw){};
+public static record CastroMap(String mapName){};
 public static record CastroOutputOptions(EnumSet<OutputOptions> outputOpts) {
     public CastroOutputOptions(EnumSet<OutputOptions> outputOpts)
         { this.outputOpts = EnumSet.copyOf(outputOpts); }
     public EnumSet<OutputOptions> outputOpts()
         { return EnumSet.copyOf(this.outputOpts); }
     };
+public static record CastroLineMaps(Map<String,LineMap> lineMaps){};
 
 // Keep track of definitions, externs that are read.
 public static interface MemAccum {AstroMem defined();AstroMem alloc(); AstroMem extern(); AstroMem global();}
@@ -60,6 +62,7 @@ static final String cmdName = "castro";
 static final String IN_EXT = ".castro";
 static final String OUT_EXT = ".as";
 static final String DEF_EXT = ".def";
+static final String MAP_EXT = ".map";
 static final String OUT_TEST_EXT = ".castro.test";
 
 private static final Logger LOG = Logger.getLogger(Castro.class.getName());
@@ -78,6 +81,8 @@ static void usage(String note)
                 infile may be '-' for stdin.
                 if outfile not specified, it is derived from infile.
                 -o outfile      allowed if exactly one infile, '-' is stdout
+                --mapoutput=mapname     Map file name is <mapname>.map.
+                                        Default is derived from first infile.
                 --formatoutput=opt1,... # comma separated list of:
                     1st two for switch and macro, next two for run
                         bslash          - split into new-line/backslash lines
@@ -88,6 +93,7 @@ static void usage(String note)
                         debug           - precede macro output with original text
                     Default is no options; switch/macro/run on a single line
                     which is compatible with all Astrolog versions.
+                --anonymous     no dates/versions in output files (for golden)
                 --test  output prefix parse data
                 -v      output more info
                 -h      output this message
@@ -106,14 +112,17 @@ public static void main(String[] args)
 {
     boolean optTest = false;
     String outName = null;
+    String mapName = null;
 
     LOG.getLevel(); // So now it's used.
     addLookup(err);
     
     // https://www.gnu.org/software/gnuprologjava/api/gnu/getopt/Getopt.html
     LongOpt longOpts[] = new LongOpt[] {
-        new LongOpt("test", LongOpt.OPTIONAL_ARGUMENT, null, 2),
+        new LongOpt("test", LongOpt.NO_ARGUMENT, null, 2),
         new LongOpt("formatoutput", LongOpt.REQUIRED_ARGUMENT, null, 3),
+        new LongOpt("anonymous", LongOpt.NO_ARGUMENT, null, 4),
+        new LongOpt("mapname", LongOpt.REQUIRED_ARGUMENT, null, 5),
     };
     Getopt g = new Getopt(cmdName, args, "o:hv", longOpts);
     
@@ -147,6 +156,8 @@ public static void main(String[] args)
                 oset.add(oo);
             }
         }
+        case 4 -> oset.add(OutputOptions.GENERAL_ANON);
+        case 5 -> mapName=g.getOptarg();
         default -> {
             usage();
         }
@@ -156,7 +167,6 @@ public static void main(String[] args)
     if(outName != null && args.length - g.getOptind() > 1)
         usage("If '-o' specified, then at most one input file allowed");
 
-    addLookup(new CastroOutputOptions(oset));
     if(optVerbose > 0)
         System.err.println(String.format("java:%s vm:%s date:%s os:%s",
                            System.getProperty("java.version"),
@@ -165,6 +175,10 @@ public static void main(String[] args)
                            System.getProperty("os.name")));
 
     List<String> inputFiles = new ArrayList<>(Arrays.asList(args).subList(g.getOptind(), args.length));
+
+    addLookup(new CastroOutputOptions(oset));
+    if(mapName != null)
+        addLookup(new CastroMap(mapName));
 
     if(optTest) {
         runCompilerTest(inputFiles.get(0), outName);

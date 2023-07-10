@@ -14,4 +14,5 @@ SM_INDENT,
 SM_DEBUG,
 RUN_NEW_LINES,
 RUN_INDENT,
+GENERAL_ANON,   // No dates/versions in output; for comparing with golden files.
 }

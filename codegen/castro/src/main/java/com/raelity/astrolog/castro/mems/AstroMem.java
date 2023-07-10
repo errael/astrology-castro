@@ -61,15 +61,21 @@ import static com.raelity.lib.collect.Util.intersects;
  * <br>5 - allocate
  * <p>
  * When the space is created, the defined (memory defined in spaces
- * already created) are copied into this space. In this fashion
- * name/address conflict are detected. Allocation occurs at the end of
- * the first pass; when a variable is allocated it is added to the global
- * alloc. At the begining of the allocation routine, the vars in alloc are
- * copied in to avoid conflicts. In addition, at the begining of allocate
- * spin through defined and anything not already in this space is copied in
+ * already created) are copied into this space; in this fashion
+ * name/address conflict are detected. Allocation occurs after all files'
+ * first pass; when a variable is allocated it is added to alloc.
+ * At the beginning of the allocation routine, the vars in alloc,
+ * those allocated in earlier compilation units, are
+ * copied in so their address will not be used.
+ * In addition, at the beginning of allocate
+ * spin through defined and add things not already in this space
  * (this accounts for stuff added to defined during pass1 after this
- * compiliation unit was processed).
+ * compilation unit was processed).
+ * Finally, after everything's allocated, copy ALLOC and ASSIGNED
+ * for each file to global; global is used to resolve names to addresses
+ * for all the subsequent passes.
  * <p>
+ * TODO:<br>
  * Variable declarations can be read at the beginning,
  * before any files are compiled, they are marked as EXTERN. 
  * A variable can be declared as EXTERN more than once as long as
@@ -141,7 +147,7 @@ public void addToGlobal()
     EnumSet<VarState> skip = EnumSet.of(BUILTIN, DEFINED);
     for(Var var : this) {
         if(!intersects(var.getState(), skip))
-            accum.global().declare(var.getId(), var.getSize(), var.getAddr(), DEFINED);
+            accum.global().declareGlobal(var, DEFINED);
     }
 }
 
@@ -154,7 +160,9 @@ public MemAccum getAccum()
 {
     return accum;
 }
-public void clearExtraMems()
+
+/** Drop references to the data used for the allocation process. */
+public void freeAccumMems()
 {
     defined = null;
     alloc = null;
@@ -321,8 +329,7 @@ public void allocate()
                     used.add(r);
                     var.addState(ALLOC);
                     if(!isTest)
-                        declare(alloc, ALLOC_TAG, var.getId(),
-                                var.getSize(), var.getAddr());
+                        alloc.declareAlternateName(ALLOC_TAG, var, DEFINED);
                     //System.err.printf("allocate var: %s %s\n", var.name, r.toString());
                     break found;
                 }
@@ -346,18 +353,28 @@ OutOfMemory(Var var, RangeSet<Integer> free)
 }
 }
 
-/** Some HACKery to add a variable to a tracking pool with a different name.
+/** Some HACKery to add a variable, under a different name, to a tracking pool.
  * This is probably only used to put stuff into the alloc pool.
  * The original name is already in a compilation unit's space, but not
  * allocated. So put it into the shared pool with a diffent name. Then it can
  * simply be added to the target without mucking around with
  * the data structures.
  */
-private static void declare(AstroMem mem, String tag, Token id, int size, int addr)
+private Var declareAlternateName(String tag, Var orig, VarState... a_state)
 {
-    String text = tag + id.getText();
-    Var var = mem.declare(text, size, addr, DEFINED);
-    var.setId(id);
+    Var var = declare(tag + orig.getId().getText(),
+                          orig.getSize(), orig.getAddr(), a_state);
+    var.original = orig;
+    return var;
+}
+
+/** essentially a shadow var.
+ */
+private Var declareGlobal(Var orig, VarState... a_state)
+{
+    Var var = declare(orig.getId(), orig.getSize(), orig.getAddr(), a_state);
+    var.original = orig;
+    return var;
 }
 
 public final Var declare(Token id, int size, int addr, VarState... a_state)
@@ -367,17 +384,11 @@ public final Var declare(Token id, int size, int addr, VarState... a_state)
     return var;
 }
 
-public final Var declare(Token id, int size)
-{
-    Var var = declare(id.getText(), size);
-    var.setId(id);
-    return var;
-}
-
 /** Add the variable without allocating it.
+ * Seems ONLY USED FOR TESTING.
  * @return Var, may have error state.
  */
-public final Var declare(String name, int size)
+final Var declare(String name, int size)
 {
     return declare(name, size, -1);
 }
@@ -385,14 +396,14 @@ public final Var declare(String name, int size)
 /** Allocate the variable at the specified address.
  * @return Var, may have error state.
  */
-public final Var declare(String name, int size, int addr, VarState... a_state)
+final Var declare(String name, int size, int addr, VarState... a_state)
 {
     if(name == null || name.isEmpty())
         throw new IllegalArgumentException("Var name null or empty");
-    if(lockMemory)
-        throw new IllegalStateException("Var declaration after memory locked");
 
     Var var = new Var(name, size, addr, a_state);
+    if(lockMemory && !var.getState().contains(DUMMY))
+        throw new IllegalStateException("Var declaration after memory locked");
     if(intersects(Var.requiresAddr, var.getState()) && !var.isAllocated())
         throw new IllegalArgumentException("Must specify address for " + Var.requiresAddr);
     boolean addedToVars;
@@ -495,16 +506,25 @@ public void dumpAllocation(PrintWriter out, EnumSet<VarState> skip)
     out.flush();
 }
 
-
 /** It is expected that the output is in a suitable format
  * for input into the compiler.
  */
 public void dumpVars(PrintWriter out, boolean byAddr)
 {
-    dumpVars(out, byAddr, EnumSet.of(BUILTIN));
+    dumpVars(out, byAddr, false);
+}
+public void dumpVars(PrintWriter out, boolean byAddr, boolean includeFileName)
+{
+    dumpVars(out, byAddr, EnumSet.of(BUILTIN), includeFileName);
 }
 
 public void dumpVars(PrintWriter out, boolean byAddr, EnumSet<VarState> skip)
+{
+    dumpVars(out, byAddr, skip, false);
+}
+
+public void dumpVars(PrintWriter out, boolean byAddr,
+                     EnumSet<VarState> skip, boolean includeFileName)
 {
     Map<Range<Integer>, Var> allocationMap = getAllocationMap();
     ArrayList<Var> varsInError = Lists.newArrayList(getErrorVars());
@@ -519,26 +539,27 @@ public void dumpVars(PrintWriter out, boolean byAddr, EnumSet<VarState> skip)
         Collections.sort(varList, (v1, v2) -> v1.getAddr() - v2.getAddr());
     else
         Collections.sort(varList);
-    dumpVars(out, varList.iterator(), skip);
+    dumpVars(out, varList.iterator(), skip, includeFileName);
 }
 
 public void dumpErrors(PrintWriter out)
 {
     out.printf("// Space: %s. Variables with errors\n", memSpaceName);
-    dumpVars(out, getErrorVars(), EnumSet.noneOf(VarState.class));
+    dumpVars(out, getErrorVars(), EnumSet.noneOf(VarState.class), true);
 }
 
-private void dumpVars(PrintWriter out, Iterator<Var> it, EnumSet<VarState> skip) {
+private void dumpVars(PrintWriter out, Iterator<Var> it,
+                      EnumSet<VarState> skip, boolean includeFileName) {
     for(; it.hasNext();) {
         Var var = it.next();
         if(intersects(var.getState(), skip))
             continue;
-        dumpVar(out, var);
+        dumpVar(out, var, includeFileName);
     }
     out.flush();
 }
 
-abstract void dumpVar(PrintWriter out, Var var);
+abstract void dumpVar(PrintWriter out, Var var, boolean includeFileName);
 
 public void dumpLayout(PrintWriter out)
 {
@@ -622,21 +643,17 @@ public void dumpLayout(PrintWriter out)
      */
     public class Var extends VarKey
     {
-    //private final String name;
     private final int size;
     private int addr; // -1 means not allocated
     private final EnumSet<VarState> state;
     /** Where the variable is defined */
     private Token id;
-    ///// private int line;
-    ///// private int col;
-    ///// private VarInfo info; // Could have map of var:info, if not used much
+    private Var original; // only used for globals
     private Set<Var> conflicts = Collections.emptySet();
     
     private Var(String name, int size, int addr, VarState... a_state)
     {
         super(name);
-        //this.name = name;
         this.size = size;
         this.addr = addr;
         if(a_state.length > 0) {
@@ -735,7 +752,7 @@ public void dumpLayout(PrintWriter out)
 
     public EnumSet<VarState> getState()
     {
-        return EnumSet.copyOf(state);
+        return EnumSet.copyOf(original == null ? state : original.state);
     }
     
     public int getSize()
@@ -750,48 +767,30 @@ public void dumpLayout(PrintWriter out)
     
     private void setAddr(int addr)
     {
+        if(lockMemory)
+            throw new IllegalStateException();
         this.addr = addr;
     }
 
     public Token getId()
     {
-        return id;
+        return original == null ? id : original.getId();
     }
 
     public void setId(Token id)
     {
+        if(lockMemory && !getState().contains(DUMMY))
+            throw new IllegalStateException();
         if(this.id != null)
             throw new IllegalStateException(String.format(
                     "var '%s' already has id; new %s", getName(), id.getText()));
         this.id = id;
-        ///// this.line = id.getLine();
-        ///// this.col = id.getCharPositionInLine();
     }
 
     public String getFileName()
     {
-        return fileName;
+        return original == null ? fileName : original.getFileName();
     }
-
-    ///// public int getLine()
-    ///// {
-    /////     return line;
-    ///// }
-
-    ///// public int getCol()
-    ///// {
-    /////     return col;
-    ///// }
-    
-    ///// public VarInfo getInfo()
-    ///// {
-    /////     return info;
-    ///// }
-    ///// 
-    ///// public void setInfo(VarInfo info)
-    ///// {
-    /////     this.info = info;
-    ///// }
     
     @Override
     public String toString()

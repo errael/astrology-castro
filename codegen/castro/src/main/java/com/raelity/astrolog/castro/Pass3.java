@@ -261,13 +261,13 @@ private StringBuilder lvalWriteVar(StringBuilder lsb, LvalContext lval_ctx,
 {
     switch(lval_ctx) {
     case LvalMemContext ctx -> {
-        String lvalVar = ctx.id.getText();
-        if(lvalVar.length() == 1) {
+        String lvalName = ctx.id.getText();
+        if(lvalName.length() == 1) {
             if(!varForAssignment)
                 lsb.append('%');
-            lsb.append(lvalVar).append(' ');
+            lsb.append(lvalName).append(' ');
         }else
-            lsb.append(registers.getVar(lvalVar).getAddr()).append(' ');
+            lsb.append(registers.getVar(lvalName).getAddr()).append(' ');
     }
     case LvalIndirectContext ctx ->
         lsb.append("@").append(lvalReadVar(ctx.id.getText())).append(' ');
@@ -334,11 +334,11 @@ String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String rhs)
     return sb.toString();
 }
 
-private String lvalReadVar(String lval)
+private String lvalReadVar(String lvalName)
 {
     // length 1 is 'a' - 'z'
-    return lval.length() == 1 ? lval
-           : String.valueOf(registers.getVar(lval).getAddr());
+    return lvalName.length() == 1 ? lvalName
+           : String.valueOf(registers.getVar(lvalName).getAddr());
 }
 
 @Override
@@ -367,11 +367,11 @@ String genLval(LvalArrayContext ctx, String expr)
 {
     sb.setLength(0);
     sb.append("Var ").append("Add ");
-    String lval = ctx.id.getText();
-    if(lval.length() == 1)
-        sb.append('%').append(lval);
+    String lvalName = ctx.id.getText();
+    if(lvalName.length() == 1)
+        sb.append('%').append(lvalName);
     else
-        sb.append(registers.getVar(lval).getAddr());
+        sb.append(registers.getVar(lvalName).getAddr());
     sb.append(' ').append(expr);
     return sb.toString();
 }

@@ -14,16 +14,18 @@ import static com.raelity.astrolog.castro.Util.lookup;
  */
 public class Macros extends AstroMem
 {
+public static final String MEM_MACROS = "Macros";
 public Macros()
 {
-    super("Macros", lookup(MacrosAccum.class));
+    super(MEM_MACROS, lookup(MacrosAccum.class));
 }
 
 @Override
-void dumpVar(PrintWriter out, Var var)
+void dumpVar(PrintWriter out, Var var, boolean includeFileName)
 {
-    out.printf("macro %s @%d;    // %s\n", var.getName(),
-               var.getAddr(), var.getState());
+    String f = includeFileName ? var.getFileName() : "";
+    out.printf("macro %s @%d;    // %s %s\n", var.getName(),
+               var.getAddr(), var.getState(), f);
 }
 
 }

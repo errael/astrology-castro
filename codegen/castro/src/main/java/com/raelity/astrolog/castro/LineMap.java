@@ -2,13 +2,22 @@
 
 package com.raelity.astrolog.castro;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.antlr.v4.runtime.misc.Interval;
 
+import com.raelity.astrolog.castro.Castro.CastroLineMaps;
+
+
 /**
- *
- * @author err
+ * A map of line number to Interval for a file;
+ * also publishes a map of fileName to LineMap.
+ * A LineMap is added when it is created, and populated
+ * during the file's pass1.
  */
 public class LineMap
 {
@@ -25,15 +34,36 @@ public Interval getInterval(int line)
     return wlm.getInterval(line);
 }
 
+public String getFileName()
+{
+    return wlm.fileName;
+}
+
     public static class WriteableLineMap
     {
     private final List<Interval> lineList;
     private final LineMap lm;
+    private final String fileName;
+    private static Map<String,LineMap> lineMaps;
     
-    public WriteableLineMap(List<Interval> lineList)
+    public static WriteableLineMap createLineMap(String fileName)
+    {
+        return new WriteableLineMap(new ArrayList<>(100), fileName);
+    }
+
+    private WriteableLineMap(List<Interval> lineList, String fileName)
     {
         this.lineList = lineList;
+        this.fileName = fileName;
+        if(lineMaps == null) {
+            lineMaps = new HashMap<>();
+            Util.addLookup(new CastroLineMaps(Collections.unmodifiableMap(lineMaps)));
+        }
         lm = new LineMap(this);
+        if(lineMaps.containsKey(fileName))
+            throw new IllegalStateException(String.format(
+                    "LineMap for %s already created\n", fileName));
+        lineMaps.put(fileName, lm);
     }
     
     public LineMap getLineMap()

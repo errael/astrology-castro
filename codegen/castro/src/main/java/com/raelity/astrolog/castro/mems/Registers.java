@@ -15,18 +15,19 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
  */
 public class Registers extends AstroMem
 {
+public static final String MEM_REGISTERS = "Registers";
 public Registers()
 {
-    super("Registers", lookup(RegistersAccum.class));
+    super(MEM_REGISTERS, lookup(RegistersAccum.class));
     for(char c = 'a'; c <= 'z'; c++)
         declare(String.valueOf(c), 1, c - 'a' + 1, BUILTIN);
 }
 
 
 @Override
-void dumpVar(PrintWriter out, Var var)
+void dumpVar(PrintWriter out, Var var, boolean includeFileName)
 {
-    String f = Boolean.FALSE ? var.getFileName() : "";
+    String f = includeFileName ? var.getFileName() : "";
     if(var.getSize() == 1)
         out.printf("var %s @%d;    // %s %s\n", var.getName(),
                    var.getAddr(), var.getState(), f);
