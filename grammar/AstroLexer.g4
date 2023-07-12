@@ -19,6 +19,8 @@ REPORT4 : 'REPORT4' {System.out.printf("REPORT4: braces: %d\n", braces);} -> ski
 // Handle these as functions
 AssignObj : '=' [Oo] [Bb] [Jj] [ \t\r\n]* '(' {setText("=Obj");} -> type(TrickyFunc) ;
 AssignHouse : '=' [Hh] [Oo] [Uu] [ \t\r\n]* '(' {setText("=Hou");} -> type(TrickyFunc) ;
+AssignString : 'AssignString' | 'assignstring' | 'SetString' | 'setstring'
+             | 'AssignStrings' | 'assignstrings' | 'SetStrings' | 'setstrings' ;
 
 SW_ARG : '{~'       {braces++;} ;
 

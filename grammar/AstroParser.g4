@@ -37,24 +37,25 @@ rsv_loc
 // TODO: also string array initialization
 
 var
-    : var1 | varArray | varArrayInit
+    : var1 | varArray 
     ;
 
+/* var pp;
+ * var pp @101;
+ * var pp { 4 };
+ */
 var1
-    : 'var' Identifier ('@' addr=integer)? ('{' init=expr '}')? ';'
-    ;
-
-varArray
-    : 'var' Identifier '[' size=integer ']' ('@' addr=integer)? ';'
+    : 'var' id=Identifier ('@' addr=integer)? ('{' init=expr '}')? ';'
     ;
 
 /*
- * var p[3] @100 { 4, 3 }    // p is size 3, starts at 100, p[2] is not init.
- * var p[] { 4, 3 }          // p is size 2
+ * var pp[3];
+ * var pp[3] @100 { 4, 3 }    // pp is size 3, starts at 100, pp[2] is not init.
+ * var pp[] { 4, 3 }          // pp is size 2
  */
-varArrayInit
-    : 'var' Identifier '[' (size=integer)? ']' ('@' addr=integer)?
-                                '{' init+=expr (',' init+=expr)* '}' ';'
+varArray
+    : 'var' id=Identifier '[' (size=integer)? ']' ('@' addr=integer)?
+                                ('{' init+=expr (',' init+=expr)* '}')? ';'
     ;
 
 /** copy stuff verbatim to output */
@@ -88,9 +89,11 @@ switch_cmd
     | name=sw_name '{' bs+=astroExprStatement + '}'
     | name=sw_name
     | string=String
+    //| assign=AssignString '(' l=lval ',' str+=String (',' str+=String)* ')'
+    | assign=AssignString l=lval  str+=String + 
     ;
 
-// No blanks in sw_name, check-report in code.
+// No blanks in sw_name, check-report in compiler code.
 // "-YYT" (not "- YYT"), "-80" (not "- 80"), "~FA" (not "~ FA"), ...
 
 sw_name
