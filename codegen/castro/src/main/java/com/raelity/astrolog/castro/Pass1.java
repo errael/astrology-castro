@@ -31,7 +31,6 @@ import com.raelity.astrolog.castro.antlr.AstroParser.Rsv_locContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Var1Context;
 import com.raelity.astrolog.castro.antlr.AstroParser.VarArrayContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.VarArrayInitContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.VarContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
@@ -93,17 +92,17 @@ void declareVar(ParserRuleContext _ctx)
     case VarArrayContext ctx -> {
         idNode = ctx.Identifier();
         addrNode = ctx.addr;
-        size = Integer.parseInt(ctx.size.getText());
-    }
-    case VarArrayInitContext ctx -> {
-        idNode = ctx.Identifier();
-        addrNode = ctx.addr;
-        if(ctx.size != null) {
-            size = Integer.parseInt(ctx.size.getText());
-            if(ctx.init.size() > size)
-                reportError(ctx, "too many initializers");
-        } else
-            size = ctx.init.size();
+        if(ctx.size == null && ctx.init.isEmpty()) {
+                reportError(ctx, "must specify array size if no initializers");
+                size = 1; // avoid another error
+        } else {
+            if(ctx.size != null) {
+                size = Integer.parseInt(ctx.size.getText());
+                if(ctx.init.size() > size)
+                    reportError(ctx, "too many initializers");
+            } else
+                size = ctx.init.size();
+        }
     }
     case null, default -> throw new IllegalArgumentException();
     }

@@ -14,7 +14,7 @@ import com.google.common.collect.RangeSet;
 
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroLineMaps;
-import com.raelity.astrolog.castro.Castro.CastroMap;
+import com.raelity.astrolog.castro.Castro.CastroMapName;
 import com.raelity.astrolog.castro.Castro.MacrosAccum;
 import com.raelity.astrolog.castro.Castro.RegistersAccum;
 import com.raelity.astrolog.castro.Castro.SwitchesAccum;
@@ -83,9 +83,9 @@ static boolean compile(List<String> inputFiles, String outName)
             continue;
         }
 
-        CastroMap castroMap = lookup(CastroMap.class);
+        CastroMapName castroMap = lookup(CastroMapName.class);
         if(castroMap == null)
-            addLookup(new CastroMap(castroIO.baseName()));
+            addLookup(new CastroMapName(castroIO.baseName()));
 
         // Setup things associated with input file for the duration.
 
@@ -310,13 +310,17 @@ private static void debugDumpAllvars(List<FileData> fData, boolean includeDefine
 }
 
 /** The .map file comes from global mem spaces.
+ * There are situations where no file is output, that is not an error.
+ * @return true if no error
  */
 private static boolean createMap()
 {
+    if(workingFileData.isEmpty())
+        return true;
     CastroIO castroIO = workingFileData.get(0).castroIO();
     if(castroIO.outDir() == null)
-        return false;
-    Path defPath = castroIO.outDir().resolve(lookup(CastroMap.class).mapName() + MAP_EXT);
+        return true;
+    Path defPath = castroIO.outDir().resolve(lookup(CastroMapName.class).mapName() + MAP_EXT);
     try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(
             defPath, WRITE, TRUNCATE_EXISTING, CREATE))) {
         CastroIO.outputFileHeader(out, "//");

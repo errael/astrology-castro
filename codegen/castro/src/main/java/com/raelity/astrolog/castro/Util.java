@@ -4,9 +4,12 @@ package com.raelity.astrolog.castro;
 
 import java.io.PrintWriter;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.IntStream;
@@ -17,12 +20,19 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.xpath.XPath;
 
 import com.raelity.astrolog.castro.Castro.CastroErr;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.IntegerContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.LvalContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.lib.CentralLookup;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
+import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 
 import static com.raelity.antlr.ParseTreeUtil.getNthParent;
@@ -43,6 +53,56 @@ private Util() { }
 //     //offset += strline.getBytes(Charset.defaultCharset()).length + 1;
 // 
 //     return null;
+// }
+
+public static List<String> collectAssignStrings(Switch_cmdContext sc_ctx)
+{
+    ArrayList<String> strings = sc_ctx.str.stream()
+            .map((t) -> {
+                // get the text and strip the quotes
+                String s = t.getText();
+                return s.substring(1, s.length()-1);
+            }).collect(Collectors.toCollection(ArrayList::new));
+    return strings;
+}
+
+/** For addr output something like either "=x" or "= 100". */
+public static StringBuilder writeRegister(StringBuilder sb, int addr)
+{
+    //String lvalName = ctx.id.getText();
+    if(addr >= 1 && addr <= 26)
+        sb.append('=').append('a' + addr - 1);
+    else
+        sb.append("= ").append(addr);
+    return sb;
+}
+
+// /** lval must be a fixed location, no expr involved. */
+// public static int lvalVarAddr(StringBuilder lsb, ParserRuleContext ctx,
+//                                         Token id, ExprContext idx,
+//                                         AstroParseResult apr, Registers registers)
+// {
+//     if(apr == null)
+//         apr = lookup(AstroParseResult.class);
+//     if(registers == null)
+//         registers = lookup(Registers.class);
+// 
+//     String lvalName = id.getText();
+//     int addr = registers.getVar(lvalName).getAddr();
+// 
+//     boolean resolved = false;
+//     if(idx == null)
+//         resolved = true;
+//     else {
+//         IntegerContext constVal = expr2const(apr, idx);
+//         if(constVal != null) {
+//             addr += Integer.parseInt(constVal.getText());
+//             resolved = true;
+//         }
+//     }
+//     if(!resolved)
+//         Util.reportError(ctx, "'%s' must be a fixed location", ctx.getText());
+//     return addr;
 // }
 
 public static Func_callContext lvalArg2Func(ParserRuleContext ctx)
@@ -82,6 +142,15 @@ public static AstroMem func_call2MacoSwitchSpace(ParserRuleContext ctx)
     return "switch".equalsIgnoreCase(funcName)? lookup(Switches.class)
            : "macro".equalsIgnoreCase(funcName) ? lookup(Macros.class)
              : null;
+}
+
+private static XPath xpathConst;
+public static IntegerContext expr2const(AstroParseResult apr, ParseTree pt)
+{
+    if( xpathConst == null)
+        xpathConst = new XPath(apr.getParser(), "/expr/term/integer");
+    Collection<ParseTree> constVal = xpathConst.evaluate(pt);
+    return (IntegerContext)(!constVal.isEmpty() ? constVal.iterator().next() : null);
 }
 
 private static XPath xpathFuncArgLval;

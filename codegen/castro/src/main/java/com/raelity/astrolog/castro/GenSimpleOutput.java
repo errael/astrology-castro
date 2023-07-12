@@ -21,6 +21,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.*;
 
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
 import static com.raelity.antlr.ParseTreeUtil.hasAncestor;
+import static com.raelity.astrolog.castro.Util.collectAssignStrings;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Minus;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Plus;
@@ -158,6 +159,22 @@ void generateAndOutputExprs()
             sb.append(":BLOCK(").append(bs.size()).append(") ");
             for(String s : bs) {
                 sb.append(s).append(' ');
+            }
+        }
+        return sb.toString();
+    }
+
+    @Override
+    String genSw_cmdStringAssign(Switch_cmdContext ctx, String name)
+    {
+        sb.setLength(0);
+        List<String> strings= collectAssignStrings(ctx);
+
+        if(!strings.isEmpty()) {
+            sb.append("SETSTR(").append(strings.size()).append(") ")
+                    .append(name).append(' ');
+            for(String str : strings) {
+                sb.append(str).append(' ');
             }
         }
         return sb.toString();

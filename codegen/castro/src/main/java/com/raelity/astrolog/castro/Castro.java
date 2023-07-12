@@ -37,7 +37,7 @@ public class Castro
 private static CastroErr err = new CastroErr(new PrintWriter(System.err, true));
 
 public static record CastroErr(PrintWriter pw){};
-public static record CastroMap(String mapName){};
+public static record CastroMapName(String mapName){};
 public static record CastroOutputOptions(EnumSet<OutputOptions> outputOpts) {
     public CastroOutputOptions(EnumSet<OutputOptions> outputOpts)
         { this.outputOpts = EnumSet.copyOf(outputOpts); }
@@ -178,7 +178,7 @@ public static void main(String[] args)
 
     addLookup(new CastroOutputOptions(oset));
     if(mapName != null)
-        addLookup(new CastroMap(mapName));
+        addLookup(new CastroMapName(mapName));
 
     if(optTest) {
         runCompilerTest(inputFiles.get(0), outName);

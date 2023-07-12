@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
@@ -17,17 +18,25 @@ import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.RunContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Var1Context;
+import com.raelity.astrolog.castro.antlr.AstroParser.VarArrayContext;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.mems.Macros;
+import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 
 import static com.raelity.antlr.ParseTreeUtil.getOriginalText;
 import static com.raelity.astrolog.castro.OutputOptions.*;
+import static com.raelity.astrolog.castro.Util.collectAssignStrings;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
+import static com.raelity.astrolog.castro.Util.writeRegister;
 
 /**
- * Output the collect Astrolog code: .as file.
+ * Output the Astrolog code, as a .as file,
+ * for the top level macro/switch/run/copy.
+ * For the switch command in particular there is some
+ * data massage going on to meet the Astrolog input requirements.
  */
 public class PassOutput extends AstroParserBaseListener
 {
@@ -42,7 +51,7 @@ static PassOutput passOutput()
 }
 
 private final AstroParseResult apr;
-//private final Registers registers;
+private final Registers registers;
 private final Macros macros;
 private final Switches switches;
 private final PrintWriter out;
@@ -54,7 +63,7 @@ private final EnumSet<OutputOptions> runOutputOpts;
 public PassOutput(AstroParseResult apr)
 {
     this.apr = apr;
-    //this.registers = lookup(Registers.class);
+    this.registers = lookup(Registers.class);
     this.macros = lookup(Macros.class);
     this.switches = lookup(Switches.class);
     this.out = lookup(CastroIO.class).pw();
@@ -248,17 +257,23 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
         if(sc_ctx.string != null) {
             lsb.append(sc_ctx.getText());
         } else {
-            String astroExpr = apr.prefixExpr.removeFrom(sc_ctx);
+            String sc_text = apr.prefixExpr.removeFrom(sc_ctx);
             if(sc_ctx.name != null) {
+                // It's a regualar switch command
                 lsb.append(sc_ctx.name.getText()).append(' ');
-                if(!astroExpr.isEmpty()) {
-                    lsb.append(quote).append(astroExpr);
+                if(!sc_text.isEmpty()) {
+                    lsb.append(quote).append(sc_text);
                     removeTrailingBlanks(lsb).append(quote);
                 }
-            } else { // expr_arg
-                lsb.append(quote).append("~ ").append(astroExpr);
+            } else if(sc_ctx.expr_arg != null) {
+                // AstroExpr as param to regular switch command
+                lsb.append(quote).append("~ ").append(sc_text);
                 removeTrailingBlanks(lsb).append(quote);
-            }
+            } else if(sc_ctx.assign != null) {
+                // ~2 or ~20 AstroExpr hooks
+                createStringAssignmenCommand(lsb, sc_ctx, quote);
+            } else
+                throw new IllegalArgumentException();
         }
         cmdPart.add(lsb.toString());
     }
@@ -271,5 +286,75 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
         }
     }
 }
+
+private void createStringAssignmenCommand(StringBuilder lsb,
+                                          Switch_cmdContext sc_ctx, char quote)
+{
+    List<String> strings= collectAssignStrings(sc_ctx);
+    // Find the character to use for AstroExpr string separator.
+    // Glom together all the strings, for easier search.
+    //char separator = (char)-1;
+    char separator = (char)-1;
+    if(strings.size() != 1) {
+        String tString = String.join("", strings);
+        String tryTheseChars = ";:,.?!@#$%^*&<>";
+        found: {
+            for(int i = 0; i < tryTheseChars.length(); i++) {
+                separator = tryTheseChars.charAt(i);
+                if(tString.indexOf(separator) < 0)
+                    break found;
+            }
+            throw new IllegalArgumentException("Can't find a separator to use");
+        }
+    }
+    if(strings.size() == 1)
+        lsb.append("~2 ");
+    else
+        lsb.append("~20 ");
+    // found a char not in string, use it as the separator
+    lsb.append(apr.prefixExpr.removeFrom(sc_ctx.l)).append(quote);
+    if(strings.size() == 1)
+        lsb.append(strings.get(0));
+    else
+        lsb.append(separator)
+                .append(String.join(String.valueOf(separator), strings));
+    lsb.append(quote);
+}
+
+    @Override
+    public void exitVarArray(VarArrayContext ctx)
+    {
+        if(ctx.init.isEmpty())
+            return;
+        sb.setLength(0);
+        int addr = registers.getVar(ctx.id.getText()).getAddr();
+        ArrayList<String> strings = ctx.init.stream()
+                .map((e) -> apr.prefixExpr.removeFrom(e))
+                .collect(Collectors.toCollection(ArrayList::new));
+        for(String str : strings) {
+            sb.append("~1 '");
+            writeRegister(sb, addr).append(' ').append(str);
+            removeTrailingBlanks(sb).append("'\n");
+            addr++;
+        }
+        out.printf(sb.toString());
+    }
+
+    @Override
+    public void exitVar1(Var1Context ctx)
+    {
+        if(ctx.init == null)
+            return;
+        sb.setLength(0);
+        int addr = registers.getVar(ctx.id.getText()).getAddr();
+        String str = apr.prefixExpr.removeFrom(ctx.init);
+        sb.append("~1 '");
+        writeRegister(sb, addr).append(' ').append(str);
+        removeTrailingBlanks(sb).append("'\n");
+        out.printf(sb.toString());
+        super.exitVar1(ctx);
+    }
+
+
     
 }

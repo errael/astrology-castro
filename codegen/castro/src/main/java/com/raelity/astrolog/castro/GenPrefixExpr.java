@@ -48,6 +48,8 @@ abstract String genSw_cmdExpr_arg(Switch_cmdContext ctx,
                                   List<String> bs);
 abstract String genSw_cmdName(Switch_cmdContext ctx,
                               String name, List<String> bs);
+abstract String genSw_cmdStringAssign(Switch_cmdContext ctx,
+                                String name);
 
 abstract String genIfOp(ExprIfOpContext ctx,
                         String condition, String if_true);
@@ -263,7 +265,8 @@ public void exitSwitch_cmd(Switch_cmdContext ctx)
     String s = ctx.string != null ? genSw_cmdString(ctx)
         : ctx.expr_arg != null ? genSw_cmdExpr_arg(ctx, bs)
           : ctx.name != null ? genSw_cmdName(ctx, apr.prefixExpr.removeFrom(ctx.name), bs)
-            : null;
+            : ctx.assign != null ? genSw_cmdStringAssign(ctx, apr.prefixExpr.removeFrom(ctx.l))
+              : null;
     if(s == null) {
         s = "#switch_cmdERROR#";
         if(!hasErrorNode(ctx))

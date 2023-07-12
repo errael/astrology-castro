@@ -2,11 +2,9 @@
 
 package com.raelity.astrolog.castro;
 
-import java.util.Collection;
 import java.util.List;
 
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.xpath.XPath;
 
@@ -35,6 +33,7 @@ import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Ops;
 import com.raelity.astrolog.castro.tables.Ops.Flow;
 
+import static com.raelity.astrolog.castro.Util.expr2const;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.report;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Assign;
@@ -111,6 +110,19 @@ String genSw_cmdName(Switch_cmdContext ctx, String name, List<String> bs)
         sb.append(s).append(' ');
     }
     return sb.toString();
+}
+
+@Override
+String genSw_cmdStringAssign(Switch_cmdContext sc_ctx, String name)
+{
+    // name is the lval string, ignore it. Instead convert
+    // the sc_ctx lval into the index and plug it back into apr.prefixExpr.
+
+    sb.setLength(0);
+    lvalVarAddr(sb, sc_ctx.l);
+    apr.prefixExpr.put(sc_ctx.l, sb.toString());
+
+    return "#AssignString#";
 }
 
 @Override
@@ -256,6 +268,36 @@ String genBinOp(ExprBinOpContext ctx, Token opToken, String lhs, String rhs)
     return sb.toString();
 }
 
+
+/** lval must be a fixed location, no expr involved. */
+private StringBuilder lvalVarAddr(StringBuilder lsb, LvalContext lval_ctx)
+{
+    boolean resolved = false;
+    String lvalName = lval_ctx.id.getText();
+    switch(lval_ctx) {
+    case LvalMemContext ctx -> {
+        if(lvalName.length() == 1)
+            lsb.append('%').append(lvalName).append(' ');
+        else
+            lsb.append(registers.getVar(lvalName).getAddr()).append(' ');
+        resolved = true;
+    }
+    case LvalIndirectContext ctx -> { break; }
+    case LvalArrayContext ctx -> {
+        IntegerContext constVal = expr2const(apr, ctx.idx);
+        if(constVal != null) {
+            lsb.append(registers.getVar(lvalName).getAddr()
+                    + Integer.parseInt(constVal.getText())).append(' ');
+            resolved = true;
+        }
+    }
+    case null, default -> throw new IllegalStateException();
+    }
+    if(!resolved)
+        Util.reportError(lval_ctx, "'%s' must be a fixed location", lval_ctx.getText());
+    return lsb;
+}
+
 private StringBuilder lvalWriteVar(StringBuilder lsb, LvalContext lval_ctx,
                                     boolean varForAssignment)
 {
@@ -312,12 +354,9 @@ String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String rhs)
     } else {
         boolean canOptim = false;
         if(opType == PlusAssign || opType == MinusAssign) {
-            if( xpathConst == null)
-                xpathConst = new XPath(apr.getParser(), "/expr/term/integer");
-            Collection<ParseTree> constVal = xpathConst.evaluate(ctx.e);
-            if(constVal.size() == 1 && "1".equals(ctx.e.getText())) {
+            IntegerContext constVal = expr2const(apr, ctx.e);
+            if(constVal != null && "1".equals(ctx.e.getText()))
                 canOptim = true;
-            }
         }
         // actual assign op
         // rewrite: Assign lvalAssign <op> lhs rhs
