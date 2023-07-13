@@ -3,10 +3,10 @@
 package com.raelity.astrolog.castro;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import org.antlr.v4.runtime.tree.xpath.XPath;
 
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprAssOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprBinOpContext;
@@ -62,9 +62,9 @@ static Pass3 pass3()
 }
 
 private final Registers registers;
-final TreeProps<String> annotations = new TreeProps<>();
-/** for switch/macro enter clear sb_an*, exit save sb_an* */
-final StringBuilder sb_annotation = new StringBuilder();
+// final TreeProps<String> annotations = new TreeProps<>();
+// /** for switch/macro enter clear sb_an*, exit save sb_an* */
+// final StringBuilder sb_annotation = new StringBuilder();
 
 private Pass3(AstroParseResult apr)
 {
@@ -276,13 +276,14 @@ private StringBuilder lvalVarAddr(StringBuilder lsb, LvalContext lval_ctx)
     String lvalName = lval_ctx.id.getText();
     switch(lval_ctx) {
     case LvalMemContext ctx -> {
+        if(Boolean.FALSE) Objects.nonNull(ctx);
         if(lvalName.length() == 1)
             lsb.append('%').append(lvalName).append(' ');
         else
             lsb.append(registers.getVar(lvalName).getAddr()).append(' ');
         resolved = true;
     }
-    case LvalIndirectContext ctx -> { break; }
+    case LvalIndirectContext ctx -> { if(Boolean.FALSE) Objects.nonNull(ctx); }
     case LvalArrayContext ctx -> {
         IntegerContext constVal = expr2const(apr, ctx.idx);
         if(constVal != null) {
@@ -301,9 +302,10 @@ private StringBuilder lvalVarAddr(StringBuilder lsb, LvalContext lval_ctx)
 private StringBuilder lvalWriteVar(StringBuilder lsb, LvalContext lval_ctx,
                                     boolean varForAssignment)
 {
+    String lvalName = lval_ctx.id.getText();
     switch(lval_ctx) {
     case LvalMemContext ctx -> {
-        String lvalName = ctx.id.getText();
+        if(Boolean.FALSE) Objects.nonNull(ctx);
         if(lvalName.length() == 1) {
             if(!varForAssignment)
                 lsb.append('%');
@@ -311,16 +313,24 @@ private StringBuilder lvalWriteVar(StringBuilder lsb, LvalContext lval_ctx,
         }else
             lsb.append(registers.getVar(lvalName).getAddr()).append(' ');
     }
-    case LvalIndirectContext ctx ->
-        lsb.append("@").append(lvalReadVar(ctx.id.getText())).append(' ');
+    case LvalIndirectContext ctx -> {
+        if(Boolean.FALSE) Objects.nonNull(ctx);
+        lsb.append("@").append(lvalReadVar(lvalName)).append(' ');
+    }
     case LvalArrayContext ctx -> {
-        lsb.append("Add ");
-        String lvalVar = ctx.id.getText();
-        if(lvalVar.length() == 1)
-            lsb.append('%').append(lvalVar);
-        else
-            lsb.append(registers.getVar(lvalVar).getAddr());
-        lsb.append(' ').append(lvalArrayIndex.get(ctx));
+        IntegerContext constVal = expr2const(apr, ctx.idx);
+        // Don't need to do a runtime add if idx is constant
+        if(constVal != null)
+            lsb.append(registers.getVar(lvalName).getAddr()
+                    + Integer.parseInt(constVal.getText())).append(' ');
+        else {
+            lsb.append("Add ");
+            if(lvalName.length() == 1)
+                lsb.append('%').append(lvalName);
+            else
+                lsb.append(registers.getVar(lvalName).getAddr());
+            lsb.append(' ').append(lvalArrayIndex.get(ctx));
+        }
     }
     case null, default -> throw new IllegalStateException();
     }
@@ -337,8 +347,6 @@ private StringBuilder lvalAssignment(StringBuilder lsb, LvalContext lval_ctx)
     lvalWriteVar(lsb, lval_ctx, true);
     return lsb;
 }
-
-private static XPath xpathConst;
 
 @Override
 String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String rhs)
@@ -405,13 +413,20 @@ String genLval(LvalIndirectContext ctx)
 String genLval(LvalArrayContext ctx, String expr)
 {
     sb.setLength(0);
-    sb.append("Var ").append("Add ");
     String lvalName = ctx.id.getText();
-    if(lvalName.length() == 1)
-        sb.append('%').append(lvalName);
-    else
-        sb.append(registers.getVar(lvalName).getAddr());
-    sb.append(' ').append(expr);
+    IntegerContext constVal = expr2const(apr, ctx.idx);
+    // Don't need to do a runtime add if idx is constant
+    if(constVal != null)
+        sb.append('@').append(registers.getVar(lvalName).getAddr()
+                + Integer.parseInt(constVal.getText())).append(' ');
+    else {
+        sb.append("Var Add ");
+        if(lvalName.length() == 1)
+            sb.append('%').append(lvalName);
+        else
+            sb.append(registers.getVar(lvalName).getAddr());
+        sb.append(' ').append(expr);
+    }
     return sb.toString();
 }
 
