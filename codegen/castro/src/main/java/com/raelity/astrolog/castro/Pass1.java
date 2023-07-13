@@ -19,6 +19,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.Assign_macro_addrContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Assign_switch_addrContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.BaseContstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ConstraintContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.IntegerContext;
@@ -42,6 +43,7 @@ import com.raelity.astrolog.castro.tables.Functions;
 
 import static com.raelity.astrolog.castro.LineMap.WriteableLineMap.createLineMap;
 import static com.raelity.astrolog.castro.Util.checkReport;
+import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
 
@@ -78,6 +80,25 @@ public Pass1()
     this.switches = lookup(Switches.class);
 }
 
+/** Check builtin variable declaration is an initialization.
+ * @return true if token is builtin, otherwise false
+ */
+private boolean checkBuiltin(ParserRuleContext ctx, Token id,
+                             IntegerContext addr, ExprContext init)
+{
+        if(isBuiltinVar(id)) {
+            if(addr != null)
+                reportError(ctx, "'%s' Can not specify address of builtin variable", id.getText());
+            else if(init == null)
+                reportError(ctx, "'%s' builtin variable declaration requires initializer", id.getText());
+            return true;
+        }
+        return false;
+}
+
+/** Add a variable to the symbol table.
+ * Allow builtin declarations that initialize: "var p {expr}", "var p[] {e1,e2}"
+ */
 void declareVar(ParserRuleContext _ctx)
 {
     TerminalNode idNode;
@@ -85,11 +106,17 @@ void declareVar(ParserRuleContext _ctx)
     int size;
     switch(_ctx) {
     case Var1Context ctx -> {
+        if(checkBuiltin(ctx, ctx.id, ctx.addr, ctx.init))
+            return;
+
         idNode = ctx.Identifier();
         addrNode = ctx.addr;
         size = 1;
     }
     case VarArrayContext ctx -> {
+        if(checkBuiltin(ctx, ctx.id, ctx.addr, ctx.init.isEmpty() ? null : ctx.init.get(0)))
+            return;
+
         idNode = ctx.Identifier();
         addrNode = ctx.addr;
         if(ctx.size == null && ctx.init.isEmpty()) {

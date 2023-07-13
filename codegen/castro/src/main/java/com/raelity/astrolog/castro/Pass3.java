@@ -34,6 +34,7 @@ import com.raelity.astrolog.castro.tables.Ops;
 import com.raelity.astrolog.castro.tables.Ops.Flow;
 
 import static com.raelity.astrolog.castro.Util.expr2const;
+import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.report;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Assign;
@@ -277,7 +278,7 @@ private StringBuilder lvalVarAddr(StringBuilder lsb, LvalContext lval_ctx)
     switch(lval_ctx) {
     case LvalMemContext ctx -> {
         if(Boolean.FALSE) Objects.nonNull(ctx);
-        if(lvalName.length() == 1)
+        if(isBuiltinVar(lvalName))
             lsb.append('%').append(lvalName).append(' ');
         else
             lsb.append(registers.getVar(lvalName).getAddr()).append(' ');
@@ -306,7 +307,7 @@ private StringBuilder lvalWriteVar(StringBuilder lsb, LvalContext lval_ctx,
     switch(lval_ctx) {
     case LvalMemContext ctx -> {
         if(Boolean.FALSE) Objects.nonNull(ctx);
-        if(lvalName.length() == 1) {
+        if(isBuiltinVar(lvalName)) {
             if(!varForAssignment)
                 lsb.append('%');
             lsb.append(lvalName).append(' ');
@@ -325,7 +326,7 @@ private StringBuilder lvalWriteVar(StringBuilder lsb, LvalContext lval_ctx,
                     + Integer.parseInt(constVal.getText())).append(' ');
         else {
             lsb.append("Add ");
-            if(lvalName.length() == 1)
+            if(isBuiltinVar(lvalName))
                 lsb.append('%').append(lvalName);
             else
                 lsb.append(registers.getVar(lvalName).getAddr());
@@ -384,7 +385,7 @@ String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String rhs)
 private String lvalReadVar(String lvalName)
 {
     // length 1 is 'a' - 'z'
-    return lvalName.length() == 1 ? lvalName
+    return isBuiltinVar(lvalName) ? lvalName
            : String.valueOf(registers.getVar(lvalName).getAddr());
 }
 
@@ -421,7 +422,7 @@ String genLval(LvalArrayContext ctx, String expr)
                 + Integer.parseInt(constVal.getText())).append(' ');
     else {
         sb.append("Var Add ");
-        if(lvalName.length() == 1)
+        if(isBuiltinVar(lvalName))
             sb.append('%').append(lvalName);
         else
             sb.append(registers.getVar(lvalName).getAddr());

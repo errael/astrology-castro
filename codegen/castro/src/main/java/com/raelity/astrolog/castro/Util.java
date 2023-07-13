@@ -50,6 +50,20 @@ private Util() { }
 //     return null;
 // }
 
+public static boolean isBuiltinVar(Token id)
+{
+    return isBuiltinVar(id.getText());
+}
+
+public static boolean isBuiltinVar(String text)
+{
+    if (text.length() != 1)
+        return false;
+    char c = text.charAt(0);
+
+    return c >= 'a' && c <= 'z';
+}
+
 public static List<String> collectAssignStrings(Switch_cmdContext sc_ctx)
 {
     ArrayList<String> strings = sc_ctx.str.stream()
@@ -66,7 +80,7 @@ public static StringBuilder writeRegister(StringBuilder sb, int addr)
 {
     //String lvalName = ctx.id.getText();
     if(addr >= 1 && addr <= 26)
-        sb.append('=').append('a' + addr - 1);
+        sb.append('=').append((char)('a' + addr - 1));
     else
         sb.append("= ").append(addr);
     return sb;
