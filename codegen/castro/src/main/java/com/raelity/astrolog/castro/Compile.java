@@ -318,9 +318,9 @@ private static boolean createMap()
     if(workingFileData.isEmpty())
         return true;
     CastroIO castroIO = workingFileData.get(0).castroIO();
-    if(castroIO.outDir() == null)
+    if(castroIO.inPath() == null)
         return true;
-    Path defPath = castroIO.outDir().resolve(lookup(CastroMapName.class).mapName() + MAP_EXT);
+    Path defPath = castroIO.inPath().resolveSibling(lookup(CastroMapName.class).mapName() + MAP_EXT);
     try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(
             defPath, WRITE, TRUNCATE_EXISTING, CREATE))) {
         CastroIO.outputFileHeader(out, "//");
@@ -329,8 +329,11 @@ private static boolean createMap()
         Switches switches = lookup(SwitchesAccum.class).global();
 
         registers.dumpVars(out, true, true);
+        out.println();
         macros.dumpVars(out, true, true);
+        out.println();
         switches.dumpVars(out, true, true);
+        out.println();
 
     } catch(IOException ex) {
         // TODO: FOR NOW count the error in the first file's apr.
@@ -349,9 +352,9 @@ private static boolean createMap()
 private static void createDef()
 {
     CastroIO castroIO = lookup(CastroIO.class);
-    if(castroIO.outDir() == null)
+    if(castroIO.inPath() == null)
         return;
-    Path defPath = castroIO.outDir().resolve(castroIO.baseName() + Castro.DEF_EXT);
+    Path defPath = castroIO.inPath().resolveSibling(castroIO.baseName() + Castro.DEF_EXT);
     try (PrintWriter out = new PrintWriter(Files.newBufferedWriter(
             defPath, WRITE, TRUNCATE_EXISTING, CREATE))) {
         CastroIO.outputFileHeader(out, "//");
