@@ -2,13 +2,19 @@
 
 package com.raelity.astrolog.castro;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
@@ -175,7 +181,9 @@ public static void main(String[] args)
                            System.getProperty("os.name")));
 
     List<String> inputFiles = new ArrayList<>(Arrays.asList(args).subList(g.getOptind(), args.length));
-
+    if(!checkFileIssues(inputFiles))
+        usage();
+    
     addLookup(new CastroOutputOptions(oset));
     if(mapName != null)
         addLookup(new CastroMapName(mapName));
@@ -212,6 +220,61 @@ public static void main(String[] args)
     if(!success) {
         System.exit(1);
     }
+}
+
+/** verify that can read the file and that the same file is not
+ * in the list twice.
+ */
+@SuppressWarnings("UseOfSystemOutOrSystemErr")
+static boolean checkFileIssues(List<String> inputFiles)
+{
+    boolean read_error = false;
+    ArrayList<Path> paths = inputFiles.stream().map((f) -> Path.of(f))
+            .collect(Collectors.toCollection(ArrayList::new));
+    // First just spin through and get rid of stuff that have access problems.
+    for(Iterator<Path> it = paths.iterator(); it.hasNext();) {
+        Path path = it.next();
+        try (InputStream is = Files.newInputStream(path)) { 
+            is.read();
+        } catch(IOException ex) {
+            System.err.printf("%s %s\n", ex.getClass().getSimpleName(),ex.getMessage());
+            it.remove();
+            read_error = true;
+        }
+    }
+
+    // Can't have the same file in the list more than once
+    record Pair(Path p1, Path p2){}
+    List<Pair> dups = new ArrayList<>();
+    for(int i = 0; i < paths.size(); i++) {
+        Path p1 = paths.get(i);
+        for(int j = i + 1; j < paths.size(); j++) {
+            boolean file_error = false;
+            boolean isSame = false;
+            Path p2 = paths.get(j);
+            //System.err.printf("    Check %d-%s %d-%s\n", i, p1, j, p2);
+            try {
+                isSame = Files.isSameFile(p1, p2);
+            } catch(IOException ex) {
+                System.err.printf("%s %s\n", ex.getClass().getSimpleName(),ex.getMessage());
+                file_error = true;
+            }
+            if(isSame) {
+                dups.add(new Pair(p1, p2));
+                file_error = true;
+            }
+            if(file_error) {
+                paths.remove(j);
+                //System.err.printf("    REMOVE: %d %s\n", j, p2);
+                j -= 1;
+            }
+        }
+    }
+    if(read_error || !dups.isEmpty()) {
+        dups.forEach((p) -> System.err.printf("Same file: '%s' '%s'\n", p.p1, p.p2));
+        return false;
+    }
+    return true;
 }
 
 static void runCompilerTest(String inputFile, String outName)
