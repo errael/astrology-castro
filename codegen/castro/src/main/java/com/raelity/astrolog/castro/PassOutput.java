@@ -273,7 +273,7 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
                 // ~2 or ~20 AstroExpr hooks
                 createStringAssignmenCommand(lsb, sc_ctx, quote);
             } else
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException(sc_ctx.getText());
         }
         cmdPart.add(lsb.toString());
     }

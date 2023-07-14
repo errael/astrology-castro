@@ -768,7 +768,7 @@ public void dumpLayout(PrintWriter out)
     private void setAddr(int addr)
     {
         if(lockMemory)
-            throw new IllegalStateException();
+            throw new IllegalStateException(getName());
         this.addr = addr;
     }
 
@@ -780,7 +780,7 @@ public void dumpLayout(PrintWriter out)
     public void setId(Token id)
     {
         if(lockMemory && !getState().contains(DUMMY))
-            throw new IllegalStateException();
+            throw new IllegalStateException(getName());
         if(this.id != null)
             throw new IllegalStateException(String.format(
                     "var '%s' already has id; new %s", getName(), id.getText()));

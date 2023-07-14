@@ -26,6 +26,7 @@ import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 
+import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.addLookup;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.removeLookup;
@@ -49,6 +50,13 @@ public static record CastroOutputOptions(EnumSet<OutputOptions> outputOpts) {
         { this.outputOpts = EnumSet.copyOf(outputOpts); }
     public EnumSet<OutputOptions> outputOpts()
         { return EnumSet.copyOf(this.outputOpts); }
+    };
+/** which errors to treat as warngings */
+public static record CastroWarningOptions(EnumSet<Error> warn) {
+    public CastroWarningOptions(EnumSet<Error> warn)
+        { this.warn = EnumSet.copyOf(warn); }
+    public EnumSet<Error> warn()
+        { return EnumSet.copyOf(this.warn); }
     };
 public static record CastroLineMaps(Map<String,LineMap> lineMaps){};
 
@@ -75,20 +83,35 @@ private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 
 private static int optVerbose;
 
+static String listEwarnOptions()
+{
+    String ewarn = """
+            Errors that can be made warnings
+                func-unk        unknown function
+                func-narg       number of arguments to function
+                func-castro     function castro uses internally for code generation
+                var-rsv         assign a variable to reserved area
+            """;
+    return ewarn;
+}
+
+private static void usageExit() { System.exit(1); }
 static void usage() { usage(null); }
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 static void usage(String note)
 {
     if(note != null)
         System.err.printf("%s: %s\n", cmdName, note);
-    String usage =
-            """
+    String usage = """
             Usage: {cmdName} [-h] [--test] [-v] [-o outfile] infile+
                 infile may be '-' for stdin.
                 if outfile not specified, it is derived from infile.
                 -o outfile      allowed if exactly one infile, '-' is stdout
                 --mapoutput=mapname     Map file name is <mapname>.map.
                                         Default is derived from first infile.
+                --Ewarn=        Make the specified error a warning.
+                                Default: warn for func-castro and var-rsv.
+                                Use --Ewarn=junk for a list.
                 --formatoutput=opt1,... # comma separated list of:
                     1st two for switch and macro, next two for run
                         bslash          - split into new-line/backslash lines
@@ -105,7 +128,8 @@ static void usage(String note)
                 -h      output this message
             """.replace("{cmdName}", cmdName);
     System.err.println(usage);
-    System.exit(1);
+    System.err.println(listEwarnOptions());
+    usageExit();
 }
 
 public static int getVerbose()
@@ -129,10 +153,13 @@ public static void main(String[] args)
         new LongOpt("formatoutput", LongOpt.REQUIRED_ARGUMENT, null, 3),
         new LongOpt("anonymous", LongOpt.NO_ARGUMENT, null, 4),
         new LongOpt("mapname", LongOpt.REQUIRED_ARGUMENT, null, 5),
+        new LongOpt("Ewarn", LongOpt.REQUIRED_ARGUMENT, null, 6),
     };
     Getopt g = new Getopt(cmdName, args, "o:hv", longOpts);
     
     EnumSet<OutputOptions> oset = EnumSet.noneOf(OutputOptions.class);
+    // Default warnings
+    EnumSet<Error> warnset = EnumSet.of(FUNC_CASTRO, VAR_RSV);
     int c;
     while ((c = g.getopt()) != -1) {
         switch (c) {
@@ -163,7 +190,21 @@ public static void main(String[] args)
             }
         }
         case 4 -> oset.add(OutputOptions.GENERAL_ANON);
-        case 5 -> mapName=g.getOptarg();
+        case 5 -> mapName = g.getOptarg();
+        case 6 -> {
+            // Option is to make Error a warning.
+            EParse e = Error.parseErrorName(g.getOptarg());
+            if(e == null) {
+                System.err.printf("'%s' unknown error name\n%s",
+                                  g.getOptarg(), listEwarnOptions());
+                usageExit();
+            } else {
+                if(!e.negated())        // make the error a warning
+                    warnset.add(e.error());
+                else                    // -Ewarn=no-xxx, xxx causes an error
+                    warnset.remove(e.error());
+            }
+        }
         default -> {
             usage();
         }
@@ -185,6 +226,7 @@ public static void main(String[] args)
         usage();
     
     addLookup(new CastroOutputOptions(oset));
+    addLookup(new CastroWarningOptions(warnset));
     if(mapName != null)
         addLookup(new CastroMapName(mapName));
 

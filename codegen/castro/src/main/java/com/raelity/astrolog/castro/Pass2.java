@@ -137,7 +137,7 @@ private Matcher enaDisMatcher(String input)
     return matcher;
 }
 
-// cache the result to avoid giving the same error twice.
+// cache the result to avoid giving the same error twice; small perf gain.
 private TreeProps<Boolean> macroSwitch_func_callChecked = new TreeProps<>();
 
 /** Check switch()/macro() lval arg; it should be defined switch/macro.

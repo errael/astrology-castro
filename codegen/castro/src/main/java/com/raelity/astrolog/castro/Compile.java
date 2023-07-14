@@ -30,10 +30,8 @@ import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 
 import static com.raelity.astrolog.castro.Castro.MAP_EXT;
-import static com.raelity.astrolog.castro.Util.addLookup;
-import static com.raelity.astrolog.castro.Util.lookup;
-import static com.raelity.astrolog.castro.Util.lookupAll;
-import static com.raelity.astrolog.castro.Util.replaceLookup;
+import static com.raelity.astrolog.castro.Error.*;
+import static com.raelity.astrolog.castro.Util.*;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 
 /**
@@ -396,7 +394,7 @@ private static void applyLayoutsAndAllocate()
             Var var = e.getValue();
             if(var.hasState(ASSIGN) && !var.hasState(LIMIT)
                     && reserve.intersects(e.getKey()))
-                Util.report(false, var.getId(),
+                reportError(VAR_RSV, var.getId(),
                        "'%s' assigned to reserve area", var.getName());
         }
 

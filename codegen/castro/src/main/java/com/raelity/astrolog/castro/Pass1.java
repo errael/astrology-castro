@@ -41,6 +41,7 @@ import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 import com.raelity.astrolog.castro.tables.Functions;
 
+import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.LineMap.WriteableLineMap.createLineMap;
 import static com.raelity.astrolog.castro.Util.checkReport;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
@@ -131,7 +132,7 @@ void declareVar(ParserRuleContext _ctx)
                 size = ctx.init.size();
         }
     }
-    case null, default -> throw new IllegalArgumentException();
+    case null, default -> throw new IllegalArgumentException(_ctx.getText());
     }
     if(ParseTreeUtil.hasErrorNode(idNode) ||
             ParseTreeUtil.hasErrorNode(addrNode))
@@ -267,12 +268,12 @@ public void exitExprFunc(ExprFuncContext ctx)
     Func_callContext fc_ctx = ctx.func_call();
     Integer narg = Functions.narg(fc_ctx.id.getText());
     if(narg == null) {
-        reportError(fc_ctx.id,
-                    "unknown function '%s'", fc_ctx.id.getText());
+        reportError(FUNC_UNK, fc_ctx.id, "unknown function '%s'", fc_ctx.id.getText());
+        Functions.recordUnknownFunction(fc_ctx.id.getText());
         return;
     }
-    if(fc_ctx.args.size() != narg)
-        reportError(fc_ctx, "function '%s' argument count, expect %d not %d",
+    if(fc_ctx.args.size() != narg && !Functions.isUnkownFunction(fc_ctx.id.getText()))
+        reportError(FUNC_NARG, fc_ctx, "function '%s' argument count, expect %d not %d",
                     fc_ctx.id.getText(), narg, fc_ctx.args.size());
 }
 

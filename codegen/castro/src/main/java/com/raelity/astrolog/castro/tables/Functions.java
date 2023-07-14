@@ -8,9 +8,11 @@ package com.raelity.astrolog.castro.tables;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class Functions
 {
@@ -38,21 +40,49 @@ public static String translate(String funcName)
     return functions.replaceFuncs.getOrDefault(funcName, name(funcName));
 }
 
-private static final Functions functions = new Functions();
-private Map<String, Info> funcs;
-private final Map<String,String> replaceFuncs = new HashMap<>();
+// Would like a read only unioun of regular maps and unknown maps.
+// https://stackoverflow.com/questions/66428518/java-read-only-view-of-the-union-of-two-maps;
+// But, unknown only needs to be a set; since unkown rest of info is derived.
 
+/** Track an unknown function; further inquiries about this
+ * name will not return null and narg returns 0. 
+ * Keep a set of unknown function names. And add the unknown
+ * to the main map to keep the rest of the code simple.
+ */
+public static void recordUnknownFunction(String funcName)
+{
+    String lc = funcName.toLowerCase(Locale.ROOT);
+    if(functions.funcs.containsKey(lc))
+        throw new IllegalArgumentException(funcName);
+    functions.unknownFuncs.add(lc);
+    functions.add(lc, 0, "R_");
+}
+
+public static boolean isUnkownFunction(String funcName)
+{
+    return functions.unknownFuncs.contains(funcName.toLowerCase(Locale.ROOT));
+}
+
+// singleton
+private static final Functions functions = new Functions();
+
+private final Map<String, Info> modifiableFuncs;
+private final Map<String, Info> funcs;
+private final Map<String,String> replaceFuncs;
+private final Set<String> unknownFuncs;
 
 private Functions() {
     // ~500 items, 700 entries, load-factor .72
-    funcs = new HashMap<>(700);
-    funcs = new HashMap<>(700);
+    // keep modifiable funcs around to add unknown func.
+    this.modifiableFuncs = new HashMap<>(700);
+    this.funcs = Collections.unmodifiableMap(modifiableFuncs);
+    this.unknownFuncs = new HashSet<>();
+    this.replaceFuncs = new HashMap<>();
     createEntries();
     // Provide "evaluate both sides" semantics for "?:" if wanted.
     addWithReplacement("QuestColon", "?:", 3, "E_IEE");
     addWithReplacement("AssignObj", "=Obj", 4, "R_IIII");
     addWithReplacement("AssignHou", "=Hou", 4, "R_IIII");
-    funcs = Collections.unmodifiableMap(funcs);
 }
 
 private void addWithReplacement(String castroName, String astroName, int narg, String types)
@@ -61,25 +91,14 @@ private void addWithReplacement(String castroName, String astroName, int narg, S
     replaceFuncs.put(castroName, astroName);
 }
 
-    private static class Info
-    {
-    /** correct case */
-    final String name;
-    final int narg;
-    
-    public Info(String name, int nargs)
-    {
-        this.name = name;
-        this.narg = nargs;
-    }
-    
-    }
+/** name is the "documented" case */
+record Info(String name, int narg){};
 
 /** key is lower case. Save original name and nargs. */
 private void add(String funcName, int narg, String types)
 {
     Objects.nonNull(types);
-    funcs.put(funcName.toLowerCase(Locale.ROOT), new Info(funcName, narg));
+    modifiableFuncs.put(funcName.toLowerCase(Locale.ROOT), new Info(funcName, narg));
 }
 
 private void createEntries()

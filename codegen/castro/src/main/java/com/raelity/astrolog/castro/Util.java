@@ -20,6 +20,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.xpath.XPath;
 
 import com.raelity.astrolog.castro.Castro.CastroErr;
+import com.raelity.astrolog.castro.Castro.CastroWarningOptions;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.IntegerContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
@@ -183,16 +184,28 @@ public static PrintWriter getErr()
 
 public static void reportError(ParserRuleContext ctx, Object... msg)
 {
-    reportError(ctx.start, msg);
+    reportError(null, ctx, msg);
+}
+
+public static void reportError(Error err, ParserRuleContext ctx, Object... msg)
+{
+    reportError(err, ctx.start, msg);
 }
 
 public static void reportError(Token token, Object... msg)
 {
-    report(true, token, msg);
+    reportError(null, token, msg);
 }
 
-public static void report(boolean fError, Token token, Object... msg)
+public static void reportError(Error err, Token token, Object... msg)
 {
+    report(err, token, msg);
+}
+
+public static void report(Error err, Token token, Object... msg)
+{
+    boolean fError = err == null ? true
+                     : !lookup(CastroWarningOptions.class).warn().contains(err);
     String optMsg = msg.length == 0 ? "" : String.format(
             (String)msg[0], Arrays.copyOfRange(msg, 1, msg.length));
     String lineText = getLineText(token);

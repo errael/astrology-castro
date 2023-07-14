@@ -33,14 +33,15 @@ import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Ops;
 import com.raelity.astrolog.castro.tables.Ops.Flow;
 
+import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.expr2const;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
-import static com.raelity.astrolog.castro.Util.report;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Assign;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Minus;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Plus;
 import static com.raelity.astrolog.castro.Util.lval2MacoSwitchSpace;
+import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.antlr.AstroLexer.Not;
 import static com.raelity.astrolog.castro.antlr.AstroLexer.PlusAssign;
 import static com.raelity.astrolog.castro.antlr.AstroLexer.Tilde;
@@ -207,7 +208,7 @@ String genBraceBlockOp(ExprBraceBlockOpContext ctx, List<String> statements)
     // use Do3, add 3 statements, the 4th statement is another Do*.
     while(!statements.isEmpty()) {
         switch(statements.size()) {
-        case 1 -> throw new IllegalStateException();
+        case 1 -> throw new IllegalStateException(ctx.getText());
         case 2 -> appendSubBlock(sb, Flow.XDO, 2, statements);
         case 3 -> appendSubBlock(sb, Flow.XDO2, 3, statements);
         case 4 -> appendSubBlock(sb, Flow.XDO3, 4, statements);
@@ -222,11 +223,11 @@ String genFuncCallOp(ExprFuncContext ctx, String _funcName, List<String> args)
 {
     sb.setLength(0);
     // TODO: send funcname(narg) to annotations stream
-    // TODO: CLEAN
-    // sb.append("FUNC(").append(args.size()).append(") ");
     String funcName = Functions.translate(_funcName);
     if(Ops.isAnyOp(funcName))
-        report(false, ctx.func_call().id, "using castro operator '%s' as a function", ctx.func_call().id.getText());
+        reportError(FUNC_CASTRO, ctx.func_call().id,
+                    "using castro operator '%s' as a function",
+                    ctx.func_call().id.getText());
     sb.append(Functions.translate(funcName)).append(' ');
     for(String arg : args) {
         sb.append(arg);
@@ -293,7 +294,7 @@ private StringBuilder lvalVarAddr(StringBuilder lsb, LvalContext lval_ctx)
             resolved = true;
         }
     }
-    case null, default -> throw new IllegalStateException();
+    case null, default -> throw new IllegalStateException(lval_ctx.getText());
     }
     if(!resolved)
         Util.reportError(lval_ctx, "'%s' must be a fixed location", lval_ctx.getText());
@@ -333,7 +334,7 @@ private StringBuilder lvalWriteVar(StringBuilder lsb, LvalContext lval_ctx,
             lsb.append(' ').append(lvalArrayIndex.get(ctx));
         }
     }
-    case null, default -> throw new IllegalStateException();
+    case null, default -> throw new IllegalStateException(lval_ctx.getText());
     }
     return lsb;
 }
