@@ -1,0 +1,55 @@
+
+plugins {
+    id 'org.frgaal.compiler'
+    // Apply the application plugin to add support for building a CLI application in Java.
+    id 'application'
+}
+
+def main_class = 'com.raelity.astrolog.castro.Castro'
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    // Use JUnit Jupiter for testing.
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+
+    // This dependency is used by the application.
+    implementation 'com.google.guava:guava:32.0.1-jre'
+    implementation "org.antlr:antlr4:4.13.0"
+    implementation 'gnu.getopt:java-getopt:1.0.13'
+    implementation 'com.raelity:raelity-lib:1.3.0'
+    // following was compile
+    implementation "org.antlr:antlr4-runtime:4.7.1"
+
+    // the following are for CentralLookup
+    implementation "org.netbeans.api:org-openide-util:RELEASE180"
+    implementation "org.netbeans.api:org-openide-util-lookup:RELEASE180"
+}
+
+//task runApp(type: JavaExec) {
+//    args '-v /ref/tools/astrolog.d/castro/grammar/x'
+//}
+
+application {
+    mainClass = main_class
+}
+
+tasks.named('test') {
+    // Use JUnit Platform for unit tests.
+    useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes "Main-Class" : main_class
+    }
+
+    // wouldn't need this if could simply use jvi-swing's jar
+    duplicatesStrategy = 'exclude'
+
+    from {configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it)} }
+}
