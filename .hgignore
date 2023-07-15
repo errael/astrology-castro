@@ -1,0 +1,21 @@
+syntax: rootglob
+
+codegen/castro/src/main/java/com/raelity/astrolog/castro/antlr
+codegen/.gradle
+codegen/build
+codegen/castro/build
+
+grammar/Astro
+grammar/grout
+play
+
+syntax: glob
+
+*.class
+
+
+*~
+*.sw[pmno]
+*.orig
+*.orig.*
+*.rej
