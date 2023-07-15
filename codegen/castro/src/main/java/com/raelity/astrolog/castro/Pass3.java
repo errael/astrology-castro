@@ -34,7 +34,6 @@ import com.raelity.astrolog.castro.tables.Ops;
 import com.raelity.astrolog.castro.tables.Ops.Flow;
 
 import static com.raelity.astrolog.castro.Error.*;
-import static com.raelity.astrolog.castro.Util.expr2const;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Assign;
@@ -47,6 +46,7 @@ import static com.raelity.astrolog.castro.antlr.AstroLexer.PlusAssign;
 import static com.raelity.astrolog.castro.antlr.AstroLexer.Tilde;
 import static com.raelity.astrolog.castro.antlr.AstroParser.MinusAssign;
 import static com.raelity.astrolog.castro.tables.Ops.astroCode;
+import static com.raelity.astrolog.castro.Util.expr2constInt;
 
 /**
  * Generate the code.
@@ -287,10 +287,9 @@ private StringBuilder lvalVarAddr(StringBuilder lsb, LvalContext lval_ctx)
     }
     case LvalIndirectContext ctx -> { if(Boolean.FALSE) Objects.nonNull(ctx); }
     case LvalArrayContext ctx -> {
-        IntegerContext constVal = expr2const(apr, ctx.idx);
+        Integer constVal = expr2constInt(ctx.idx);
         if(constVal != null) {
-            lsb.append(registers.getVar(lvalName).getAddr()
-                    + Integer.parseInt(constVal.getText())).append(' ');
+            lsb.append(registers.getVar(lvalName).getAddr() + constVal).append(' ');
             resolved = true;
         }
     }
@@ -320,11 +319,10 @@ private StringBuilder lvalWriteVar(StringBuilder lsb, LvalContext lval_ctx,
         lsb.append("@").append(lvalReadVar(lvalName)).append(' ');
     }
     case LvalArrayContext ctx -> {
-        IntegerContext constVal = expr2const(apr, ctx.idx);
+        Integer constVal = expr2constInt(ctx.idx);
         // Don't need to do a runtime add if idx is constant
         if(constVal != null)
-            lsb.append(registers.getVar(lvalName).getAddr()
-                    + Integer.parseInt(constVal.getText())).append(' ');
+            lsb.append(registers.getVar(lvalName).getAddr() + constVal).append(' ');
         else {
             lsb.append("Add ");
             if(isBuiltinVar(lvalName))
@@ -364,8 +362,8 @@ String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String rhs)
     } else {
         boolean canOptim = false;
         if(opType == PlusAssign || opType == MinusAssign) {
-            IntegerContext constVal = expr2const(apr, ctx.e);
-            if(constVal != null && "1".equals(ctx.e.getText()))
+            Integer constVal = expr2constInt(ctx.e);
+            if(constVal != null && 1 == constVal)
                 canOptim = true;
         }
         // actual assign op
@@ -416,11 +414,10 @@ String genLval(LvalArrayContext ctx, String expr)
 {
     sb.setLength(0);
     String lvalName = ctx.id.getText();
-    IntegerContext constVal = expr2const(apr, ctx.idx);
+    Integer constVal = expr2constInt(ctx.idx);
     // Don't need to do a runtime add if idx is constant
     if(constVal != null)
-        sb.append('@').append(registers.getVar(lvalName).getAddr()
-                + Integer.parseInt(constVal.getText())).append(' ');
+        sb.append('@').append(registers.getVar(lvalName).getAddr() + constVal).append(' ');
     else {
         sb.append("Var Add ");
         if(isBuiltinVar(lvalName))

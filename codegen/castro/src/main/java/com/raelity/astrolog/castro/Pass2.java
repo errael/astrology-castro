@@ -73,7 +73,7 @@ private void checkReportUnknownVar(LvalContext ctx, Token token)
     if(fc_ctx != null)
         if(checkReportMacroSwitchFuncArgs(fc_ctx))
             return;
-    Util.reportError(token, "unknown variable '%s' (first occurance)",
+    reportError(token, "unknown variable '%s' (first occurance)",
                      token.getText());
     registers.declare(token, 1, -1, DUMMY);
 }
@@ -151,7 +151,7 @@ private boolean checkReportMacroSwitchFuncArgs(Func_callContext ctx)
     AstroMem memSpace = func_call2MacoSwitchSpace(ctx);
 
     if(memSpace != null
-            && isLvalExpr(apr, ctx.args.get(0))
+            && isLvalExpr(ctx.args.get(0))
             && memSpace.getVar(ctx.args.get(0).getText()) == null) {
         reportError(ctx, "'%s' is not a defined %s", ctx.args.get(0).getText(),
                              memSpace.memSpaceName.equals(MEM_SWITCHES)

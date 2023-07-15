@@ -154,25 +154,31 @@ public static AstroMem func_call2MacoSwitchSpace(ParserRuleContext ctx)
              : null;
 }
 
-private static XPath xpathConst;
-public static IntegerContext expr2const(AstroParseResult apr, ParseTree pt)
+private static XPath xpathConstInt;
+/** @return IntegerConstext if pt is expr that's an integer constant, else null */
+public static Integer expr2constInt(ParseTree pt)
 {
-    if( xpathConst == null)
-        xpathConst = new XPath(apr.getParser(), "/expr/term/integer");
-    Collection<ParseTree> constVal = xpathConst.evaluate(pt);
-    return (IntegerContext)(!constVal.isEmpty() ? constVal.iterator().next() : null);
+    if( xpathConstInt == null) {
+        xpathConstInt = new XPath(lookup(AstroParseResult.class).getParser(),
+                                  "/expr/term/integer");
+    }
+    Collection<ParseTree> constVal = xpathConstInt.evaluate(pt);
+    if(constVal.isEmpty())
+        return null;
+    return Integer.valueOf(constVal.iterator().next().getText());
 }
 
 private static XPath xpathFuncArgLval;
-public static Collection<ParseTree> expr2Lvals(AstroParseResult apr, ParseTree pt)
+public static Collection<ParseTree> expr2Lvals(ParseTree pt)
 {
     if(xpathFuncArgLval == null)
-        xpathFuncArgLval = new XPath(apr.getParser(), "/expr/term/lval");
+        xpathFuncArgLval = new XPath(lookup(AstroParseResult.class).getParser(),
+                                     "/expr/term/lval");
     return xpathFuncArgLval.evaluate(pt);
 }
-public static boolean isLvalExpr(AstroParseResult apr, ParseTree pt)
+public static boolean isLvalExpr(ParseTree pt)
 {
-    return !expr2Lvals(apr, pt).isEmpty();
+    return !expr2Lvals(pt).isEmpty();
 }
 
 
