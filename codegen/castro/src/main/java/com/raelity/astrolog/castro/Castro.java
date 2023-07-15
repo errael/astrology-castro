@@ -91,6 +91,7 @@ static String listEwarnOptions()
                 func-narg       number of arguments to function
                 func-castro     function castro uses internally for code generation
                 var-rsv         assign a variable to reserved area
+                array-oob       access array out of bounds
             """;
     return ewarn;
 }

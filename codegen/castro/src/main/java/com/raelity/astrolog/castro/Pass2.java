@@ -100,6 +100,11 @@ public void exitLvalIndirect(LvalIndirectContext ctx)
 public void exitLvalArray(LvalArrayContext ctx)
 {
     checkReportUnknownVar(ctx, ctx.Identifier().getSymbol());
+    Integer constVal = Util.expr2constInt(ctx.idx);
+    if(constVal != null) {
+        if(constVal >= registers.getVar(ctx.id.getText()).getSize())
+            reportError(Error.ARRAY_OOB, ctx, "'%s' array index out of bounds", ctx.getText());
+    }
 }
 
 /** Check that only switch commands for astro expression hooks

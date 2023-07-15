@@ -14,6 +14,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import com.raelity.astrolog.castro.Castro.CastroOutputOptions;
 import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprStatementContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.CopyContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.RunContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
@@ -26,8 +27,10 @@ import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 
 import static com.raelity.antlr.ParseTreeUtil.getOriginalText;
+import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.OutputOptions.*;
 import static com.raelity.astrolog.castro.Util.collectAssignStrings;
+import static com.raelity.astrolog.castro.Util.expr2constInt;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.Util.writeRegister;
@@ -307,12 +310,26 @@ private void createStringAssignmenCommand(StringBuilder lsb,
             throw new IllegalArgumentException("Can't find a separator to use");
         }
     }
+    // check if strings fit in allocated space.
+    int room = 1;   // assume there's room for one string
+    if(sc_ctx.l instanceof LvalArrayContext arr_ctx) {
+        // can only check if there's a constant index
+        Integer constVal = expr2constInt(arr_ctx.idx);
+        if(constVal != null) {
+            int size = registers.getVar(arr_ctx.id.getText()).getSize();
+            room = size - constVal;
+        }
+    }
+    if(strings.size() > room)
+        reportError(ARRAY_OOB, sc_ctx,
+                    "'%s' array index out of bounds", sc_ctx.l.getText());
+
     if(strings.size() == 1)
         lsb.append("~2 ");
     else
         lsb.append("~20 ");
-    // found a char not in string, use it as the separator
     lsb.append(apr.prefixExpr.removeFrom(sc_ctx.l)).append(quote);
+    // found a char not in string, use it as the separator
     if(strings.size() == 1)
         lsb.append(strings.get(0));
     else
