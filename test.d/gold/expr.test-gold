@@ -28,8 +28,8 @@ input: (a & b) << c + d;
 === MACRO test_assignment(11)
 input: a = p;
     [astroExprStatement] = a p
-input: q = p[3];
-    [astroExprStatement] = q INDEX p 3
+input: q = pp[3];
+    [astroExprStatement] = q INDEX pp 3
 input: q = *p;
     [astroExprStatement] = q INDIR p
 input: *r = q;
@@ -50,30 +50,30 @@ input: a = b * + c;
     [astroExprStatement] = a * b u+ c
 
 === MACRO test_function(12)
-input: f();
-    [astroExprStatement] FUNC(0) f 
-input: f(a);
-    [astroExprStatement] FUNC(1) f a 
-input: f(a, b);
-    [astroExprStatement] FUNC(2) f a b 
-input: f(a, b, c);
-    [astroExprStatement] FUNC(3) f a b c 
-input: f(a, b+c, d);
-    [astroExprStatement] FUNC(3) f a + b c d 
-input: f(a+b);
-    [astroExprStatement] FUNC(1) f + a b 
-input: f(a+b, b);
-    [astroExprStatement] FUNC(2) f + a b b 
-input: f(a, b, c+b);
-    [astroExprStatement] FUNC(3) f a b + c b 
-input: a = f();
-    [astroExprStatement] = a FUNC(0) f 
-input: a = f(a, b+c, d) + g(x, y);
-    [astroExprStatement] = a + FUNC(3) f a + b c d  FUNC(2) g x y 
-input: a = f(a, b+c, g(x,y) + z);
-    [astroExprStatement] = a FUNC(3) f a + b c + FUNC(2) g x y  z 
-input: a = f(a, b+c, g(x,y) + h(z));
-    [astroExprStatement] = a FUNC(3) f a + b c + FUNC(2) g x y  FUNC(1) h z  
+input: Lat();
+    [astroExprStatement] FUNC(0) Lat 
+input: Odd(a);
+    [astroExprStatement] FUNC(1) Odd a 
+input: Max(a, b);
+    [astroExprStatement] FUNC(2) Max a b 
+input: Tween(a, b, c);
+    [astroExprStatement] FUNC(3) Tween a b c 
+input: Tween(a, b+c, d);
+    [astroExprStatement] FUNC(3) Tween a + b c d 
+input: Odd(a+b);
+    [astroExprStatement] FUNC(1) Odd + a b 
+input: Max(a+b, b);
+    [astroExprStatement] FUNC(2) Max + a b b 
+input: Tween(a, b, c+b);
+    [astroExprStatement] FUNC(3) Tween a b + c b 
+input: a = Lat();
+    [astroExprStatement] = a FUNC(0) Lat 
+input: a = Tween(a, b+c, d) + Max(x, y);
+    [astroExprStatement] = a + FUNC(3) Tween a + b c d  FUNC(2) Max x y 
+input: a = Tween(a, b+c, Max(x,y) + z);
+    [astroExprStatement] = a FUNC(3) Tween a + b c + FUNC(2) Max x y  z 
+input: a = Tween(a, b+c, Max(x,y) + Odd(z));
+    [astroExprStatement] = a FUNC(3) Tween a + b c + FUNC(2) Max x y  FUNC(1) Odd z  
 
 === MACRO test_block(1)
 input: { a = b; c = d;}
@@ -108,16 +108,16 @@ input: z = if(a+b) c += d else {e; f;}
 === MACRO test_quest_colon(6)
 input: a ? b : d ? d : e ? f : g;
     [astroExprStatement] ?: a b ?: d d ?: e f g   
-input: a ? b : c() + d ? e : f ? g : h;
-    [astroExprStatement] ?: a b ?: + FUNC(0) c  d e ?: f g h   
-input: a ? b : c ? d() + e : f ? g : h;
-    [astroExprStatement] ?: a b ?: c + FUNC(0) d  e ?: f g h   
+input: a ? b : Lat() + d ? e : f ? g : h;
+    [astroExprStatement] ?: a b ?: + FUNC(0) Lat  d e ?: f g h   
+input: a ? b : c ? Lat() + e : f ? g : h;
+    [astroExprStatement] ?: a b ?: c + FUNC(0) Lat  e ?: f g h   
 input: x = a ? b : d ? d : e ? f : g;
     [astroExprStatement] = x ?: a b ?: d d ?: e f g   
-input: x = a ? b : c() + d ? e : f ? g : h;
-    [astroExprStatement] = x ?: a b ?: + FUNC(0) c  d e ?: f g h   
-input: x = a ? b : c ? d() + e : f ? g : h;
-    [astroExprStatement] = x ?: a b ?: c + FUNC(0) d  e ?: f g h   
+input: x = a ? b : Lat() + d ? e : f ? g : h;
+    [astroExprStatement] = x ?: a b ?: + FUNC(0) Lat  d e ?: f g h   
+input: x = a ? b : c ? Lat() + e : f ? g : h;
+    [astroExprStatement] = x ?: a b ?: c + FUNC(0) Lat  e ?: f g h   
 
 === MACRO test_control_expressions(6)
 input: for(a = b+c; d+e) f += a;
@@ -145,8 +145,8 @@ input: if(a) {b;};
     [astroExprStatement] IF a BLOCK(1) b 
 input: + if(c) {d;}
     [astroExprStatement] u+ IF c BLOCK(1) d 
-input: x[3+4] = *y + while(a[3] < x) b+=c;
-    [astroExprStatement] = INDEX x + 3 4 + INDIR y WHILE < INDEX a 3 x += b c
+input: pp[3+4] = *y + while(pp[3] < x) b+=c;
+    [astroExprStatement] = INDEX pp + 3 4 + INDIR y WHILE < INDEX pp 3 x += b c
 input: do {a; b;} while(c);
     [astroExprStatement] DO_WHILE BLOCK(2) a b  c
 input: + while(a) b;
@@ -159,17 +159,17 @@ input: do {a; b;} while(c) + while(a) b;
     [astroExprStatement] + DO_WHILE BLOCK(2) a b  c WHILE a b
 input: a += b + {  c;  d;  }
     [astroExprStatement] += a + b BLOCK(2) c d 
-input: q = (while(a[3] < x) b+=c);
-    [astroExprStatement] = q WHILE < INDEX a 3 x += b c
+input: q = (while(pp[3] < x) b+=c);
+    [astroExprStatement] = q WHILE < INDEX pp 3 x += b c
 input: q = b += c + for(p=3; 5) h;
     [astroExprStatement] = q += b + c FOR p <== 3 UNTIL 5 h
 
 === MACRO test_multiple_control_expressions(4)
-input: q = while(a[3] < x) b += c + for(p=3; 5) h;
-    [astroExprStatement] = q WHILE < INDEX a 3 x += b + c FOR p <== 3 UNTIL 5 h
-input: q = (while(a[3] < x) b += c) + for(p = 3; 5) h;
-    [astroExprStatement] = q + WHILE < INDEX a 3 x += b c FOR p <== 3 UNTIL 5 h
-input: q = while(a[3] < x) b += c;
-    [astroExprStatement] = q WHILE < INDEX a 3 x += b c
+input: q = while(pp[3] < x) b += c + for(p=3; 5) h;
+    [astroExprStatement] = q WHILE < INDEX pp 3 x += b + c FOR p <== 3 UNTIL 5 h
+input: q = (while(pp[3] < x) b += c) + for(p = 3; 5) h;
+    [astroExprStatement] = q + WHILE < INDEX pp 3 x += b c FOR p <== 3 UNTIL 5 h
+input: q = while(pp[3] < x) b += c;
+    [astroExprStatement] = q WHILE < INDEX pp 3 x += b c
 input: for(p = 3; 5) h += 3;
     [astroExprStatement] FOR p <== 3 UNTIL 5 += h 3

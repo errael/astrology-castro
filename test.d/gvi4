@@ -1,0 +1,20 @@
+#!/bin/bash
+
+base=$1
+gvim -c "set co=220" -c "vsplit" \
+    -c "1wincmd w   |  split" \
+    -c "3wincmd w   |  split" \
+    -c "2wincmd w   |  next" \
+    -c "3wincmd w   |  2next" \
+    -c "4wincmd w   |  3next" \
+    $base.{castro,as,def,map}
+
+exit
+
+gvim -c "set co=220" -c "vsplit" \
+    -c "1wincmd w" -c "split" \
+    -c "3wincmd w" -c "split" \
+    -c "2wincmd w" -c "next" \
+    -c "3wincmd w" -c "2next" \
+    -c "4wincmd w" -c "3next" \
+    $base.{castro,as,def,map}

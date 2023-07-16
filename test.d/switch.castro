@@ -1,7 +1,5 @@
 //var d1 {3};
 
-//switch one quote< "o<'n>e" st<u\>ff "two" >
-
 //macro aaa {
 //    a =Obj();
 //    b =hou();
@@ -17,7 +15,7 @@ switch yyy {
     R ~{ a = 0;}
     R ~ { a = 0;}
     R {~ a = 0;}
-    /// R { ~ a = 0;}
+    //ERR// R { ~ a = 0;}
 
 //                                                  V - beware "=Obj"
 //  R {~ b=0; for(a=0;Objs()) if(ObjOn(a)) { b=a; a=Objs(); } b; }
@@ -38,26 +36,26 @@ switch xxx @37 {
     _~0
     =~0
 
-    /// =~ 0
-    /// ~ 0stuff { x; }
-    /// ~ 0
-    /// _ ~0
+    //ERR// =~ 0
+    //ERR// ~ 0stuff { x; }
+    //ERR// ~ 0
+    //ERR// _ ~0
 
-    /// _~ 0
+    //ERR// _~ 0
 
-    /// _~ FOO
-    /// =~ BAR
+    //ERR// _~ FOO
+    //ERR// =~ BAR
 
     // one or both of following cause crash, not an issue
     //_~
     //=~
 
-    /// - stuff
-    /// ~ foo
-    /// ~foo
+    //ERR// - stuff
+    //ERR// ~ foo
+    //ERR// ~foo
     ~foo { x; }
     ~ { a; }
-    /// bar { a; }
+    //ERR// bar { a; }
 }
 
 switch one {

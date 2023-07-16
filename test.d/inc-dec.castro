@@ -1,16 +1,20 @@
+var pp[4] @200;
 
 macro Inc {
     a += 3;
 
     a += 1;
     *a += 1;
-    a[3] += 1;
+    // a[3] += 1;   // error: Array OOB
+    pp[3] += 1;
 }
+
 macro Dec {
     b -= 3;
 
     b -= 1;
     *b -= 1;
-    b[3] -= 1;
+    // b[3] -= 1;   // error: Array OOB
+    pp[3] -= 1;
 }
 

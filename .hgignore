@@ -9,6 +9,10 @@ grammar/Astro
 grammar/grout
 play
 
+test.d/*.as
+test.d/*.def
+test.d/*.map
+
 syntax: glob
 
 *.class

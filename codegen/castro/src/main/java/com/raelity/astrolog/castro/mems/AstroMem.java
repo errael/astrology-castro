@@ -511,28 +511,26 @@ public void dumpAllocation(PrintWriter out, EnumSet<VarState> skip)
  */
 public void dumpVars(PrintWriter out, boolean byAddr)
 {
-    dumpVars(out, byAddr, false);
-}
-public void dumpVars(PrintWriter out, boolean byAddr, boolean includeFileName)
-{
-    dumpVars(out, byAddr, EnumSet.of(BUILTIN), includeFileName);
+    dumpVars(out, byAddr, EnumSet.of(BUILTIN));
 }
 
 public void dumpVars(PrintWriter out, boolean byAddr, EnumSet<VarState> skip)
 {
-    dumpVars(out, byAddr, skip, false);
+    dumpVars(out, byAddr, skip, false, true);
 }
 
 public void dumpVars(PrintWriter out, boolean byAddr,
-                     EnumSet<VarState> skip, boolean includeFileName)
+                     EnumSet<VarState> skip, boolean includeFileName,
+                     boolean spaceHeader)
 {
     Map<Range<Integer>, Var> allocationMap = getAllocationMap();
     ArrayList<Var> varsInError = Lists.newArrayList(getErrorVars());
     RangeSet<Integer> used = TreeRangeSet.create(allocationMap.keySet());
     RangeSet<Integer> free = used.complement();
 
-    out.printf("// Space: %s %s\n// used %s\n// free %s\n// errors: %d\n",
-               memSpaceName, fileName, used, free, varsInError.size());
+    if(spaceHeader)
+        out.printf("// Space: %s %s\n// used %s\n// free %s\n// errors: %d\n",
+                   memSpaceName, fileName, used, free, varsInError.size());
 
     List<Var> varList = Lists.newArrayList(iterator());
     if(byAddr)

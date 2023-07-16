@@ -1,0 +1,7 @@
+#!/bin/bash
+
+CASTRO_JAR=$DIR/../codegen/castro/build/libs/castro-0.1.0.jar
+
+castro() {
+    java -jar $CASTRO_JAR --form=nl,indent,run_nl,run_indent "$@"
+}

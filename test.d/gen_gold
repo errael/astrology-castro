@@ -1,0 +1,39 @@
+#!/bin/bash
+
+CMD=${0##*/}
+DIR=${0%/*}
+
+. $DIR/TEST_COMMON
+
+
+# Running the tests from their directory, gives nice short names.
+cd $DIR
+
+Main() {
+    run_all "$@"
+}
+
+run_all() {
+    for t in "$@"
+    do
+        gen $t
+    done
+}
+
+#
+# cur_file used by callees
+#
+gen() {
+    local cur_file=${1%.castro}
+    echo "generating gold for '$cur_file'"
+    castro --anon $cur_file.castro
+    make_gold
+}
+
+make_gold() {
+    mv $cur_file.as gold/$cur_file.as-gold
+    mv $cur_file.def gold/$cur_file.def-gold
+    mv $cur_file.map gold/$cur_file.map-gold
+}
+
+Main "$@"

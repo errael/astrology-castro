@@ -24,13 +24,14 @@ macro test_isolated_value {
     //*55;
 }
 
+var pp[50] @100;
 
 //
 // ASSIGNMENT
 //
 macro test_assignment {
     a = p;
-    q = p[3];
+    q = pp[3];
     q = *p;
     *r = q;
     p = &q;
@@ -48,19 +49,19 @@ macro test_assignment {
 // FUNCTION CALLS
 //
 macro test_function {
-    f();
-    f(a);
-    f(a, b);
-    f(a, b, c);
-    f(a, b+c, d);
-    f(a+b);
-    f(a+b, b);
-    f(a, b, c+b);
+    Lat();
+    Odd(a);
+    Max(a, b);
+    Tween(a, b, c);
+    Tween(a, b+c, d);
+    Odd(a+b);
+    Max(a+b, b);
+    Tween(a, b, c+b);
 
-    a = f();
-    a = f(a, b+c, d) + g(x, y);
-    a = f(a, b+c, g(x,y) + z);
-    a = f(a, b+c, g(x,y) + h(z));
+    a = Lat();
+    a = Tween(a, b+c, d) + Max(x, y);
+    a = Tween(a, b+c, Max(x,y) + z);
+    a = Tween(a, b+c, Max(x,y) + Odd(z));
 }
 
 //
@@ -95,11 +96,11 @@ macro test_if_else {
 //
 macro test_quest_colon {
     a ? b : d ? d : e ? f : g;
-    a ? b : c() + d ? e : f ? g : h;
-    a ? b : c ? d() + e : f ? g : h;
+    a ? b : Lat() + d ? e : f ? g : h;
+    a ? b : c ? Lat() + e : f ? g : h;
     x = a ? b : d ? d : e ? f : g;
-    x = a ? b : c() + d ? e : f ? g : h;
-    x = a ? b : c ? d() + e : f ? g : h;
+    x = a ? b : Lat() + d ? e : f ? g : h;
+    x = a ? b : c ? Lat() + e : f ? g : h;
 }
 
 //
@@ -128,13 +129,13 @@ macro test_complex_expressions {
     if(a) {b;};
     + if(c) {d;}
 
-    x[3+4] = *y + while(a[3] < x) b+=c;
+    pp[3+4] = *y + while(pp[3] < x) b+=c;
     do {a; b;} while(c); + while(a) b;
     do a while(b) + 33;
     + do a while(b) + 33;
     do {a; b;} while(c) + while(a) b;
     a += b + {  c;  d;  }  
-    q = (while(a[3] < x) b+=c);
+    q = (while(pp[3] < x) b+=c);
     q = b += c + for(p=3; 5) h;
 }
 
@@ -143,9 +144,9 @@ macro test_complex_expressions {
 // MULTIPLE CONTROL EXPRESSIONS
 //
 macro test_multiple_control_expressions {
-    q = while(a[3] < x) b += c + for(p=3; 5) h;
-    q = (while(a[3] < x) b += c) + for(p = 3; 5) h; // while in parens
-    q = while(a[3] < x) b += c; for(p = 3; 5) h += 3;
+    q = while(pp[3] < x) b += c + for(p=3; 5) h;
+    q = (while(pp[3] < x) b += c) + for(p = 3; 5) h; // while in parens
+    q = while(pp[3] < x) b += c; for(p = 3; 5) h += 3;
 }
 
 //

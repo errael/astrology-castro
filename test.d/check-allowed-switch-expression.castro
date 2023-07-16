@@ -6,10 +6,10 @@ switch CheckAllowedExpression {
     _~0
 
     // error: does not take expression
-    ~0 {a;}
-    -~0 {a;}
-    =~0 {a;}
-    _~0 {a;}
+    //ERR// ~0 {a;}
+    //ERR// -~0 {a;}
+    //ERR// =~0 {a;}
+    //ERR// _~0 {a;}
 
     // other tilde commands take an expression
     ~cmd {a;}
@@ -18,10 +18,10 @@ switch CheckAllowedExpression {
     _~cmd {a;}
 
     // error: missing expression
-    ~cmd
-    -~cmd
-    =~cmd
-    _~cmd
+    //ERR// ~cmd
+    //ERR// -~cmd
+    //ERR// =~cmd
+    //ERR// _~cmd
 
     // regular commands
     cmd
@@ -30,8 +30,8 @@ switch CheckAllowedExpression {
     _cmd
 
     // error: regualr command does not take an expression
-    cmd {a;}
-    -cmd {a;}
-    =cmd {a;}
-    _cmd {a;}
+    //ERR// cmd {a;}
+    //ERR// -cmd {a;}
+    //ERR// =cmd {a;}
+    //ERR// _cmd {a;}
 }

@@ -265,7 +265,7 @@ private static void compileOneFile()
 
     PassOutput.passOutput();
     if(apr.errors() > currentErrorCount)
-        err.printf("Code output: %d errors\n", apr.errors() - currentErrorCount);
+        err.printf("Pass output: %d errors\n", apr.errors() - currentErrorCount);
 }
 
 /** Setup the global lookup for the next file that's going to be
@@ -326,11 +326,11 @@ private static boolean createMap()
         Macros macros = lookup(MacrosAccum.class).global();
         Switches switches = lookup(SwitchesAccum.class).global();
 
-        registers.dumpVars(out, true, true);
+        registers.dumpVars(out, true, EnumSet.of(BUILTIN), true, false);
         out.println();
-        macros.dumpVars(out, true, true);
+        macros.dumpVars(out, true, EnumSet.of(BUILTIN), true, false);
         out.println();
-        switches.dumpVars(out, true, true);
+        switches.dumpVars(out, true, EnumSet.of(BUILTIN), true, false);
         out.println();
 
     } catch(IOException ex) {

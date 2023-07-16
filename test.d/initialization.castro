@@ -1,21 +1,31 @@
 
 
-var yyy1[3] @100 {z+1, z+2, z+3};
-var yyy2[] @200 {1, 2, 3};
-//var yyy3[] @300;
-//var yyy4[3] @400 {1, 2, 3, 4};
-var yyy5 @500 {107};
+var yy1[3] @100 {z+1, z+2, z+3};
+var yy2[] @200 {1, 2, 3};
+var yy2a[5] @250 {1, 2, 3};
 
-var yyy;
+//ERR// var yy3[] @300;
+//ERR// var yy4[3] @400 {1, 2, 3, 4};
+
+var yy5 @500 {107};
+var yy6[10] @600;
+
+var yy;
+
 run {
-    SetString yyy "one" "two"
+    SetString yy1[0] "one" "two"
+    setstring yy6[5] "one" "two" "three"
+
+    //ERR// SetString yy1 "one" "two"
+    //ERR// SetString yy "one" "two"
 }
 
 switch foo @100 {
-    SetString j "one" "two"
-    SetString j[3] "one" "two"
-    SetString yyy "one" "two"
-    SetString yyy[3] "one" // "two"
-    //xxx
-    //SetString(x, "one", "two")
+    SetString yy "one"
+    SetString yy6[0] "one;" "two:" "one." "two,"
+
+    //ERR// SetString j "one" "two"
+    //ERR// SetString j[3] "one" "two"
+    //ERR// SetString yy "one" "two"
+    //ERR// SetString yy[3] "one" // "two"
 }

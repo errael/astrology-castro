@@ -1,0 +1,129 @@
+#!/bin/bash
+
+CMD=${0##*/}
+DIR=${0%/*}
+
+. $DIR/TEST_COMMON
+
+set -e
+
+TESTS="
+    assignments.castro
+    blocks.castro
+    check-allowed-switch-expression.castro
+    expr.castro
+    inc-dec.castro
+    initialization.castro
+    run.castro
+    special-func.castro
+    switch.castro
+    unary-ops.castro
+"
+
+usage() {
+    echo "$CMD [-l] [-h] [--clean] [files]*"
+    echo "    -l    list files tested by default, then exit"
+    echo "    --clean   rm .as, .def, .map files for defualt test list"
+    echo "    -h    output this message"
+
+    exit 1
+}
+
+declare TEMP
+#TEMP=$(getopt -o "w:s"
+TEMP=$(getopt -o "hl" \
+    --long 'clean' \
+    -n "$CMD" -- "$@")
+if [[ $? -ne 0 ]]; then usage > /dev/stderr; fi
+eval set -- "$TEMP"
+unset TEMP
+
+typeset -i cleanflag
+typeset -i lflag
+while true
+do
+    case "$1" in
+        -l) lflag=1;                                shift   ;;
+        --clean) cleanflag=1;                       shift   ;;
+        -h) usage                                           ;;
+        --) shift
+            break
+            ;;
+        *) echo Internal Error "'$1'"; exit 1   ;;
+    esac
+done
+
+if ((lflag))
+then
+    echo $TESTS
+    exit
+fi
+
+declare -a files=($@)
+nFiles=${#files[@]}
+
+if ((nFiles == 0))
+then
+    files=($TESTS)
+fi
+nFiles=${#files[@]}
+
+# Running the tests from their directory, gives nice short names.
+cd $DIR
+
+
+Main() {
+    run_all
+}
+
+typeset -A error_tests
+typeset -A error_files
+
+run_all() {
+    for t in ${files[@]}
+    do
+        run_test $t
+    done
+
+    if ((${#error_tests[@]} != 0))
+    then
+        echo "FAIL: ${!error_tests[@]}"
+        echo "FAIL_DIFF: ${!error_files[@]}"
+    fi
+}
+
+#
+# cur_test used by callees
+#
+run_test() {
+    local cur_test=${1%.castro}
+    if ((cleanflag))
+    then
+        rm -f $cur_test.as $cur_test.def $cur_test.map $cur_test.test
+        return
+    fi
+
+    echo === running $t
+    castro --anon $cur_test.castro
+    check_result $cur_test
+}
+
+check_result() {
+    check_one as
+    check_one def
+    check_one map
+}
+
+check_one() {
+    local ext=$1
+
+    if ! diff gold/$cur_test.$ext-gold $cur_test.$ext
+    then
+        #echo "FAIL DIFF '$cur_test.$ext'"
+        #echo "adding to error '$cur_test'"
+        error_tests+=($cur_test)
+        error_files+=($cur_test.$ext)
+    fi
+}
+
+Main

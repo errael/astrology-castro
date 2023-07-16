@@ -77,7 +77,7 @@ static final String IN_EXT = ".castro";
 static final String OUT_EXT = ".as";
 static final String DEF_EXT = ".def";
 static final String MAP_EXT = ".map";
-static final String OUT_TEST_EXT = ".castro.test";
+static final String OUT_TEST_EXT = ".test";
 
 private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 

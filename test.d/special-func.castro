@@ -11,11 +11,11 @@ macro ma1 {
 
     macro(3);
 
-    macro(foo1);    // error, not a macro
+    // macro(foo1);    // error, not a macro
 
-    macro(bar);     // error, 
-    macro(+baz);    // error, 
-    macro(*foo1);   // error
+    // macro(bar);     // error, 
+    // macro(+baz);    // error, 
+    // macro(*foo1);   // error
 
     //a = macro(c + switch(bar));
 
