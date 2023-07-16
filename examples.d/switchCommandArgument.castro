@@ -1,0 +1,43 @@
+
+// The last example in "AstroExpression Features" is
+// "command switches can use AstroExpressions [as] parameter
+// 
+// This code
+    run {
+        =R {~
+            b = 0;
+            for(a = 0; Objs())
+                if(ObjOn(a)) { b = a; a = Objs(); }
+            b;
+        }
+    }
+// generates
+//    =R  "~ =b 0  For %a 0 Objs If ObjOn @a Do =b @a =a Objs  @b" 
+// the same as in the example. The AstroExpression could be
+// defined as a macro
+    macro findFirstUnrestrictedObject @300 {
+        b=0; for(a=0;Objs()) if(ObjOn(a)) { b = a; a = Objs(); } b;
+    }
+// and used like
+    run {
+        =R {~ Macro(findFirstUnrestrictedObject); }
+    }
+// the two generating
+//    ~M 300 '=b 0 For %a 0 Objs If ObjOn @a Do =b @a =a Objs @b'
+//    =R  "~ Macro 300" 
+
+// The code could be in a switch macro
+    switch restrictFirstUnrestrictedObject @101 {
+        =R {~ b=0; for(a=0;Objs()) if(ObjOn(a)) { b = a; a = Objs(); } b; }
+    }
+// generates
+//    -M0 101 '=R  "~ =b 0  For %a 0 Objs If ObjOn @a Do =b @a =a Objs  @b"'
+// Here's an example of using it
+    macro doStuff {
+        // ...
+        Switch(restrictFirstUnrestrictedObject);
+        // ...
+    }
+// which generates
+//    ~M 1 'Switch 101'
+

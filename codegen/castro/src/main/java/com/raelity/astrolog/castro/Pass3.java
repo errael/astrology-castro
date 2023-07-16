@@ -49,7 +49,7 @@ import static com.raelity.astrolog.castro.tables.Ops.astroCode;
 import static com.raelity.astrolog.castro.Util.expr2constInt;
 
 /**
- * Generate the code.
+ * Generate the AstroExpression code.
  */
 public class Pass3 extends GenPrefixExpr
 {
@@ -342,7 +342,7 @@ private StringBuilder lvalAssignment(StringBuilder lsb, LvalContext lval_ctx)
     lsb.append('=');
     // In the case of "a = 3" ==> "=a 3".
     // All the other cases have a space after the "=".
-    if(!(lval_ctx instanceof LvalMemContext) || lval_ctx.id.getText().length() != 1)
+    if(!(lval_ctx instanceof LvalMemContext) || !isBuiltinVar(lval_ctx.id))
         lsb.append(' ');
     lvalWriteVar(lsb, lval_ctx, true);
     return lsb;
@@ -355,8 +355,8 @@ String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String rhs)
     int opType = opToken.getType();
     if(opType == Assign) {
         // Just a simple assign
-        // Ignore the lhs, it is an lvalRead.
-        // Need an assign target.
+        // Ignore the lhs, it was generated as an lvalRead;
+        // need an assign target.
         lvalAssignment(sb, ctx.l)
                 .append(rhs);
     } else {
@@ -441,7 +441,7 @@ String genInteger(IntegerContext ctx)
 String genAddr(TermAddressOfContext ctx)
 {
     sb.setLength(0);
-    sb.append("ADDR").append(' ').append(ctx.Identifier().getText());
+    sb.append(registers.getVar(ctx.id.getText()).getAddr()).append(' ');
     return sb.toString();
 }
 

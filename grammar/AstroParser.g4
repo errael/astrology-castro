@@ -174,10 +174,10 @@ expr returns [int fBlock = 0]
     ;
 
 term
-   : integer        #termSingle
-   | paren_expr     #termParen
-   | lval           #termSingle
-   | '&' Identifier #termAddressOf
+   : integer            #termSingle
+   | paren_expr         #termParen
+   | lval               #termSingle
+   | '&' id=Identifier  #termAddressOf
    ;
 
 lval locals[Token id]

@@ -36,9 +36,10 @@ import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.Util.writeRegister;
 
 /**
- * Output the Astrolog code, as a .as file,
- * for the top level macro/switch/run/copy.
- * For the switch command in particular there is some
+ * Generate and Output the Astrolog code, as a .as file,
+ * for the top level macro/switch/run/copy; using the AstroExpression
+ * compiled in pass3.
+ * For the switch command expecially there is some
  * data massage going on to meet the Astrolog input requirements.
  */
 public class PassOutput extends AstroParserBaseListener

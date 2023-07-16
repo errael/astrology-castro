@@ -20,9 +20,9 @@ import static com.raelity.astrolog.castro.Util.lookup;
 
 /**
  * Process the tree so that each top level expr node has a String property
- which is the prefix notation code for it's expr; using putToPrefixExpr()
- and removeFromPrefixExpr, this class manages
- the {@code prefixCode} properties and subclass provide the data.
+ which is the prefix notation code for it's expr; using prefixExpr.put()
+ and prefixExpr.removeFrom(), this class manages
+ the {@code prefixExpr} properties and subclass provide the data.
  * A top level expr node has no expr ascendants. 
  * At each expr node, invoke an abstract method with the node's tokens
  * and the children expressions; the subclass generates and returns the
@@ -30,7 +30,7 @@ import static com.raelity.astrolog.castro.Util.lookup;
  * <p>
  * The general strategy is that an exit listener sets an expr's
  * prefixExpr string incorporating it's children. Repeat until only the
- * top level exprs have prefixCode.
+ * top level exprs have prefixExpr.
  */
 public abstract class GenPrefixExpr extends AstroParserBaseListener
 {
