@@ -19,6 +19,9 @@ import java.util.stream.Collectors;
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
+import org.antlr.v4.gui.TreeViewer;
+
+import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 import com.raelity.astrolog.castro.lib.CentralLookup;
 import com.raelity.astrolog.castro.mems.AstroMem;
@@ -123,10 +126,16 @@ static void usage(String note)
                         debug           - precede macro output with original text
                     Default is no options; switch/macro/run on a single line
                     which is compatible with all Astrolog versions.
-                --anonymous     no dates/versions in output files (for golden)
+                --anonymous     no dates/versions in output files (for test golden)
+                -h      output this message
+
+                The following options are primarily for debug. --gui is also fun to see
+                and may provide insight. It shows how the program is parsed. Only uses
+                the first file and does not generate any compilation output files.
+                --gui           show AST in GUI
+                --console       show the AST in the console
                 --test  output prefix parse data
                 -v      output more info
-                -h      output this message
             """.replace("{cmdName}", cmdName);
     System.err.println(usage);
     System.err.println(listEwarnOptions());
@@ -145,6 +154,9 @@ public static void main(String[] args)
     String outName = null;
     String mapName = null;
 
+    boolean console = false;
+    boolean gui = false;
+
     LOG.getLevel(); // So now it's used.
     addLookup(err);
     
@@ -155,6 +167,8 @@ public static void main(String[] args)
         new LongOpt("anonymous", LongOpt.NO_ARGUMENT, null, 4),
         new LongOpt("mapname", LongOpt.REQUIRED_ARGUMENT, null, 5),
         new LongOpt("Ewarn", LongOpt.REQUIRED_ARGUMENT, null, 6),
+        new LongOpt("gui", LongOpt.NO_ARGUMENT, null, 7),
+        new LongOpt("console", LongOpt.NO_ARGUMENT, null, 8),
     };
     Getopt g = new Getopt(cmdName, args, "o:hv", longOpts);
     
@@ -206,6 +220,8 @@ public static void main(String[] args)
                     warnset.remove(e.error());
             }
         }
+        case 7 -> gui = true;
+        case 8 -> console = true;
         default -> {
             usage();
         }
@@ -230,6 +246,11 @@ public static void main(String[] args)
     addLookup(new CastroWarningOptions(warnset));
     if(mapName != null)
         addLookup(new CastroMapName(mapName));
+
+    if(gui || console) {
+        show(inputFiles.get(0), gui, console);
+        return;
+    }
 
     if(optTest) {
         runCompilerTest(inputFiles.get(0), outName);
@@ -339,6 +360,35 @@ static void runCompilerTest(String inputFile, String outName)
     ProgramContext program = apr.getParser().program();
     apr.setContext(program);
     GenSimpleOutput.genPrefixNotation();
+}
+
+static void show(String inputFile, boolean gui, boolean console) {
+    CastroIO castroIO = new CastroIO(inputFile, "-", true);
+    if(castroIO.getErrorMsg() != null)
+        usage(castroIO.getErrorMsg());
+    if(castroIO.isAbort())
+        return;
+    AstroParseResult apr = castroIO.getApr();
+
+    AstroParser parser = apr.getParser();
+    ProgramContext program = apr.getParser().program();
+
+    if(console)     //show AST in console
+        castroIO.pw().println(program.toStringTree(parser));
+
+    if(gui) {
+        TreeViewer viewer = new TreeViewer(Arrays.asList(
+                parser.getRuleNames()),program);
+        viewer.open();
+        // JFrame frame = new JFrame("Antlr AST");
+        // JPanel panel = new JPanel();
+        // viewer.setScale(1.5); // Scale a little
+        // panel.add(viewer);
+        // frame.add(panel);
+        // frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // frame.pack();
+        // frame.setVisible(true);
+    }
 }
 
 }
