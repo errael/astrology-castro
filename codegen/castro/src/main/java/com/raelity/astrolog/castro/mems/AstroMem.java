@@ -345,12 +345,17 @@ public void allocate()
 @SuppressWarnings("serial")
 public final class OutOfMemory extends RuntimeException
 {
+public final Var var;
+public final RangeSet<Integer> free;
 OutOfMemory(Var var, RangeSet<Integer> free)
 {
     super(String.format("%s: name %s, size %d, free %s",
                         AstroMem.this.getClass().getSimpleName(),
                         var.getName(), var.getSize(), free));
+    this.var = var;
+    this.free = free;
 }
+
 }
 
 /** Some HACKery to add a variable, under a different name, to a tracking pool.

@@ -4,6 +4,7 @@ package com.raelity.astrolog.castro;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import com.raelity.astrolog.castro.Castro.MacrosAccum;
 import com.raelity.astrolog.castro.Castro.RegistersAccum;
 import com.raelity.astrolog.castro.Castro.SwitchesAccum;
 import com.raelity.astrolog.castro.mems.AstroMem;
+import com.raelity.astrolog.castro.mems.AstroMem.OutOfMemory;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.AstroMem.Var.VarState;
 import com.raelity.astrolog.castro.mems.Macros;
@@ -118,11 +120,28 @@ static boolean compile(List<String> inputFiles, String outName)
     //
 
     //debugDumpAllvars(workingFileData, false);
+    boolean oom = false;
     for(FileData data : workingFileData) {
         initLookup(data);
 
-        applyLayoutsAndAllocate();
+        try {
+            applyLayoutsAndAllocate();
+        } catch(OutOfMemory ex) {
+            Var var = ex.var;
+            reportError(ex.var.getId(), "'%s' OutOfMemory size %d, free %s",
+                        var.getName(), var.getSize(), ex.free);
+            oom = true;
+        }
     }
+
+    // Before publishing the globals, output per/file info.
+    for(FileData data : workingFileData) {
+        initLookup(data);
+        createDef();
+    }
+
+    if(oom)
+        return false;
 
     // Collect all the variables into "global" container
     for(FileData data : workingFileData) {
@@ -131,12 +150,6 @@ static boolean compile(List<String> inputFiles, String outName)
         for(AstroMem mem : lookupAll(AstroMem.class)) {
             mem.addToGlobal();
         }
-    }
-
-    // Before publishing the globals, output per/file info.
-    for(FileData data : workingFileData) {
-        initLookup(data);
-        createDef();
     }
 
     // Examine each of the global mem spaces accumulated from
