@@ -22,7 +22,6 @@ import org.antlr.v4.runtime.tree.xpath.XPath;
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroWarningOptions;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.IntegerContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.lib.CentralLookup;
@@ -225,6 +224,8 @@ public static void report(Error err, Token token, Object... msg)
 
 public static String getLineText(Token token)
 {
+    if(token == null)
+        return "NULL TOKEN";
     // TODO: check return is empty string, try a backup
     return getLineText(token.getLine(), token.getInputStream());
 }

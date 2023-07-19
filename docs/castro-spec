@@ -23,6 +23,7 @@ Examples:
 ==============================================================================
 Warnings/Oddities:
 
+- There are some cases where blanks are significant...
 - The functions "=Obj" and "=Hou" can cause problems, for example
   "a==Obj(...)" is parsed as "a == Obj(...)", write "a= =Obj(...)"
   or use "a=AssignObj(...)"
@@ -53,17 +54,21 @@ Warnings/Oddities:
 
 ==============================================================================
 Variable initialization
-    var v1 {1};
-    var v2[] { a+b, c+d };
-    var v3 @100 {1};
-Builtin variables can be initialized like other variables; but they
-can not have their address changed.
+var var1 {1};       // initialize automantically allocated variable
+var var2 @100 {1};  // initialize variable assigned to addess 100
+var var_array1[] { a+b, c+d };  // initialize 2 element array
+var var_array2[4] { a+b, c+d };  // 4 element array, initialize first tw0 elements
+
+Builtin variables can be initialized like other non-array variables; but they can **not** have their address assigned.
 
 
-Initialize strings in a switch, example
+Strings are initialized in `switch {...}` or `run {...}`.
+var var1;
+var var_array[4];
 switch someSwitch {
-    SetString yyy "one" "two"       // assign string to yyy[0], yyy[1]
-    SetString yyy[3] "one"          // assign string to yyy[0]
+    SetString var_array[0] "one" "two"  // assign string to var_array[0], var_array[1]
+    SetString var_array[3] "one"        // assign string to var_array[3]
+    SetString var1 "one"                // assign string to var1
 }
 
 ==============================================================================
