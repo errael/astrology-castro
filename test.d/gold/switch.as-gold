@@ -43,7 +43,7 @@
     ~ "@y"  
     ~1 "@y"  
     ~0stuff "@x"  
-    ~stuff "=c Add @a @b  Add @x @y   DoWhile @a  @b"  
+    ~stuff "=c Add @a @b  Add @x @y   DoWhile @b @a"  
     ~3 "@y"  
     "two"  
 '

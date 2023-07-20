@@ -84,8 +84,8 @@
     For %a Add @b @c Add @d @e =f Add @f @a  
     While @a @b  
     While @a Do @b @c  
-    DoWhile @a @b  
-    DoWhile Do @a @b @c  
+    DoWhile @b @a  
+    DoWhile @c Do @a @b  
     DoCount Add @x @y Do @a @b  
 '
 
@@ -97,11 +97,11 @@
     If @a @b   
     If @c @d   
     = Add 100 Add 3 4 Add Var @y While Lt @103 @x =b Add @b @c  
-    DoWhile Do @a @b @c  
+    DoWhile @c Do @a @b  
     While @a @b  
-    Add DoWhile @a @b 33  
-    Add DoWhile @a @b 33  
-    Add DoWhile Do @a @b @c While @a @b  
+    Add DoWhile @b @a 33  
+    Add DoWhile @b @a 33  
+    Add DoWhile @c Do @a @b While @a @b  
     =a Add @a Add @b Do @c @d  
     =q While Lt @103 @x =b Add @b @c  
     =q =b Add @b Add @c For %p 3 5 @h  
