@@ -39,7 +39,7 @@ This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpre
 - No `||` or `&&`, only `|`,`&`. Primary downside is no short circuit execution.
 - No user defined functions, only builtin functions.
 - Address of and indirect, `&var_name` and `*var_name` supported;
-  `&` and `*` are only used with an identifier.
+  `&` and `*` are only used with an identifier, nothing more complex.
 <!--
 </details>
 
@@ -61,7 +61,7 @@ This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpre
 
 ###     Statement summary
 These are the basic statements
-- `layout` directives constrain and restict automatic allocation. The three regions are memory/macro/switch. Optional and, if present, must be before anything else.
+- `layout` directives constrain automatic allocation. The three regions are memory/macro/switch. `layout` is optional and, if present, must be before anything else.
 - `var` declarations and initialization.
 - `macro` definitions result in `~M` `Astrolog`commands.
 - `switch` definitions result in `-M0` `Astrolog` commands.
@@ -94,7 +94,16 @@ The `macro` statement defines an `AstroExpression macro` using `~M`; it contains
 
 Note that everything is an expression, including the control flow statements.
 
-The `switch()` and `macro()` functions take either an identifier, which is a `macro` or `switch` name; they also take an expression which evaluates to an index. Expressions and function calls are as usual.
+The `macro()` and `switch()` functions take either an identifier, which is a `macro` or `switch` name respectively. They also take an expression which evaluates to an index. Expressions and function calls are as usual. Note the following
+```
+var pp;
+macro m1 {
+    macro(100 + a);
+    pp = 100 + a;
+    macro(pp);      // This generates an error, the identifier pp is not the name of a macro
+    macro(+pp);     // This works because "+pp" is unambiguously an expression
+}
+```
 
 ###     switch
 The `switch` statement defines a `command switch macro` using `-M0`; it contains `Astrolog command switch`es and their arguments.
@@ -116,7 +125,7 @@ Note that `@12` attaches this macro to **F12**; it is optional, but until `Astro
 The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the switch commands are at the top level of the `.as` file output and not embedded in a `-M0`.
 
 ###     copy
-The `copy` statement literally copies text to the output file with no interpretation or changes; the ultimate workaround.
+The `copy` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround.
 
 ###     Variables
 
@@ -163,8 +172,6 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
 <!--
 </details>
 -->
-#####   Control Flow Statements
-See the [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express) for details.
 
 ##      Running castro
 
@@ -179,6 +186,8 @@ java -jar $CASTRO_JAR "$@"
 
 After running `castro`, look at the resulting `.as` to see what happened.
 Explore examples.d and test.d with their gold files.
+
+Allocation is done in a way such that things can be moved around in a file and after re-compilation there is no change in the locations of allocated variables. If no variables are added, removed or renamed, and their sizes are the same then their allocated locations does not change no matter the order of their declaration.
 
 ### Warnings instead of Errors
 Some errors that `castro` reports, may in fact not be errors depending on the targeted version of `Astrolog` or because the "programmer knows what they're doing". There are command line options to treat specified errors as options; try `castro -h`.
@@ -216,4 +225,4 @@ Handle single file compilation, uses the .map file as input.
     ```
     `ex5` does `{ a += 1; } -3;` three times. The result of first two subtractions are thrown away, the last is the value of the `repeat(3)`.
 
-    _A prefix notation predence/parenthesis free language can be nice._
+    _A prefix notation predence/parenthesis free language can be nice and does have advantages._

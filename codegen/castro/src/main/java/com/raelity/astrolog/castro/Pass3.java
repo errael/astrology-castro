@@ -170,7 +170,7 @@ String genDoWhileOp(ExprDowhileOpContext ctx, String statement, String condition
 {
     sb.setLength(0);
     sb.append(astroControlOp(Flow.DO_WHILE)).append(' ')
-            .append(statement).append(condition);
+            .append(condition).append(statement);
     return sb.toString();
 }
 
