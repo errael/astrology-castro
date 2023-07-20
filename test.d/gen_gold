@@ -26,7 +26,7 @@ run_all() {
 gen() {
     local cur_file=${1%.castro}
     echo "generating gold for '$cur_file'"
-    castro --anon $cur_file.castro
+    tcastro --anon $cur_file.castro
     make_gold
 }
 

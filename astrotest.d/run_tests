@@ -1,0 +1,111 @@
+#!/bin/bash
+
+CMD=${0##*/}
+DIR=${0%/*}
+
+#. $DIR/../test.d/TEST_COMMON
+
+set -e
+
+MAP=testing
+OUTPUT=results
+
+FILES="
+    flow_control
+    test_infra
+    main
+"
+
+usage() {
+    echo "$CMD [-l] [-h] [--clean]"
+    #echo "    -l    list files tested by default, then exit"
+    echo "    --clean   rm .as, .def, .map files"
+    echo "    -h    output this message"
+
+    exit 1
+}
+
+declare TEMP
+#TEMP=$(getopt -o "w:s"
+TEMP=$(getopt -o "h" \
+    --long 'clean' \
+    -n "$CMD" -- "$@")
+if [[ $? -ne 0 ]]; then usage > /dev/stderr; fi
+eval set -- "$TEMP"
+unset TEMP
+
+typeset -i cleanflag
+#typeset -i lflag
+while true
+do
+    case "$1" in
+#       -l) lflag=1;                                shift   ;;
+        --clean) cleanflag=1;                       shift   ;;
+        -h) usage                                           ;;
+        --) shift
+            break
+            ;;
+        *) echo Internal Error "'$1'"; exit 1   ;;
+    esac
+done
+
+declare -a files=($FILES)
+
+# echo ${files[@]/%/.as}
+# f1=(${files[@]/%/.as})
+# typeset -p f1
+# exit
+
+# Running the tests from their directory, gives nice short names.
+cd $DIR
+
+
+Main() {
+    run_all
+}
+
+typeset -A error_tests
+typeset -A error_files
+
+run_all() {
+    run_test
+}
+
+clean() {
+    rm -f ${files[@]/%/.as} ${files[@]/%/.def} ${files[@]/%/.map}
+    rm -f $MAP.map $OUTPUT
+}
+
+run_echo() {
+    echo "$@" > /dev/tty
+    "$@"
+}
+
+#
+# cur_test used by callees
+#
+run_test() {
+    if ((cleanflag))
+    then
+        clean
+        return
+    fi
+
+    run_echo castro --mapn=$MAP ${files[@]/%/.castro}
+
+    temp=(${files[@]/%/.as})
+    run_echo astrolog @ ${temp[@]/#/-i } > $OUTPUT
+    grep -E 'PASS|FAIL' $OUTPUT
+
+    if grep -q FAIL $OUTPUT
+    then
+        echo
+        echo "============================================================="
+        echo "                          FAIL"
+        echo "============================================================="
+        echo
+        exit 1
+    fi
+}
+
+Main

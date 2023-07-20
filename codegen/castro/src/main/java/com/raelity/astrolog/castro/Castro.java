@@ -111,7 +111,7 @@ static void usage(String note)
                 infile may be '-' for stdin.
                 if outfile not specified, it is derived from infile.
                 -o outfile      allowed if exactly one infile, '-' is stdout
-                --mapoutput=mapname     Map file name is <mapname>.map.
+                --mapname=mapname     Map file name is <mapname>.map.
                                         Default is derived from first infile.
                 --Ewarn=        Make the specified error a warning.
                                 Default: warn for func-castro and var-rsv.
