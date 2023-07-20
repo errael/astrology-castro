@@ -1,0 +1,4 @@
+
+run {
+    ~1 { Switch(test_control_flow); }
+}

@@ -1,0 +1,161 @@
+/*
+ * Test the various flow control statements.
+ * https://github.com/errael/astrology-castro#flow-control-statements
+ */
+
+
+layout memory { base 200; limit 250; }
+layout macro { base 200; limit 250; }
+layout switch { base 200; limit 250; }
+
+var cond;
+
+var count;
+var temp;
+var temp2;
+
+switch test_control_flow {
+    // set up pointers to test name and sub test name
+    //~1 { c = &test_name; d = &test_name + 1; }
+
+    // run the tests
+    ~1 { Switch(test_if); }
+    ~1 { Switch(test_if_else); }
+    ~1 { Switch(test_repeat); }
+    ~1 { Switch(test_while); }
+    ~1 { Switch(test_do_while); }
+    ~1 { Switch(test_for); }
+
+    // The following is to test that failure output
+    // ~1 { Switch(test_if_all_fail); }
+}
+
+switch test_for {
+    SetString test_name[0] "test_for_1"
+    SetString test_name[1] ": count 5"
+    ~1 { count = 5; result = Macro(test_for_1); expect = 6; macro(check); }
+    // also check the computed result
+    SetString test_name[1] ": count 5 calculation"
+    ~1 { result = temp2; expect = 5; macro(check); }
+
+    SetString test_name[1] ": count 4"
+    ~1 { count = 4; result = Macro(test_for_2); expect = 5; macro(check); }
+    // also check the computed result
+    SetString test_name[1] ": count 4 calculation"
+    ~1 { result = temp2; expect = 10; macro(check); }
+}
+macro test_for_1 {
+    temp2 = 0;
+    for(temp = 1; count) temp2 += 1;
+}
+macro test_for_2 {
+    temp2 = 0;
+    for(temp = 1; count) temp2 += temp;
+}
+
+switch test_while {
+    SetString test_name[0] "test_while_1"
+    SetString test_name[1] ": 5"
+    ~1 { count = 5; result = Macro(test_while_1); expect = 5; macro(check); }
+    SetString test_name[1] ": 11"
+    ~1 { count = 11; result = Macro(test_while_1); expect = 11; macro(check); }
+
+    SetString test_name[0] "test_while_5"
+    SetString test_name[1] ": 5-25"
+    ~1 { count = 5; result = Macro(test_while_5); expect = 25; macro(check); }
+    SetString test_name[1] ": 11-55"
+    ~1 { count = 11; result = Macro(test_while_5); expect = 55; macro(check); }
+}
+macro test_while_1 {
+    temp = 0;
+    while((count -= 1) >= 0) temp += 1;
+}
+macro test_while_5 {
+    temp = 0;
+    while((count -= 1) >= 0) { temp += 1; temp += 1; temp +=1; temp += 1; temp += 1; }
+}
+
+switch test_do_while {
+    SetString test_name[0] "test_do_while_1"
+    SetString test_name[1] ": 5"
+    ~1 { count = 5; result = Macro(test_do_while_1); expect = 5; macro(check); }
+    SetString test_name[1] ": 11"
+    ~1 { count = 11; result = Macro(test_do_while_1); expect = 11; macro(check); }
+
+    SetString test_name[0] "test_do_while_5"
+    SetString test_name[1] ": 5-25"
+    ~1 { count = 5; result = Macro(test_do_while_5); expect = 25; macro(check); }
+    SetString test_name[1] ": 11-55"
+    ~1 { count = 11; result = Macro(test_do_while_5); expect = 55; macro(check); }
+}
+macro test_do_while_1 {
+    temp = 0;
+    do temp += 1 while((count -= 1) > 0) ;
+}
+macro test_do_while_5 {
+    temp = 0;
+     do { temp += 1; temp += 1; temp +=1; temp += 1; temp += 1; } while((count -= 1) > 0);
+}
+
+switch test_if {
+    SetString test_name[0] "test_if"
+
+    SetString test_name[1] ": true"
+    ~1 { cond = 1; expect = 1; result = 0; Macro(test_if); }
+    SetString test_name[1] ": false"
+    ~1 { cond = 0; expect = 0; result = 0; Macro(test_if); }
+}
+
+macro test_if {
+    if(cond) result = 1;
+    Macro(check);
+}
+
+switch test_if_else {
+    SetString test_name[0] "test_if_else"
+
+    SetString test_name[1] ": true"
+    ~1 { cond = 1; expect = 1; result = 0; Macro(test_if_else); }
+    SetString test_name[1] ": false"
+    ~1 { cond = 0; expect = 2; result = 0; Macro(test_if_else); }
+}
+
+macro test_if_else {
+    if(cond) result = 1 else result = 2;
+    Macro(check);
+}
+
+switch test_repeat {
+    SetString test_name[0] "test_repeat_1"
+
+    SetString test_name[1] ": 3"
+    ~1 { count = 3; result = Macro(test_repeat_1); expect = 3; Macro(check); }
+    SetString test_name[1] ": 7"                             
+    ~1 { count = 7; result = Macro(test_repeat_1); expect = 7; Macro(check); }
+
+    SetString test_name[0] "test_repeat_2"
+    SetString test_name[1] ": 3-6"
+    ~1 { count = 3; result = Macro(test_repeat_2); expect = 6; Macro(check); }
+    SetString test_name[1] ": 7-14"                             
+    ~1 { count = 7; result = Macro(test_repeat_2); expect = 14; Macro(check); }
+}
+
+// the macro return value, the repeat value, is the result
+macro test_repeat_1 {
+    temp = 0;
+    repeat(count) temp += 1;
+}
+macro test_repeat_2 {
+    temp = 0;
+    repeat(count) { temp += 1; temp += 1; }
+}
+
+// NOTE: the condition is opposite the passing test
+switch test_if_all_fail {
+    SetString test_name[0] "test_if_show_fail"
+
+    SetString test_name[1] ": true"
+    ~1 { cond = 0; expect = 1; result = 0; Macro(test_if); }
+    SetString test_name[1] ": false"
+    ~1 { cond = 1; expect = 0; result = 0; Macro(test_if); }
+}

@@ -104,7 +104,7 @@ run_test() {
     fi
 
     echo === running $t
-    castro --anon $cur_test.castro
+    tcastro --anon $cur_test.castro
     check_result $cur_test
 }
 

@@ -1,0 +1,4 @@
+These tests generate files that aren't expected to run in Astrolog. They are
+intended to detect changes in code generation output. The output format
+facilitates seeing any changes. They do not execute at least because of line
+breaks.

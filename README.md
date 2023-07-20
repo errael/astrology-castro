@@ -82,17 +82,18 @@ layout memory {
 This directive allows allocation of addresses between 101 inclusive and 111 exclusive; but not addresses 104, 106, 107, 108. If an _out of memory_ error occurs look at the `.def` output file for more information.
 
 ###     macro
-The `macro` statement defines an `AstroExpression macro` using `~M`; it contains expressions with function calls. See [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); there are a wide variety of function calls.
+The `macro` statement defines an `AstroExpression macro` using `~M`; it contains expressions with function calls. See [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); there are a wide variety of function calls. The value of `Macro(some_macro)` is the value of the last statement/expr in some_macro as defined by `Astrolog`.
 
-#####   Control Flow Statements
+#####   Flow Control Statements
 - `if (`_expr_`)` _expr_
 - `if (`_expr_`)` _expr_ `else` _expr_
 - `repeat (`_expr_`)` _expr_
 - `while (`_expr_`)` _expr_
 - `do` _expr_ `while (`_expr_`)`
+- `for(` _addr_ `=` _expr_ `;` _expr_ `)` _expr_
 - `{` _one or more expr separated by semi-colon_ `}`
 
-Note that everything is an expression, including the control flow statements.
+Note that everything is an expression, including the flow control statements themselves.
 
 The `macro()` and `switch()` functions take either an identifier, which is a `macro` or `switch` name respectively. They also take an expression which evaluates to an index. Expressions and function calls are as usual. Note the following
 ```
@@ -119,10 +120,12 @@ switch nameId @12 {
     SetString var_strings[0] "one" "two" "three"
 }
 ```
-Note that `@12` attaches this macro to **F12**; it is optional, but until `Astrolog` supports `command switch macro` numbers outside the function key range it should be specified, rather than using automatic allocation. All `Astrolog` commands that start with `~`, except `~0`, `_~0`, `~2` and `~20`, take an `AstroExpression` as an argument; it is delineated with `{` and `}`. An `AstroExpression` can be used as an argument to a `command switch macro`; it is delineated by `{~` and `}`. `SetString`, and it's aliases, is used to assign strings.
+All `Astrolog` commands that start with `~`, except `~0`, `_~0`, take an `AstroExpression` as an argument; it is delineated with `{` and `}`. An `AstroExpression` can be used as an argument to a `command switch macro`; it is delineated by `{~` and `}`. `SetString` (not `~2` and `~20`), and it's aliases, is used to assign strings.
+
+Note that `@12` assigns 12 to the switch address which binds it to **F12**; it is optional, but until `Astrolog` supports `command switch macro` numbers outside the function key range it should be specified, rather than using automatic allocation.
 
 ###     run
-The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the switch commands are at the top level of the `.as` file output and not embedded in a `-M0`.
+The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is source as in `-i file`.
 
 ###     copy
 The `copy` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround.
@@ -175,17 +178,17 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
 
 ##      Running castro
 
-Requires jre-11 or later. The released jar is executable, I use a script like
+Requires jre-11 or later. The released jar is executable, use a script like
 ```
 #!/bin/sh
 CASTRO_JAR=/lib/castro-0.1.0.jar
 java -jar $CASTRO_JAR "$@"
 ```
 
-
-
 After running `castro`, look at the resulting `.as` to see what happened.
 Explore examples.d and test.d with their gold files.
+
+### Working with multiple files.
 
 Allocation is done in a way such that things can be moved around in a file and after re-compilation there is no change in the locations of allocated variables. If no variables are added, removed or renamed, and their sizes are the same then their allocated locations does not change no matter the order of their declaration.
 

@@ -1,0 +1,65 @@
+/*
+ * Simple test infrastructure.
+ *
+ * Usage
+ * Do "macro(check) with expect/result and test_name setup.
+ * Either PASS or FAIL is output along with info.
+ *
+ * Vars
+ *      expect
+ *      result
+ *
+ * Strings
+ *      test_name[0] - name of running test
+ *      test_name[1] - sub test name
+ */
+
+// expect/result are moved to a/b
+// c/d are set up to point to the test_name strings
+
+
+layout memory { base 100; limit 150; }
+layout macro { base 100; limit 150; }
+layout switch { base 100; limit 150; }
+
+var expect;
+var result;
+var test_name[2];
+
+macro check {
+    c = &test_name; d = &test_name + 1;
+
+    a = expect;
+    b = result;
+    expect == result ? switch(pass) : switch(fail);
+}
+
+switch pass {
+    -YYT "PASS: \c\d\n"
+}
+switch fail {
+    -YYT "FAIL: \c\d: expect: \A result: \B\n"
+}
+
+switch mark1 { -YYT "MARK-1\n" } 
+switch mark2 { -YYT "MARK-2\n" } 
+switch mark3 { -YYT "MARK-3\n" } 
+switch mark4 { -YYT "MARK-4\n" } 
+switch mark5 { -YYT "MARK-5\n" } 
+
+
+
+//switch check {
+//    ~1 { expect == result ? switch(pass) : switch(fail); }
+//}
+
+// macro check {
+//     expect == result ? switch(pass) : switch(fail);
+// }
+// 
+// switch pass {
+// 
+// }
+// 
+// switch fail {
+// }
