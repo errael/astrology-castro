@@ -57,6 +57,55 @@ This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpre
 -->
 
 
+##      Running castro
+
+Requires jre-11 or later. The released jar is executable, use a script named castro like
+```
+#!/bin/sh
+CASTRO_JAR=/lib/castro-0.1.0.jar
+java -jar $CASTRO_JAR "$@"
+```
+
+Running `castro`  on a file produces 3 output files. For example, if there's `foo.castro` then executing `castro foo.castro` creates
+- `foo.as` can be executed by `Astrolog` with `-i foo.as`
+- `foo.def` has details of allocation
+- `foo.map` has a summary of allocation for all files that were compiled
+
+When multiple files are compiled together, the `.map` file name defaults to the first file in the input file list; it can be specifed with the `--mapname=base`.
+
+Look at `foo.as`, it can be executed by `Astrolog` with `-i foo.as`. `foo.def` has details 
+
+There's examples.d, astrotest.d and test.d with their gold files.
+
+### Working with multiple files.
+
+Compiling multiple files together is currently the only way to get symbolic references between files resolved.
+
+There is a test which compiles and runs on astrolog at
+[multi-file test](https://github.com/errael/astrology-castro/tree/main/astrotest.d)
+It is compiled and run with
+```
+castro --mapn=testing flow_control.castro test_infra.castro main.castro
+astrolog -i flow_control.as -i test_infra.as -i main.as
+```
+main.castro is simply
+```
+run {
+    ~1 { Switch(test_control_flow); }
+}
+```
+and loaded last to make sure all the macro and switch are loaded. After the compilation you can look at the files. The .def files, one for each .castro file, has the allocation details for the file. The file testing.map shows the allocation for all the files, in this excerpt
+```
+var test_name[2] @102;    // [ALLOC] test_infra.castro
+var cond @200;    // [ALLOC] flow_control.castro
+```
+note that each line has the file name in which the variable is declared. To run this under released Astrolog-7.60, remove the `layout switch` directives. It is likely later releases will not restrict `command switch` to function keys.
+
+Allocation is done in a way such that things can be moved around in a file and after re-compilation there is no change in the locations of allocated variables. If no variables are added, removed or renamed, and their sizes are the same then their allocated locations does not change no matter the order of their declaration.
+
+### Warnings instead of Errors
+Some errors that `castro` reports, may in fact not be errors depending on the targeted version of `Astrolog` or because the "programmer knows what they're doing". There are command line options to treat specified errors as options; try `castro -h`.
+
 ##      Castro Language
 
 ###     Statement summary
@@ -65,7 +114,7 @@ These are the basic statements
 - `var` declarations and initialization.
 - `macro` definitions result in `~M` `Astrolog`commands.
 - `switch` definitions result in `-M0` `Astrolog` commands.
-- `run` results in inline top level command switches. Contents like `switch`, but not embedded in a `-M0`.
+- `run` results in inline top level command switches. Parsed as `switch`, but not embedded in a `-M0`.
 - `copy` literally copies text to the output file with no interpretation or changes.
 
 `castro` identifiers are the same as with `"C"`, likewise operators have the same precedence as with `"C"`; blanks and newlines are just white space.
@@ -84,7 +133,7 @@ This directive allows allocation of addresses between 101 inclusive and 111 excl
 ###     macro
 The `macro` statement defines an `AstroExpression macro` using `~M`; it contains expressions with function calls. See [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); there are a wide variety of function calls. The value of `Macro(some_macro)` is the value of the last statement/expr in some_macro as defined by `Astrolog`.
 
-#####   Flow Control Statements
+####   Flow Control Statements
 - `if (`_expr_`)` _expr_
 - `if (`_expr_`)` _expr_ `else` _expr_
 - `repeat (`_expr_`)` _expr_
@@ -96,6 +145,7 @@ The `macro` statement defines an `AstroExpression macro` using `~M`; it contains
 
 Note that everything is an expression, including the flow control statements themselves.
 
+#####   Macro() and Switch()
 The `macro()` and `switch()` functions take either an identifier, which is a `macro` or `switch` name respectively. They also take an expression which evaluates to an index. Expressions and function calls are as usual. Note the following
 ```
 var pp;
@@ -107,7 +157,8 @@ macro m1 {
 }
 ```
 
-In `castro` `e1 ? e2 : e3` follows the same semantics as `if(e1) e2 else e3` (and `"C"`) and only evaluates one of `e2` or `e3`. This is different from `Astrolog`'s `? :` operator which evaluates both `e2` and `e3`.
+#####   ? :
+In `castro`, `e1 ? e2 : e3` follows the same semantics as `if(e1) e2 else e3` (and `"C"`) and only evaluates one of `e2` or `e3`. This is different from `Astrolog`'s `? :` operator which evaluates both `e2` and `e3`.
 
 ###     switch
 The `switch` statement defines a `command switch macro` using `-M0`; it contains `Astrolog command switch`es and their arguments.
@@ -123,7 +174,7 @@ switch nameId @12 {
     SetString var_strings[0] "one" "two" "three"
 }
 ```
-All `Astrolog` commands that start with `~`, except `~0`, `_~0`, take an `AstroExpression` as an argument; it is delineated with `{` and `}`. An `AstroExpression` can be used as an argument to a `command switch macro`; it is delineated by `{~` and `}`. `SetString` (not `~2` and `~20`), and it's aliases, is used to assign strings.
+All `Astrolog` commands that start with `~`, except `~0`, `_~0`, take an `AstroExpression` as an argument; it is delineated with `{` and `}`. An `AstroExpression` can be used as an argument to a `command switch macro`; it is delineated by `{~` and `}`. `SetString` (not `~2` and `~20`), and it's aliases, is used to assign strings. `~2`, `~20`, `~M` commands are only indirectly supported.
 
 Note that `@12` assigns 12 to the switch address which binds it to **F12**; it is optional, but until `Astrolog` supports `command switch macro` numbers outside the function key range it should be specified, rather than using automatic allocation.
 
@@ -178,47 +229,6 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
 <!--
 </details>
 -->
-
-##      Running castro
-
-Requires jre-11 or later. The released jar is executable, use a script like
-```
-#!/bin/sh
-CASTRO_JAR=/lib/castro-0.1.0.jar
-java -jar $CASTRO_JAR "$@"
-```
-
-After running `castro`, look at the resulting `.as` to see what happened.
-Explore examples.d and test.d with their gold files.
-
-### Working with multiple files.
-
-Compiling multiple files together is currently the only way to get symbolic references between files resolved.
-
-There is a test which compiles and runs on astrolog at
-[multi-file test](https://github.com/errael/astrology-castro/tree/main/astrotest.d)
-It is compiled and run with
-```
-castro --mapn=testing flow_control.castro test_infra.castro main.castro
-astrolog -i flow_control.as -i test_infra.as -i main.as
-```
-main.castro is simply
-```
-run {
-    ~1 { Switch(test_control_flow); }
-}
-```
-and loaded last to make sure all the macro and switch are loaded. After the compilation you can look at the files. The .def files, one for each .castro file, has the allocation details for the file. The file testing.map shows the allocation for all the files, in this excerpt
-```
-var test_name[2] @102;    // [ALLOC] test_infra.castro
-var cond @200;    // [ALLOC] flow_control.castro
-```
-note that each line has the file name in which the variable is declared. To run this under released Astrolog-7.60, remove the `layout switch` directives. It is likely later releases will not restrict `command switch` to function keys.
-
-Allocation is done in a way such that things can be moved around in a file and after re-compilation there is no change in the locations of allocated variables. If no variables are added, removed or renamed, and their sizes are the same then their allocated locations does not change no matter the order of their declaration.
-
-### Warnings instead of Errors
-Some errors that `castro` reports, may in fact not be errors depending on the targeted version of `Astrolog` or because the "programmer knows what they're doing". There are command line options to treat specified errors as options; try `castro -h`.
 
 
 ##      TODO
