@@ -1,1 +1,7 @@
-These are runtime test that execute in astrolog.
+These are runtime test that execute in astrolog. The shell script usage
+    ./run_tests
+    ./run_tests --clean
+
+It can be executed directly, without the shell script
+    castro --mapn=testing flow_control.castro test_infra.castro main.castro
+    astrolog -i flow_control.as -i test_infra.as -i main.as

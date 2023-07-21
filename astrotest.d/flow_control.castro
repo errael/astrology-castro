@@ -15,19 +15,18 @@ var temp;
 var temp2;
 
 switch test_control_flow {
-    // set up pointers to test name and sub test name
-    //~1 { c = &test_name; d = &test_name + 1; }
-
     // run the tests
-    ~1 { Switch(test_if); }
-    ~1 { Switch(test_if_else); }
-    ~1 { Switch(test_repeat); }
-    ~1 { Switch(test_while); }
-    ~1 { Switch(test_do_while); }
-    ~1 { Switch(test_for); }
+    ~1 {
+        Switch(test_if);
+        Switch(test_if_else);
+        Switch(test_repeat);
+        Switch(test_while);
+        Switch(test_do_while);
+        Switch(test_for);
+    }
 
-    // The following is to test that failure output
-    // ~1 { Switch(test_if_all_fail); }
+    // Uncomment the following to see what failure output looks like
+    ~1 { Switch(test_force_fail); }
 }
 
 switch test_for {
@@ -151,12 +150,8 @@ macro test_repeat_2 {
     repeat(count) { temp += 1; temp += 1; }
 }
 
-// NOTE: the condition is opposite the passing test
-switch test_if_all_fail {
-    SetString test_name[0] "test_if_show_fail"
-
-    SetString test_name[1] ": true"
-    ~1 { cond = 0; expect = 1; result = 0; Macro(test_if); }
-    SetString test_name[1] ": false"
-    ~1 { cond = 1; expect = 0; result = 0; Macro(test_if); }
+switch test_force_fail {
+    SetString test_name[0] "test_force_fail"
+    SetString test_name[1] ""
+    ~1 { expect = 321; result = 123; macro(check); }
 }
