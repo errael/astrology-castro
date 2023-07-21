@@ -9,6 +9,11 @@ set -e
 
 MAP=testing
 OUTPUT=results
+ASTROLOG=/junk/install/astrolog.d/base/astrolog
+
+astrolog() {
+    $ASTROLOG "$@"
+}
 
 FILES="
     flow_control
@@ -18,7 +23,6 @@ FILES="
 
 usage() {
     echo "$CMD [-l] [-h] [--clean]"
-    #echo "    -l    list files tested by default, then exit"
     echo "    --clean   rm .as, .def, .map files"
     echo "    -h    output this message"
 
@@ -26,7 +30,6 @@ usage() {
 }
 
 declare TEMP
-#TEMP=$(getopt -o "w:s"
 TEMP=$(getopt -o "h" \
     --long 'clean' \
     -n "$CMD" -- "$@")
@@ -35,7 +38,6 @@ eval set -- "$TEMP"
 unset TEMP
 
 typeset -i cleanflag
-#typeset -i lflag
 while true
 do
     case "$1" in
@@ -81,9 +83,6 @@ run_echo() {
     "$@"
 }
 
-#
-# cur_test used by callees
-#
 run_test() {
     if ((cleanflag))
     then
@@ -94,7 +93,7 @@ run_test() {
     run_echo castro --mapn=$MAP ${files[@]/%/.castro}
 
     temp=(${files[@]/%/.as})
-    run_echo astrolog @ ${temp[@]/#/-i } > $OUTPUT
+    run_echo astrolog ${temp[@]/#/-i } > $OUTPUT
     grep -E 'PASS|FAIL' $OUTPUT
 
     if grep -q FAIL $OUTPUT

@@ -38,6 +38,7 @@ switch test_for {
     SetString test_name[1] ": count 5 calculation"
     ~1 { result = temp2; expect = 5; macro(check); }
 
+    SetString test_name[0] "test_for_2"
     SetString test_name[1] ": count 4"
     ~1 { count = 4; result = Macro(test_for_2); expect = 5; macro(check); }
     // also check the computed result

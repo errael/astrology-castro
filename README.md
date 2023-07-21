@@ -91,6 +91,7 @@ The `macro` statement defines an `AstroExpression macro` using `~M`; it contains
 - `while (`_expr_`)` _expr_
 - `do` _expr_ `while (`_expr_`)`
 - `for(` _addr_ `=` _expr_ `;` _expr_ `)` _expr_
+- _expr_ `?` _expr_ `:` _expr_
 - `{` _one or more expr separated by semi-colon_ `}`
 
 Note that everything is an expression, including the flow control statements themselves.
@@ -105,6 +106,8 @@ macro m1 {
     macro(+pp);     // This works because "+pp" is unambiguously an expression
 }
 ```
+
+In `castro` `e1 ? e2 : e3` follows the same semantics as `if(e1) e2 else e3` (and `"C"`) and only evaluates one of `e2` or `e3`. This is different from `Astrolog`'s `? :` operator which evaluates both `e2` and `e3`.
 
 ###     switch
 The `switch` statement defines a `command switch macro` using `-M0`; it contains `Astrolog command switch`es and their arguments.
@@ -190,6 +193,28 @@ Explore examples.d and test.d with their gold files.
 
 ### Working with multiple files.
 
+Compiling multiple files together is currently the only way to get symbolic references between files resolved.
+
+There is a test which compiles and runs on astrolog at
+[multi-file test](https://github.com/errael/astrology-castro/tree/main/astrotest.d)
+It is compiled and run with
+```
+castro --mapn=testing flow_control.castro test_infra.castro main.castro
+astrolog -i flow_control.as -i test_infra.as -i main.as
+```
+main.castro is simply
+```
+run {
+    ~1 { Switch(test_control_flow); }
+}
+```
+and loaded last to make sure all the macro and switch are loaded. After the compilation you can look at the files. The .def files, one for each .castro file, has the allocation details for the file. The file testing.map shows the allocation for all the files, in this excerpt
+```
+var test_name[2] @102;    // [ALLOC] test_infra.castro
+var cond @200;    // [ALLOC] flow_control.castro
+```
+note that each line has the file name in which the variable is declared. To run this under released Astrolog-7.60, remove the `layout switch` directives. It is likely later releases will not restrict `command switch` to function keys.
+
 Allocation is done in a way such that things can be moved around in a file and after re-compilation there is no change in the locations of allocated variables. If no variables are added, removed or renamed, and their sizes are the same then their allocated locations does not change no matter the order of their declaration.
 
 ### Warnings instead of Errors
@@ -197,7 +222,7 @@ Some errors that `castro` reports, may in fact not be errors depending on the ta
 
 
 ##      TODO
-Handle single file compilation, uses the .map file as input.
+Handle single file compilation, uses the .map file as input. Not sure this is an essential feature.
 
 
 ##     Warnings/Oddities:
