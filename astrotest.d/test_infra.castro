@@ -1,27 +1,22 @@
 /*
  * Simple test infrastructure for running tests under Astrolog.
  *
- * Example output
- *      PASS: test_do_while_5: 5-25
- *      FAIL: test_if_show_fail: true: expect: 1 result: 0
- * Note that expect/result are only output on fail.
- *
  * Usage
- *      Do "macro(check)" after initializing expect/result and test_name.
+ *      Do "macro(check)" after setting expect/result and test_name.
  *      Either PASS or FAIL is output along with info.
+ *
+ * Example output. Note that expect/result are only output on fail.
+ *      PASS: test_do_while_5: 5-25
+ *      FAIL: test_force_fail: expect: 321 result: 123
  *
  * Vars
  *      expect
  *      result
  *
  * Strings
- *      test_name[0] - name of running test
- *      test_name[1] - sub test name
+ *      test_name[0] - name of running test. example: "test_do_while_5"
+ *      test_name[1] - sub test name.        example: ": 5-25"
  */
-
-// expect/result are moved to a/b
-// c/d are set up to point to the test_name strings
-
 
 layout memory { base 100; limit 150; }
 layout macro { base 100; limit 150; }
@@ -31,12 +26,17 @@ var expect;
 var result;
 var test_name[2];
 
+// expect/result are moved to a/b
+// c/d are set up to point to the test_name strings
+
+// return true for pass, false for fail
 macro check {
     c = &test_name; d = &test_name + 1;
 
     a = expect;
     b = result;
     expect == result ? switch(pass) : switch(fail);
+    expect == result;
 }
 
 switch pass {

@@ -1,4 +1,4 @@
-# astrology-castro
+# astrology-castro - v0.1.0 early beta
 `castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression`. `castro` is a standalone tool; its output is a `.as` file that can be used with `Astrolog`'s command switch `-i <filename>`. Some motivating factors for `castro` were familiar expression syntax (avoid writing and maintaining the prefix notation expressions), automatic memory allocation, referring to things by name rather than address.
 
 Here's a simple example. Note that the switch, macro and variable definitions could be in 3 different files. As in `Astrolog`, function names are case insensitive. _Switch and macro names are case sensitive_.
@@ -69,11 +69,9 @@ java -jar $CASTRO_JAR "$@"
 Running `castro`  on a file produces 3 output files. For example, if there's `foo.castro` then executing `castro foo.castro` creates
 - `foo.as` can be executed by `Astrolog` with `-i foo.as`
 - `foo.def` has details of allocation
-- `foo.map` has a summary of allocation for all files that were compiled
+- `foo.map` has a summary of allocation for all files
 
-When multiple files are compiled together, the `.map` file name defaults to the first file in the input file list; it can be specifed with the `--mapname=base`.
-
-Look at `foo.as`, it can be executed by `Astrolog` with `-i foo.as`. `foo.def` has details 
+When multiple files are compiled together, the `.map` base file name defaults to the first file in the input file list; it can be specifed with the `--mapname=base`.
 
 There's examples.d, astrotest.d and test.d with their gold files.
 
@@ -94,12 +92,12 @@ run {
     ~1 { Switch(test_control_flow); }
 }
 ```
-and loaded last to make sure all the macro and switch are loaded. After the compilation you can look at the files. The .def files, one for each .castro file, has the allocation details for the file. The file testing.map shows the allocation for all the files, in this excerpt
+and loaded last to make sure all the macro and switch are loaded/defined. Examine the `.def` files to see the allocation details per file. The file `testing.map` shows the allocation for all the files, in this excerpt
 ```
 var test_name[2] @102;    // [ALLOC] test_infra.castro
 var cond @200;    // [ALLOC] flow_control.castro
 ```
-note that each line has the file name in which the variable is declared. To run this under released Astrolog-7.60, remove the `layout switch` directives. It is likely later releases will not restrict `command switch` to function keys.
+note that each line has the file name in which the variable is declared. To run this under released Astrolog-7.60, remove the `layout switch` directives.
 
 Allocation is done in a way such that things can be moved around in a file and after re-compilation there is no change in the locations of allocated variables. If no variables are added, removed or renamed, and their sizes are the same then their allocated locations does not change no matter the order of their declaration.
 
@@ -158,28 +156,28 @@ macro m1 {
 ```
 
 #####   ? :
-In `castro`, `e1 ? e2 : e3` follows the same semantics as `if(e1) e2 else e3` (and `"C"`) and only evaluates one of `e2` or `e3`. This is different from `Astrolog`'s `? :` operator which evaluates both `e2` and `e3`.
+In `castro`, `e1 ? e2 : e3` follows the same semantics as `if(e1) e2 else e3` (and `"C"`) and only evaluates one of `e2` or `e3`. This is different from `Astrolog`'s `? :` operator which evaluates both `e2` and `e3`. `castro` provides a function `QuestColon(e1, e2, e3)` which has the `Astrolog` semantics.
 
 ###     switch
-The `switch` statement defines a `command switch macro` using `-M0`; it contains `Astrolog command switch`es and their arguments.
+The `switch` statement generates a `command switch macro` using `-M0`; it contains `Astrolog command switch`es and their arguments.
 ```
 var aspect;
 var orb;
 var var_strings[3];
 
 switch nameId @12 {
-    -zl 122W19:59 47N36:35
+    -zl "122W19:59" "47N36:35"
     ~1 { aspect = 7; orb = 2; }
     -Ao {~ aspect; } {~ orb; }
-    SetString var_strings[0] "one" "two" "three"
+    SetString var_strings[0] "one" 'two' "three"
 }
 ```
-All `Astrolog` commands that start with `~`, except `~0`, `_~0`, take an `AstroExpression` as an argument; it is delineated with `{` and `}`. An `AstroExpression` can be used as an argument to a `command switch macro`; it is delineated by `{~` and `}`. `SetString` (not `~2` and `~20`), and it's aliases, is used to assign strings. `~2`, `~20`, `~M` commands are only indirectly supported.
+All `Astrolog` commands that start with `~`, except `~0`, `_~0`, take an `AstroExpression` as an argument; it is delineated with `{` and `}`. An `AstroExpression` can be used as an argument to a `command switch macro`; it is delineated by `{~` and `}`. `SetString` is used to assign strings. `~2`, `~20`, `~M` commands are not directly supported.
 
-Note that `@12` assigns 12 to the switch address which binds it to **F12**; it is optional, but until `Astrolog` supports `command switch macro` numbers outside the function key range it should be specified, rather than using automatic allocation.
+Note that `@12` assigns 12 to the switch address which binds it to **F12**; it is optional. `Astrolog` versions after v7.60 are expected to support `command switch macro` numbers outside the function key range, as it does with the `AstroExpression macro`.
 
 ###     run
-The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is source as in `-i file`.
+The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
 
 ###     copy
 The `copy` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround.
@@ -245,7 +243,9 @@ Handle single file compilation, uses the .map file as input. Not sure this is an
       But `{ ~ a+b; }` has a space between `{` and `~` and is different,
       it parses as `{ (~a) + b; }`
 
-- 
+- A `switch` is almost free form text, except inside `AstroExpression`s as with `~cmd {...}` and `-cmd {~ ... }`. If a command switch argument contains language special characters,
+like the `:` in `-zl "122W19:59" "47N36:35"` the word should be quoted. This requirement may be
+relaxed in the future.
 
 - `;` ends an expression. Beware a missing `;`. Consider
     ```
