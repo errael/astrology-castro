@@ -4,6 +4,17 @@
 //              calculating the lone value can not have side effects
 //
 
+// new test, don't want other macros to change address to minimize diff
+macro test_constants @ 20 {
+    3;
+    0b1001;
+    0x1b;
+    1.23;
+    0.12;
+    .12;
+    123.;
+}
+
 macro test_isolated_value {
     *r;
     +3;

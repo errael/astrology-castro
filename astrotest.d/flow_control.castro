@@ -14,7 +14,7 @@ var count;
 var temp;
 var temp2;
 
-switch test_control_flow {
+switch test_flow_control {
     // run the tests
     ~1 {
         Switch(test_if);
@@ -26,7 +26,7 @@ switch test_control_flow {
     }
 
     // Uncomment the following to see what failure output looks like
-    ~1 { Switch(test_force_fail); }
+    // ~1 { Switch(test_force_fail); }
 }
 
 switch test_for {

@@ -131,15 +131,17 @@ Identifier
 // see IntegerConstant below
 IntegerConstant
     //:   DecimalConstant
-    :   Digit+
+    :   NonzeroDigit Digit*
+    | '0'+      // a zero constant was handled by octal constant
+    //|   Digit+
     ;
 
-IdentifierDigitNondigit
-    :   Digit
-        (   IdentifierNondigit
-        |   Digit
-        )*
-    ;
+//IdentifierDigitNondigit
+//    :   Digit
+//        (   IdentifierNondigit
+//        |   Digit
+//        )*
+//    ;
 
 fragment
 IdentifierNondigit
@@ -158,6 +160,12 @@ Digit
     :   [0-9]
     ;
 
+
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
 //fragment
 //IntegerConstant
 //    :   DecimalConstant
@@ -167,22 +175,22 @@ Digit
 //    |	BinaryConstant
 //    ;
 
-fragment
+//fragment
 BinaryConstant
 	:	'0' [bB] [0-1]+
 	;
 
-fragment
-DecimalConstant
-    :   NonzeroDigit Digit*
-    ;
+//fragment
+//DecimalConstant
+//    :   NonzeroDigit Digit*
+//    ;
 
-fragment
-OctalConstant
-    :   '0' OctalDigit*
-    ;
+//fragment
+//OctalConstant
+//    :   '0' OctalDigit*
+//    ;
 
-fragment
+//fragment
 HexadecimalConstant
     :   HexadecimalPrefix HexadecimalDigit+
     ;
@@ -197,10 +205,10 @@ NonzeroDigit
     :   [1-9]
     ;
 
-fragment
-OctalDigit
-    :   [0-7]
-    ;
+//fragment
+//OctalDigit
+//    :   [0-7]
+//    ;
 
 fragment
 HexadecimalDigit
@@ -216,82 +224,84 @@ HexadecimalDigit
 //    ;
 
 //fragment
-FloatingConstant
-    :   DecimalFloatingConstant
-    |   HexadecimalFloatingConstant
-    ;
+//FloatingConstant
+//    :   DecimalFloatingConstant
+//    |   HexadecimalFloatingConstant
+//    ;
 
-fragment
+//fragment
 DecimalFloatingConstant
-    :   FractionalConstant ExponentPart? FloatingSuffix?
-    |   DigitSequence ExponentPart FloatingSuffix?
+    :   FractionalConstant      // ExponentPart? FloatingSuffix?
+//    |   DigitSequence ExponentPart FloatingSuffix?
     ;
 
-fragment
-HexadecimalFloatingConstant
-    :   HexadecimalPrefix (HexadecimalFractionalConstant | HexadecimalDigitSequence) BinaryExponentPart FloatingSuffix?
-    ;
+// fragment
+// HexadecimalFloatingConstant
+//     :   HexadecimalPrefix (HexadecimalFractionalConstant | HexadecimalDigitSequence) BinaryExponentPart FloatingSuffix?
+//     ;
 
 fragment
 FractionalConstant
+    // TODO: astrolog fix needed
+    // could take out the "?" since Astrolog barfs on ".12"
     :   DigitSequence? '.' DigitSequence
     |   DigitSequence '.'
     ;
 
-fragment
-ExponentPart
-    :   [eE] Sign? DigitSequence
-    ;
+//fragment
+//ExponentPart
+//    :   [eE] Sign? DigitSequence
+//    ;
 
-fragment
-Sign
-    :   [+-]
-    ;
+//fragment
+//Sign
+//    :   [+-]
+//    ;
 
 DigitSequence
     :   Digit+
     ;
 
-fragment
-HexadecimalFractionalConstant
-    :   HexadecimalDigitSequence? '.' HexadecimalDigitSequence
-    |   HexadecimalDigitSequence '.'
-    ;
-
-fragment
-BinaryExponentPart
-    :   [pP] Sign? DigitSequence
-    ;
-
-fragment
-HexadecimalDigitSequence
-    :   HexadecimalDigit+
-    ;
-
-fragment
-FloatingSuffix
-    :
-//    :   [flFL]
-    ;
+//fragment
+//HexadecimalFractionalConstant
+//    :   HexadecimalDigitSequence? '.' HexadecimalDigitSequence
+//    |   HexadecimalDigitSequence '.'
+//    ;
+//
+//fragment
+//BinaryExponentPart
+//    :   [pP] Sign? DigitSequence
+//    ;
 
 //fragment
-CharacterConstant
-    :   '\'' CCharSequence '\''
+//HexadecimalDigitSequence
+//    :   HexadecimalDigit+
+//    ;
+
+//fragment
+//FloatingSuffix
+//    :
+//    :   [flFL]
+//    ;
+
+//fragment
+//CharacterConstant
+//    :   '\'' CCharSequence '\''
 //    |   'L\'' CCharSequence '\''
 //    |   'u\'' CCharSequence '\''
 //    |   'U\'' CCharSequence '\''
-    ;
+//    ;
 
-fragment
-CCharSequence
-    :   CChar+
-    ;
+//fragment
+//CCharSequence
+//    :   CChar+
+//    ;
 
-fragment
-CChar
-    :   ~['\\\r\n]
+//fragment
+//CChar
+//    :   ~['\\\r\n]
 //    |   EscapeSequence
-    ;
+//    ;
 
 //fragment
 //EscapeSequence
@@ -304,6 +314,17 @@ CChar
 //INT
 //   : [0-9] +
 //   ;
+
+
+IdentifierDigitNondigit
+    :   Digit
+        (   IdentifierNondigit
+        |   Digit
+        )*
+    ;
+
+
+
 
 WS
    : [ \r\n\t] -> skip

@@ -40,6 +40,8 @@ This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpre
 - No user defined functions, only builtin functions.
 - Address of and indirect, `&var_name` and `*var_name` supported;
   `&` and `*` are only used with an identifier, nothing more complex.
+- Integer constants are decimal, hex (0x), binary(0b). Octal not supported.
+- Floating constants are decimal ###.###, exponents not supported.
 <!--
 </details>
 
@@ -137,7 +139,7 @@ The `macro` statement defines an `AstroExpression macro` using `~M`; it contains
 - `repeat (`_expr_`)` _expr_
 - `while (`_expr_`)` _expr_
 - `do` _expr_ `while (`_expr_`)`
-- `for(` _addr_ `=` _expr_ `;` _expr_ `)` _expr_
+- `for(` _var_ `=` _expr_ `;` _expr_ `)` _expr_
 - _expr_ `?` _expr_ `:` _expr_
 - `{` _one or more expr separated by semi-colon_ `}`
 
@@ -180,7 +182,7 @@ Note that `@12` assigns 12 to the switch address which binds it to **F12**; it i
 The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
 
 ###     copy
-The `copy` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround.
+The `copy{LITERALLY_COPIED_TO_OUTPUT}` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround. All whitespace, including newlines, is copied as is. Use '\}' to include a '}' in the output. It's unclear if this is needed, it does provide a way to redefine a macro/switch.
 
 ###     Variables
 
