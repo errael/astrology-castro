@@ -91,7 +91,7 @@ run_test() {
         return
     fi
 
-    run_echo castro --mapn=$MAP ${files[@]/%/.castro}
+    run_echo castro --mapname=$MAP ${files[@]/%/.castro}
 
     temp=(${files[@]/%/.as})
     run_echo astrolog ${temp[@]/#/-i } > $OUTPUT
@@ -99,9 +99,10 @@ run_test() {
 
     if grep -q FAIL $OUTPUT
     then
+        local a=$(grep FAIL $OUTPUT | wc -l)
         echo
         echo "============================================================="
-        echo "                          FAIL"
+        echo "                      FAIL: $a errors"
         echo "============================================================="
         echo
         exit 1

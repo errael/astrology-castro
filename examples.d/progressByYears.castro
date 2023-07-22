@@ -1,15 +1,15 @@
 var yearA;
 var yearB;
 
-// yearA/yearB inclusive
-switch progressedAspectsBetweenYearsAB @77 {
-    -dpY {~ yearA < yearB ? yearA : yearB; } {~ Abs(yearA - yearB) + 1; }
-}
-
-macro progressByYears @99 {
+macro progressByYears {
     yearA = 1973;
     yearB = 1975;
     Switch(progressedAspectsBetweenYearsAB);
+}
+
+// yearA/yearB inclusive
+switch progressedAspectsBetweenYearsAB {
+    -dpY {~ yearA < yearB ? yearA : yearB; } {~ Abs(yearA - yearB) + 1; }
 }
 
 //////////////////////////////////////////////////////////////////////////////

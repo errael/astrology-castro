@@ -69,11 +69,13 @@ macro
     : 'macro' id=Identifier ('@' addr=integer)? '{' bs+=astroExprStatement + '}'
     ;
 
-// Define/declare a "switch" command
-// which is a squence of astrolog command switches.
-// Note that "~M <index> 'expression'" and "~2[0] <index> 'vals'"
-// are not supported. Use macro definition and string initializes.
-// Can always do copy { ... } to manually generate these.
+/*
+ * Define/declare a "switch" command
+ * which is a squence of astrolog command switches.
+ * Note that "~M <index> 'expression'" and "~2[0] <index> 'vals'"
+ * are not supported. Use macro definition and string initializes.
+ * Can always do copy { ... } to manually generate these.
+ */
 
 switch
     : 'switch' id=Identifier ('@' addr=integer)? '{' sc+=switch_cmd+ '}'
