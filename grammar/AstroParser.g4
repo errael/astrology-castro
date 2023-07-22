@@ -23,9 +23,9 @@ layout_region
     ;
 
 constraint
-    : 'base' integer                        #baseContstraint
-    // | 'stack' integer                    #stackContstraint
-    | 'limit' integer                       #limitContstraint
+    : 'base' i=integer                      #baseContstraint
+    // | 'stack' i=integer                  #stackContstraint
+    | 'limit' i=integer                     #limitContstraint
     | 'reserve' rsv_loc (',' rsv_loc)*      #reserveContstraint
     ;
 

@@ -85,8 +85,8 @@ There is a test which compiles and runs on astrolog at
 [multi-file test](https://github.com/errael/astrology-castro/tree/main/astrotest.d)
 It is compiled and run with
 ```
-castro --mapn=testing flow_control.castro test_infra.castro main.castro
-astrolog -i flow_control.as -i test_infra.as -i main.as
+castro --mapn=testing expressions.castro flow_control.castro test_infra.castro main.castro
+astrolog -i expressions.as -i flow_control.as -i test_infra.as -i main.as
 ```
 main.castro is simply
 ```

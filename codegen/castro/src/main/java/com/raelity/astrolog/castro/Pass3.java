@@ -48,6 +48,7 @@ import static com.raelity.astrolog.castro.antlr.AstroLexer.Tilde;
 import static com.raelity.astrolog.castro.antlr.AstroParser.MinusAssign;
 import static com.raelity.astrolog.castro.tables.Ops.astroCode;
 import static com.raelity.astrolog.castro.Util.expr2constInt;
+import static com.raelity.astrolog.castro.Util.parseInt;
 import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.HexadecimalConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.BinaryConstant;
@@ -442,11 +443,7 @@ String genInteger(IntegerContext ctx)
     if(ctx.i.getType() == IntegerConstant) {
         sb.append(s);
     } else {
-        int i = switch(ctx.i.getType()) {
-        case BinaryConstant -> Integer.parseInt(s.substring(2), 2);
-        case HexadecimalConstant -> Integer.parseInt(s.substring(2), 16);
-        default -> throw new IllegalArgumentException();
-        };
+        int i = parseInt(ctx.i);
         sb.append(i);
     }
     sb.append(' ');

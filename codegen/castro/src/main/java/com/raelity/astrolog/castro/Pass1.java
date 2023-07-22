@@ -46,6 +46,7 @@ import static com.raelity.astrolog.castro.LineMap.WriteableLineMap.createLineMap
 import static com.raelity.astrolog.castro.Util.checkReport;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
+import static com.raelity.astrolog.castro.Util.parseInt;
 import static com.raelity.astrolog.castro.Util.reportError;
 
 
@@ -125,7 +126,7 @@ void declareVar(ParserRuleContext _ctx)
                 size = 1; // avoid another error
         } else {
             if(ctx.size != null) {
-                size = Integer.parseInt(ctx.size.getText());
+                size = parseInt(ctx.size.i);
                 if(ctx.init.size() > size)
                     reportError(ctx, "too many initializers");
             } else
@@ -138,7 +139,7 @@ void declareVar(ParserRuleContext _ctx)
             ParseTreeUtil.hasErrorNode(addrNode))
         return;
     Token id = idNode.getSymbol();
-    int addr = addrNode == null ? -1 : Integer.parseInt(addrNode.getText());
+    int addr = addrNode == null ? -1 : parseInt(addrNode.i);
     Var var = registers.declare(id, size, addr);
     checkReport(var);
 }
@@ -157,7 +158,7 @@ private void declareSwithOrMacro(AstroMem mem, IntegerContext i_ctx, Token id)
     if(i_ctx == null || ParseTreeUtil.hasErrorNode(i_ctx))
         addr = -1;
     else
-        addr = Integer.parseInt(i_ctx.getText());
+        addr = parseInt(i_ctx.i);
     Var var = mem.declare(id, 1, addr);
     checkReport(var);
 };
@@ -223,7 +224,8 @@ AstroMem getAstroMem(int region)
     };
 }
 
-private int checkReportSimpleConstraint(ConstraintContext ctx, int curVal)
+private int checkReportSimpleConstraint(ConstraintContext ctx,
+                                        IntegerContext i_ctx, int curVal)
 {
     if(ParseTreeUtil.hasErrorNode(ctx))
         return -1;
@@ -231,13 +233,13 @@ private int checkReportSimpleConstraint(ConstraintContext ctx, int curVal)
         reportError(ctx, "'%s' already set", ctx.start.getText());
         return -1;
     }
-    return Integer.parseInt(ctx.getChild(1).getText());
+    return parseInt(i_ctx.i);
 }
 
 @Override
 public void exitBaseContstraint(BaseContstraintContext ctx)
 {
-    int newVal = checkReportSimpleConstraint(ctx, workingLayout.base);
+    int newVal = checkReportSimpleConstraint(ctx, ctx.i, workingLayout.base);
     if(newVal >= 0)
         workingLayout.base = newVal;
 }
@@ -245,7 +247,7 @@ public void exitBaseContstraint(BaseContstraintContext ctx)
 @Override
 public void exitLimitContstraint(LimitContstraintContext ctx)
 {
-    int newVal = checkReportSimpleConstraint(ctx, workingLayout.limit);
+    int newVal = checkReportSimpleConstraint(ctx, ctx.i, workingLayout.limit);
     if(newVal >= 0)
         workingLayout.limit = newVal;
 }
@@ -255,10 +257,14 @@ public void exitRsv_loc(Rsv_locContext ctx)
 {
     if(ParseTreeUtil.hasErrorNode(ctx))
         return;
-    int r1 = Integer.parseInt(ctx.range.get(0).getText());
-    int r2
-            = ctx.range.size() == 1 ? r1 + 1
-            : Integer.parseInt(ctx.range.get(1).getText());
+    int r1 = parseInt(ctx.range.get(0).i);
+    int r2 = ctx.range.size() == 1 ? r1 + 1 : parseInt(ctx.range.get(1).i);
+    if(r1 > r2) {
+        reportError(ctx, "'%s' %d is greater than %d", ctx.getText(), r1, r2);
+        int t = r1;
+        r1 = r2;
+        r2 = t;
+    }
     workingLayout.reserve.add(Range.closedOpen(r1, r2));
 }
 
