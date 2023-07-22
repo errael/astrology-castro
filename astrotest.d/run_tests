@@ -16,6 +16,7 @@ astrolog() {
 }
 
 FILES="
+    expressions
     flow_control
     test_infra
     main

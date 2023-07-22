@@ -335,7 +335,13 @@ void generateAndOutputExprs()
     @Override
     String genInteger(IntegerContext ctx)
     {
-        return ctx.IntegerConstant().getText();
+        return ctx.i.getText();
+    }
+
+    @Override
+    String genFloat(FloatContext ctx)
+    {
+        return ctx.f.getText();
     }
     
     @Override

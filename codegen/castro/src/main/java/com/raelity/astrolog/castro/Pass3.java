@@ -20,6 +20,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.ExprQuestOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprRepeatOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprUnOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprWhileOpContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.FloatContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.IntegerContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalContext;
@@ -47,6 +48,9 @@ import static com.raelity.astrolog.castro.antlr.AstroLexer.Tilde;
 import static com.raelity.astrolog.castro.antlr.AstroParser.MinusAssign;
 import static com.raelity.astrolog.castro.tables.Ops.astroCode;
 import static com.raelity.astrolog.castro.Util.expr2constInt;
+import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
+import static com.raelity.astrolog.castro.antlr.AstroParser.HexadecimalConstant;
+import static com.raelity.astrolog.castro.antlr.AstroParser.BinaryConstant;
 
 /**
  * Generate the AstroExpression code.
@@ -429,11 +433,31 @@ String genLval(LvalArrayContext ctx, String expr)
     return sb.toString();
 }
 
+/** return a decimal string */
 @Override
 String genInteger(IntegerContext ctx)
 {
     sb.setLength(0);
-    sb.append(ctx.IntegerConstant().getText()).append(' ');
+    String s = ctx.i.getText();
+    if(ctx.i.getType() == IntegerConstant) {
+        sb.append(s);
+    } else {
+        int i = switch(ctx.i.getType()) {
+        case BinaryConstant -> Integer.parseInt(s.substring(2), 2);
+        case HexadecimalConstant -> Integer.parseInt(s.substring(2), 16);
+        default -> throw new IllegalArgumentException();
+        };
+        sb.append(i);
+    }
+    sb.append(' ');
+    return sb.toString();
+}
+
+@Override
+String genFloat(FloatContext ctx)
+{
+    sb.setLength(0);
+    sb.append(ctx.f.getText()).append(' ');
     return sb.toString();
 }
 

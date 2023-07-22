@@ -175,6 +175,7 @@ expr returns [int fBlock = 0]
 
 term
    : integer            #termSingle
+   | float              #termSingle
    | paren_expr         #termParen
    | lval               #termSingle
    | '&' id=Identifier  #termAddressOf
@@ -186,7 +187,9 @@ lval locals[Token id]
     | altid=Identifier                {$id = $altid;} #lvalMem
     ;
 
-integer : IntegerConstant ;
+integer : i=IntegerConstant | i=BinaryConstant | i=HexadecimalConstant ;
+
+float : f=DecimalFloatingConstant ;
 
 /*************************************************************
 constant

@@ -80,6 +80,7 @@ abstract String genLval(LvalMemContext ctx);
 abstract String genLval(LvalIndirectContext ctx);
 abstract String genLval(LvalArrayContext ctx, String expr);
 abstract String genInteger(IntegerContext ctx);
+abstract String genFloat(FloatContext ctx);
 
 abstract String genAddr(TermAddressOfContext ctx);
 
@@ -250,6 +251,13 @@ public void exitLvalIndirect(LvalIndirectContext ctx)
 public void exitInteger(IntegerContext ctx)
 {
     String s = genInteger(ctx);
+    apr.prefixExpr.put(ctx, s);
+}
+
+@Override
+public void exitFloat(FloatContext ctx)
+{
+    String s = genFloat(ctx);
     apr.prefixExpr.put(ctx, s);
 }
 

@@ -11,5 +11,6 @@ macro test_if_else @6;    // [ALLOC] expr.castro
 macro test_isolated_value @7;    // [ALLOC] expr.castro
 macro test_multiple_control_expressions @8;    // [ALLOC] expr.castro
 macro test_quest_colon @9;    // [ALLOC] expr.castro
+macro test_constants @20;    // [ASSIGN] expr.castro
 
 

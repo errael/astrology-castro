@@ -12,8 +12,8 @@
 var pp[50] @100;    // [ASSIGN] 
 
 // Space: Macros expr.castro
-// used [(-∞..10), [2147483647..+∞)]
-// free [[10..2147483647)]
+// used [(-∞..10), [20..21), [2147483647..+∞)]
+// free [[10..20), [21..2147483647)]
 // errors: 0
 macro test_assignment @1;    // [ALLOC] 
 macro test_block @2;    // [ALLOC] 
@@ -24,6 +24,7 @@ macro test_if_else @6;    // [ALLOC]
 macro test_isolated_value @7;    // [ALLOC] 
 macro test_multiple_control_expressions @8;    // [ALLOC] 
 macro test_quest_colon @9;    // [ALLOC] 
+macro test_constants @20;    // [ASSIGN] 
 
 // Space: Switches expr.castro
 // used [(-∞..1), [2147483647..+∞)]

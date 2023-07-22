@@ -1,4 +1,7 @@
 
 run {
-    ~1 { Switch(test_control_flow); }
+    ~1 {
+        Switch(test_expressions);
+        Switch(test_flow_control);
+    }
 }
