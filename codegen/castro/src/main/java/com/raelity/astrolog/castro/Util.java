@@ -31,6 +31,9 @@ import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Switches;
 
 import static com.raelity.antlr.ParseTreeUtil.getNthParent;
+import static com.raelity.astrolog.castro.antlr.AstroParser.BinaryConstant;
+import static com.raelity.astrolog.castro.antlr.AstroParser.HexadecimalConstant;
+import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
 
 /**
  *
@@ -62,6 +65,17 @@ public static boolean isBuiltinVar(String text)
     char c = text.charAt(0);
 
     return c >= 'a' && c <= 'z';
+}
+
+public static int parseInt(Token token)
+{
+    String s = token.getText();
+    return switch(token.getType()) {
+    case IntegerConstant -> Integer.parseInt(s);
+    case BinaryConstant -> Integer.parseInt(s.substring(2), 2);
+    case HexadecimalConstant -> Integer.parseInt(s.substring(2), 16);
+    default -> throw new IllegalArgumentException();
+    };
 }
 
 public static List<String> collectAssignStrings(Switch_cmdContext sc_ctx)
