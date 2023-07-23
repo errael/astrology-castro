@@ -8,8 +8,10 @@ import java.util.regex.Pattern;
 
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.raelity.antlr.ParseTreeUtil;
+import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
@@ -28,6 +30,8 @@ import static com.raelity.astrolog.castro.Util.lvalArg2Func;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUMMY;
 import static com.raelity.astrolog.castro.Util.func_call2MacoSwitchSpace;
+import static com.raelity.astrolog.castro.Util.getText;
+import static com.raelity.astrolog.castro.antlr.AstroLexer.Tilde;
 import static com.raelity.astrolog.castro.mems.Switches.MEM_SWITCHES;
 
 ////////////////////////////////////////////////////////////////////
@@ -117,17 +121,29 @@ public void exitSwitch_cmd(Switch_cmdContext ctx)
     String errMsg = null;
     if(ctx.name != null) {
         // check command have/not-have an expression
+        Object optParam = null;
         if(ctx.name.tilde != null) {
+            // It's a "~" command, like "~j0" or "_~j0" or ...
             boolean isEnaDisAstroExpr = enaDisMatcher(ctx.name.getText()).matches();
             if(isEnaDisAstroExpr && !ctx.bs.isEmpty())
                 errMsg = "'%s' enable/disable AstroExpression does not take an expression";
             else if(!isEnaDisAstroExpr && ctx.bs.isEmpty())
                 errMsg = "'%s' AstroExpression command without an expression";
-        } else if(!ctx.bs.isEmpty())
+        } else if(!ctx.bs.isEmpty()) {
+            // not "~" command but has an expression
             errMsg = "'%s' switch command does not take an expression";
+            //errMsg = "only '~' switch command, not '%s', takes an expression";
+            //errMsg = "'%s' switch command is not a '~hook' command, it does not take an expression";
+            // If the expr starts with "~", then maybe "{~" was meant
+            Token tok = ctx.bs.get(0).e.start;
+            if(tok.getType() == Tilde) {
+                errMsg += "; '{~' instead of'%s'?";
+                optParam = getText(ctx.b, tok); // ctx.b is '{'
+            }
+        }
         if(errMsg != null)
             reportError(ctx, errMsg, ParseTreeUtil.getOriginalText(
-                    ctx.name, lookup(AstroParseResult.class).getInput()));
+                    ctx.name, lookup(AstroParseResult.class).getInput()), optParam);
     }
 }
 private Matcher matcher;

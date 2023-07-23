@@ -236,6 +236,18 @@ public static void report(Error err, Token token, Object... msg)
         lookup(AstroParseResult.class).countError();
 }
 
+/** @return text encompassing token1:token2 */
+public static String getText(Token token1, Token token2)
+{
+    // assuming both tokens in same stream
+    try {
+        return token1.getInputStream().getText(
+                new Interval(token1.getStartIndex(), token2.getStopIndex()));
+    } catch(Exception ex) {
+        return ex.getMessage();
+    }
+}
+
 public static String getLineText(Token token)
 {
     if(token == null)

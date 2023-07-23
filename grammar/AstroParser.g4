@@ -88,7 +88,7 @@ run
 
 switch_cmd
     : expr_arg=SW_ARG bs+=astroExprStatement + '}'   // express arg to regular switch
-    | name=sw_name '{' bs+=astroExprStatement + '}'
+    | name=sw_name b='{' bs+=astroExprStatement + '}'
     | name=sw_name
     | string=String
     //| assign=AssignString '(' l=lval ',' str+=String (',' str+=String)* ')'
@@ -112,7 +112,7 @@ sw_name
  * TODO: Give warning if line starts with '*', '+', '-'
  */
 astroExprStatement
-    : astroExpr opt_semi[($astroExpr.stop.getType() == Semi) ? 1 : 0]
+    : e=astroExpr opt_semi[($astroExpr.stop.getType() == Semi) ? 1 : 0]
     ;
 
 opt_semi[int fHasSemi]

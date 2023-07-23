@@ -11,7 +11,6 @@ import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
-import com.raelity.antlr.ParseTreeUtil;
 import com.raelity.astrolog.castro.LineMap.WriteableLineMap;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser;
@@ -41,6 +40,7 @@ import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 import com.raelity.astrolog.castro.tables.Functions;
 
+import static com.raelity.antlr.ParseTreeUtil.hasErrorNode;
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.LineMap.WriteableLineMap.createLineMap;
 import static com.raelity.astrolog.castro.Util.checkReport;
@@ -135,8 +135,7 @@ void declareVar(ParserRuleContext _ctx)
     }
     case null, default -> throw new IllegalArgumentException(_ctx.getText());
     }
-    if(ParseTreeUtil.hasErrorNode(idNode) ||
-            ParseTreeUtil.hasErrorNode(addrNode))
+    if(hasErrorNode(idNode) || hasErrorNode(addrNode))
         return;
     Token id = idNode.getSymbol();
     int addr = addrNode == null ? -1 : parseInt(addrNode.i);
@@ -155,7 +154,7 @@ public void exitVar(VarContext ctx)
 private void declareSwithOrMacro(AstroMem mem, IntegerContext i_ctx, Token id)
 {
     int addr;
-    if(i_ctx == null || ParseTreeUtil.hasErrorNode(i_ctx))
+    if(i_ctx == null || hasErrorNode(i_ctx))
         addr = -1;
     else
         addr = parseInt(i_ctx.i);
@@ -207,10 +206,15 @@ public void exitLayout(LayoutContext ctx)
 @Override
 public void exitLayout_region(Layout_regionContext ctx)
 {
-    Layout layout = getAstroMem(ctx.start.getType()).getNewLayout();
-    if(layout.getMem() == null)
-        reportError(ctx, "'%s' layout already specified",
-                          ctx.getText());
+    Layout layout;
+    if(hasErrorNode(ctx))
+        layout = new Layout();
+    else {
+        layout = getAstroMem(ctx.start.getType()).getNewLayout();
+        if(layout.getMem() == null)
+            reportError(ctx, "'%s' layout already specified",
+                         ctx.getText());
+    }
     workingLayout = layout;
 }
 
@@ -227,7 +231,7 @@ AstroMem getAstroMem(int region)
 private int checkReportSimpleConstraint(ConstraintContext ctx,
                                         IntegerContext i_ctx, int curVal)
 {
-    if(ParseTreeUtil.hasErrorNode(ctx))
+    if(hasErrorNode(ctx))
         return -1;
     if(curVal >= 0) {
         reportError(ctx, "'%s' already set", ctx.start.getText());
@@ -255,7 +259,7 @@ public void exitLimitContstraint(LimitContstraintContext ctx)
 @Override
 public void exitRsv_loc(Rsv_locContext ctx)
 {
-    if(ParseTreeUtil.hasErrorNode(ctx))
+    if(hasErrorNode(ctx))
         return;
     int r1 = parseInt(ctx.range.get(0).i);
     int r2 = ctx.range.size() == 1 ? r1 + 1 : parseInt(ctx.range.get(1).i);

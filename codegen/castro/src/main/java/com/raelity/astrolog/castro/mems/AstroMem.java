@@ -200,7 +200,7 @@ public Layout getNewLayout()
         lr = new Layout(this);
         layoutRestrictions = lr;
     } else
-        lr = new Layout(null);
+        lr = new Layout();
     return lr;
 }
 
