@@ -50,8 +50,6 @@ import static com.raelity.astrolog.castro.tables.Ops.astroCode;
 import static com.raelity.astrolog.castro.Util.expr2constInt;
 import static com.raelity.astrolog.castro.Util.parseInt;
 import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
-import static com.raelity.astrolog.castro.antlr.AstroParser.HexadecimalConstant;
-import static com.raelity.astrolog.castro.antlr.AstroParser.BinaryConstant;
 
 /**
  * Generate the AstroExpression code.

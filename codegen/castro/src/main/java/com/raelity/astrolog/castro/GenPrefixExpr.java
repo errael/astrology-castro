@@ -37,6 +37,10 @@ public abstract class GenPrefixExpr extends AstroParserBaseListener
 
 final AstroParseResult apr;
 final TreeProps<String> lvalArrayIndex = new TreeProps<>(); // OUCH
+/** May need to look  at the expressions individually later; NOTE static.
+ * Can contain info from multiple parse trees.
+ */
+final static TreeProps<List<String>> switchCommandExpressions = new TreeProps<>();
 
 public GenPrefixExpr(AstroParseResult apr)
 {
@@ -159,7 +163,7 @@ public void exitExprBraceBlockOp(ExprBraceBlockOpContext ctx)
 {
     String s = genBraceBlockOp(ctx,
             ctx.brace_block().bs.stream()
-                .map((bsctx) -> apr.prefixExpr.removeFrom(bsctx.astroExpr().expr()))
+                .map((bsctx) -> apr.prefixExpr.removeFrom(bsctx.e.e))
                 .collect(Collectors.toCollection(ArrayList::new)));
         apr.prefixExpr.put(ctx, s);
 }
@@ -267,9 +271,11 @@ public void exitFloat(FloatContext ctx)
 @Override
 public void exitSwitch_cmd(Switch_cmdContext ctx)
 {
-    ArrayList<String> bs = ctx.bs.stream()
-            .map((bsctx) -> apr.prefixExpr.removeFrom(bsctx.astroExpr().expr()))
+    List<String> bs = ctx.bs.stream()
+            .map((bsctx) -> apr.prefixExpr.removeFrom(bsctx.e.e))
             .collect(Collectors.toCollection(ArrayList::new));
+    if(!bs.isEmpty())
+        switchCommandExpressions.put(ctx, bs);
     String s = ctx.string != null ? genSw_cmdString(ctx)
         : ctx.expr_arg != null ? genSw_cmdExpr_arg(ctx, bs)
           : ctx.name != null ? genSw_cmdName(ctx, apr.prefixExpr.removeFrom(ctx.name), bs)

@@ -15,6 +15,9 @@ test.d/*.map
 astrotest.d/*.as
 astrotest.d/*.def
 astrotest.d/*.map
+examples.d/*.as
+examples.d/*.def
+examples.d/*.map
 
 syntax: glob
 

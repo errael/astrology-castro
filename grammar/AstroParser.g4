@@ -122,7 +122,7 @@ opt_semi[int fHasSemi]
 
 astroExpr
     //: expr expr_semi[$expr.fBlock]
-    : expr expr_semi[$expr.stop.getType() == RightBrace ? 1 : 0]
+    : e=expr expr_semi[$expr.stop.getType() == RightBrace ? 1 : 0]
     ;
 
 expr_semi[int fBlock]

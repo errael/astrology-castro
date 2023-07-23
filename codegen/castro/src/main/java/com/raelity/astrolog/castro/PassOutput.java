@@ -28,6 +28,7 @@ import com.raelity.astrolog.castro.mems.Switches;
 
 import static com.raelity.antlr.ParseTreeUtil.getOriginalText;
 import static com.raelity.astrolog.castro.Error.*;
+import static com.raelity.astrolog.castro.GenPrefixExpr.switchCommandExpressions;
 import static com.raelity.astrolog.castro.OutputOptions.*;
 import static com.raelity.astrolog.castro.Util.collectAssignStrings;
 import static com.raelity.astrolog.castro.Util.expr2constInt;
@@ -281,14 +282,98 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
         }
         cmdPart.add(lsb.toString());
     }
+
+    // NOTE that lsc and cmdPart are in a 1-1 correspondance
+
+    // check/fixup for special castro functions
+    for(int pIdx = 0; pIdx < lsc.size(); pIdx++) {
+        if(lsc.get(pIdx).name != null && lsc.get(pIdx).getText().equals("printf_hack"))
+            hackPrintf(quote, lsc.subList(pIdx, lsc.size()),
+                       cmdPart.subList(pIdx, cmdPart.size()));
+    }
+
     for(String s : cmdPart) {
-        // Don't put -- "~ AstroExpression " -- on new line
+        // Don't put -- "~ AstroExpression " -- on new line even with OutputOpt
         if(s.startsWith("\"~"))
             sb.append(s).append(' ');
         else {
             nextLine(sb, opts).append(s).append(' ');
         }
     }
+}
+
+/**
+ * Modify cmdPart to do the printf.
+ * The list args are typically sublists.
+ * <p>
+ * There must be at least 3 elements: <br>
+ * 0 - printf_hack <br>
+ * 1 - format string <br>
+ * 2 - expression array
+ */
+private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cmdPart)
+{
+    if((2 >= lsc.size()    // must be room for "formatstr and exprs
+            || lsc.get(1).string == null)
+            || lsc.get(2).expr_arg == null) {
+        reportError(lsc.get(0), "printf_hack \"%%s%%d%%f\" {~ arg1; ... }");
+        return;
+    }
+    StringBuilder sb_tmp = new StringBuilder();
+    String fmt = lsc.get(1).string.getText();
+    List<String> eArgs = switchCommandExpressions.get(lsc.get(2));
+    int fmtArgs = 0;
+    int state = 1;
+    for(int i = 0; i < fmt.length(); i++) {
+        char c = fmt.charAt(i);
+        char fmtSpec = 0;
+        switch(state) {
+        case 1 -> {
+            if(c == '%') {
+                state = 2;
+                continue;   // skipping the initial '%'
+            }
+            if(c == '\'' || c == '"')
+                continue;   // discard quotes, can't generally have them in -YYT
+            sb_tmp.append(c);
+        }
+        case 2 -> {
+            switch(c) {
+            case '%' -> sb_tmp.append(c);
+            case 's' -> fmtSpec = (char)('a' + fmtArgs);
+            case 'd','f' -> fmtSpec = (char)('A' + fmtArgs);
+            default ->
+                reportError(lsc.get(1), "'%%%c' invalid format specifier.", c);
+            }
+            if(fmtSpec != 0) {
+                fmtArgs++;
+                sb_tmp.append('\\').append(fmtSpec);
+            }
+            state = 1;
+        }
+        }
+    }
+    if(fmtArgs != eArgs.size()) {
+        reportError(lsc.get(1), "printf arg count: fmt %d, expr %d.",
+                                fmtArgs, eArgs.size());
+        return;
+    }
+    sb_tmp.append(' ');
+    String yytFormatString = sb_tmp.toString();
+    sb_tmp.setLength(0);
+    sb_tmp.append("~1 ").append(quote).append(' ');
+    for(int i = 0; i < eArgs.size(); i++) {
+        sb_tmp.append('=').append((char)('a' + i)).append(' ').append(eArgs.get(i));
+    }
+    removeTrailingBlanks(sb_tmp).append(quote).append(' ');
+
+    cmdPart.set(0, "");
+    cmdPart.set(1, sb_tmp.toString());
+
+    sb_tmp.setLength(0);
+    sb_tmp.append("-YYT ").append(quote).append(yytFormatString);
+    removeTrailingBlanks(sb_tmp).append(quote);
+    cmdPart.set(2, sb_tmp.toString());
 }
 
 private void createStringAssignmenCommand(StringBuilder lsb,
@@ -339,40 +424,38 @@ private void createStringAssignmenCommand(StringBuilder lsb,
     lsb.append(quote);
 }
 
-    @Override
-    public void exitVarArray(VarArrayContext ctx)
-    {
-        if(ctx.init.isEmpty())
-            return;
-        sb.setLength(0);
-        int addr = registers.getVar(ctx.id.getText()).getAddr();
-        ArrayList<String> strings = ctx.init.stream()
-                .map((e) -> apr.prefixExpr.removeFrom(e))
-                .collect(Collectors.toCollection(ArrayList::new));
-        for(String str : strings) {
-            sb.append("~1 '");
-            writeRegister(sb, addr).append(' ').append(str);
-            removeTrailingBlanks(sb).append("'\n");
-            addr++;
-        }
-        out.printf(sb.toString());
-    }
-
-    @Override
-    public void exitVar1(Var1Context ctx)
-    {
-        if(ctx.init == null)
-            return;
-        sb.setLength(0);
-        int addr = registers.getVar(ctx.id.getText()).getAddr();
-        String str = apr.prefixExpr.removeFrom(ctx.init);
+@Override
+public void exitVarArray(VarArrayContext ctx)
+{
+    if(ctx.init.isEmpty())
+        return;
+    sb.setLength(0);
+    int addr = registers.getVar(ctx.id.getText()).getAddr();
+    ArrayList<String> strings = ctx.init.stream()
+            .map((e) -> apr.prefixExpr.removeFrom(e))
+            .collect(Collectors.toCollection(ArrayList::new));
+    for(String str : strings) {
         sb.append("~1 '");
         writeRegister(sb, addr).append(' ').append(str);
         removeTrailingBlanks(sb).append("'\n");
-        out.printf(sb.toString());
-        super.exitVar1(ctx);
+        addr++;
     }
+    out.printf(sb.toString());
+}
 
+@Override
+public void exitVar1(Var1Context ctx)
+{
+    if(ctx.init == null)
+        return;
+    sb.setLength(0);
+    int addr = registers.getVar(ctx.id.getText()).getAddr();
+    String str = apr.prefixExpr.removeFrom(ctx.init);
+    sb.append("~1 '");
+    writeRegister(sb, addr).append(' ').append(str);
+    removeTrailingBlanks(sb).append("'\n");
+    out.printf(sb.toString());
+    super.exitVar1(ctx);
+}
 
-    
 }
