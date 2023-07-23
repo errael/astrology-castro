@@ -4,7 +4,6 @@ package com.raelity.astrolog.castro;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -40,6 +39,11 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
  * Run the passes. <br>
  * Pass1 - Layout info, var/mem symbol tables, check func name/nargs,
  *         Build LineMap.
+ *              TODO: consider: split this pass into two: pass1a and pass1b.
+ *              pass1a parse without a visitor, don't continue if error.
+ *              The visitor that is now pass1 has lots of code to continue in
+ *              the face of error. But NPE might sneak through; so what?
+ * Allocation - between pass1 and pass2.
  * Pass2 - Check used variables are defined.
  *         Check no blanks in switch cmd, proper switch expression usage.
  * Pass3 - Generate code.

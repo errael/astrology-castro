@@ -1,5 +1,5 @@
 # astrology-castro - v0.1.0 early beta
-`castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression` (WYSIWYG). `castro` is a standalone tool; its output is a `.as` file that can be used with `Astrolog`'s command switch `-i <filename>`. Some motivating factors for `castro` were familiar expression syntax (avoid writing and maintaining the prefix notation expressions), automatic memory allocation, referring to things by name rather than address.
+`castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression` (and WYSIWYG). `castro` is a standalone tool; its output is a `.as` file that can be used with `Astrolog`'s command switch `-i <filename>`. Some motivating factors for `castro` were familiar expression syntax (avoid writing and maintaining the prefix notation expressions), automatic memory allocation, referring to things by name rather than address.
 
 Here's a simple example. Note that the switch, macro and variable definitions could be in 3 different files. As in `Astrolog`, function names are case insensitive. _Switch and macro names are case sensitive_.
 ```
@@ -237,7 +237,7 @@ Handle single file compilation, uses the .map file as input. Not sure this is an
 
 
 ##     Warnings/Oddities:
-- `True()`/`False()` are `Astrolog` _functions_; the `()` must be present.
+- `True()`/`False()` are `Astrolog` **functions**; the `()` must be present.
 - Some cases where blanks are significant
     - The functions `=Obj` and `=Hou` can cause problems, for example `a==Obj(...)` is parsed as `a == Obj(...)`,
       write `a= =Obj(...)` for assignment.

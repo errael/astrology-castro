@@ -29,6 +29,11 @@ public class Layout
         this.reserve = TreeRangeSet.create();
     }
 
+    public Layout()
+    {
+        this(null);
+    }
+
     public AstroMem getMem()
     {
         return mem;
