@@ -279,10 +279,10 @@ public void exitExprFunc(ExprFuncContext ctx)
     Integer narg = Functions.narg(fc_ctx.id.getText());
     if(narg == null) {
         reportError(FUNC_UNK, fc_ctx.id, "unknown function '%s'", fc_ctx.id.getText());
-        Functions.recordUnknownFunction(fc_ctx.id.getText());
+        Functions.recordCastroFunction(fc_ctx.id.getText());
         return;
     }
-    if(fc_ctx.args.size() != narg && !Functions.isUnkownFunction(fc_ctx.id.getText()))
+    if(fc_ctx.args.size() != narg && !Functions.isCastroFunction(fc_ctx.id.getText()))
         reportError(FUNC_NARG, fc_ctx, "function '%s' argument count, expect %d not %d",
                     fc_ctx.id.getText(), narg, fc_ctx.args.size());
 }

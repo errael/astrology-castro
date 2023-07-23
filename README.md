@@ -28,6 +28,8 @@ This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpre
 `castro` has a `layout` directive which constrains the allocated address; in addition, it is possible to assign addresses.
 
 ###      Differences from "C"
+
+`castro` has a weird looking printf, see [printf.castro](https://github.com/errael/astrology-castro/tree/main/examples.d/printf.castro) for a description that compiles and runs.
 <!--
 <details>
 <summary>statement differences</summary>
@@ -173,11 +175,20 @@ switch nameId @12 {
     ~1 { aspect = 7; orb = 2; }
     -Ao {~ aspect; } {~ orb; }
     SetString var_strings[0] "one" 'two' "three"
+    printf_hack "aspect %d, orb %d, 1st string <%s>\n" {~ aspect; orb; &var_strings; }
 }
 ```
 All `Astrolog` commands that start with `~`, except `~0`, `_~0`, take an `AstroExpression` as an argument; it is delineated with `{` and `}`. An `AstroExpression` can be used as an argument to a `command switch macro`; it is delineated by `{~` and `}`. `SetString` is used to assign strings. `~2`, `~20`, `~M` commands are not directly supported.
 
 Note that `@12` assigns 12 to the switch address which binds it to **F12**; it is optional. `Astrolog` versions after v7.60 are expected to support `command switch macro` numbers outside the function key range, as it does with the `AstroExpression macro`.
+
+See [printf.castro](https://github.com/errael/astrology-castro/tree/main/examples.d/printf.castro)
+for a description which compiles and runs. The original idea was a function that looked like:
+```
+    printf("aspect %d, orb %d, 1st string <%s>\n", aspect, orb, &var_strings)
+```
+which turned out to be complicated to implement; so this is an experimental version; comment in
+DISCUSSION.
 
 ###     run
 The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
