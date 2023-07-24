@@ -1,0 +1,24 @@
+
+var str1[4];
+var v1 {11};
+var v2 {8};
+
+switch printf_example {
+    setstring str1[0] "string-1" "string-2" "string-3" "string-4"
+
+    cprintf "PRINTF-1: %d %f %d %s\n" {~ v1 - v2; v1; v1 + v2; &str1; }
+    cprintf "PRINTF-2: no args\n"
+
+    // printfs that end up on one output line, the newline flushes
+    cprintf "PRINTF-3: "
+    cprintf " %d" {~ v1 + v2; }
+    cprintf " %d" {~ v1; }
+    cprintf " %d" {~ v1 - v2; }
+    cprintf "\n"
+
+    cprintf "PRINTF-4: %s %s %s %s\n"
+                    {~ &str1; &str1 + 1; &str1 + 2; &str1 + 3; }
+}
+
+run { ~1 { Switch(printf_example); } }
+

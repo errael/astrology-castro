@@ -31,9 +31,11 @@ import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Switches;
 
 import static com.raelity.antlr.ParseTreeUtil.getNthParent;
+import static com.raelity.astrolog.castro.Error.OCTAL_CONST;
 import static com.raelity.astrolog.castro.antlr.AstroParser.BinaryConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.HexadecimalConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
+import static com.raelity.astrolog.castro.antlr.AstroParser.OctalConstant;
 
 /**
  *
@@ -74,6 +76,12 @@ public static int parseInt(Token token)
     case IntegerConstant -> Integer.parseInt(s);
     case BinaryConstant -> Integer.parseInt(s.substring(2), 2);
     case HexadecimalConstant -> Integer.parseInt(s.substring(2), 16);
+    case OctalConstant -> {
+        int i = Integer.parseInt(s, 8);
+        if(i != 0)
+            reportError(OCTAL_CONST, token, "'%s' Octal constant", s);
+        yield i;
+    }
     default -> throw new IllegalArgumentException();
     };
 }

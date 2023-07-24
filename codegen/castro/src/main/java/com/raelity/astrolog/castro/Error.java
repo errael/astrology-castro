@@ -15,6 +15,7 @@ FUNC_NARG("func-narg"),         // wrong number of function arguments
 FUNC_CASTRO("func-castro"),     // internal function, used in code generation
 VAR_RSV("var-rsv"),             // assigning variable to reserved area
 ARRAY_OOB("array-oob"),         // array index out of bounds
+OCTAL_CONST("octal-const"),     // octal constant
 ;
 private String name;
 Error(String name) {

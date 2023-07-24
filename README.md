@@ -23,13 +23,13 @@ which generates
 -M0 1 '-dpY  "~ IfElse Lt @27 @28 @27 @28" "~ Add Abs Sub @27 @28 1"'
 ```
 
-This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpression` basics. See DISCUSSION for musings on possible extensions.
+This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpression` basics. See [discussions](https://github.com/errael/astrology-castro/discussions) for musings on possible extensions.
 
 `castro` has a `layout` directive which constrains the allocated address; in addition, it is possible to assign addresses.
 
 ###      Differences from "C"
 
-`castro` has a weird looking printf, see [printf.castro](examples.d/printf.castro) for a description that compiles and runs. And see [printf](#printf) in this file.
+`castro` has a weird looking printf, see [castro printf](#castro-printf). And examples [printf.castro](examples.d/printf.castro) for a description that compiles and runs.
 <!--
 <details>
 <summary>statement differences</summary>
@@ -53,6 +53,8 @@ This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpre
 ####    variable differences
 
 - Single char variable names 'a' to 'z' are pre-declared.
+  AstroExpression hooks use as much as %u ... %z.
+  [castro printf](#castro-printf)printf uses as much as %a ... %j.
 - Variables are declared with `var`, for example `var foo;`
 - A variable is integer or float depending on usage. `AstroLog` truncates as needed.
 - A variable declaration may assign the variable or array to a specific location; append `@integer`, for example `var foo @100;` and `var bar[10] @200;`; this assigns `foo` to location 100 and array `bar` starts at location 200.
@@ -176,24 +178,26 @@ switch nameId @12 {
     ~1 { aspect = 7; orb = 2; }
     -Ao {~ aspect; } {~ orb; }
     SetString var_strings[0] "one" 'two' "three"
-    printf_hack "aspect %d, orb %d, 1st string <%s>\n" {~ aspect; orb; &var_strings; }
+    cprintf "aspect %d, orb %d, 1st string <%s>\n" {~ aspect; orb; &var_strings; }
 }
 ```
 All `Astrolog` commands that start with `~`, except `~0`, `_~0`, take an `AstroExpression` as an argument; it is delineated with `{` and `}`. An `AstroExpression` can be used as an argument to a `command switch macro`; it is delineated by `{~` and `}`. `SetString` is used to assign strings. `~2`, `~20`, `~M` commands are not directly supported.
 
 Note that `@12` assigns 12 to the switch address which binds it to **F12**; it is optional. `Astrolog` versions after v7.60 are expected to support `command switch macro` numbers outside the function key range, as it does with the `AstroExpression macro`.
 
-####    printf
+####    castro printf
 
-**Warning**: printf uses the lower memory locations for the printf arguments, up to 10: `%a`, `%b`, `%c`, ..., `%i`, `%j`. Beware of overlap.
+```
+    cprintf <format_string> {~ <arguments> }
 
-See [printf.castro](examples.d/printf.castro)
-for a description which compiles and runs. The original idea was a function that looked like:
+    format_string - %d, %i, %f, %g to print a number (they are equivelent).
+                    %s to print a string, use its address as the arg.
+    arguments     - One AstroExpression per format specifier.
+                    Arguments is optional.
 ```
-    printf("aspect %d, orb %d, 1st string <%s>\n", aspect, orb, &var_strings)
-```
-which turned out to be complicated to implement; so this is an experimental version; comment in
-DISCUSSION.
+Example: `cprintf "v1 %d, v2 %d" {~ 3 + 4; 7 + 4; }`
+
+**Warning**: printf uses the lower memory locations for the printf arguments, up to 10: `%a`, `%b`, `%c`, ..., `%i`, `%j`. Beware of interference with program variables. Recall that Astrolog uses up to %u ... %z for processing AstroExpression hooks.
 
 ###     run
 The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
@@ -249,11 +253,18 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
 
 
 ##      TODO
-Handle single file compilation, uses the .map file as input. Not sure this is an essential feature.
+- Handle single file, out of normally multi-file, compilation. Uses something like the .map file as input; maybe a `--extern-file` option. Not sure this is an essential feature. May be too confusing; just compile them all.
+- Warn if switch/macro used before defined in same file.
+```
+    run { ~1 { switch(some_switch); }
+    switch some_switch { -YYT "Boo\n" }
+```
 
 
 ##     Warnings/Oddities:
 - `True()`/`False()` are `Astrolog` **functions**; the `()` must be present.
+- `castro` checks for valid `AstroExpression` function names. There is no such check for valid switch commands; if that information becomes available, `castro` will use it.
+- Too long switch or macro don't fit in `Astrolog`'s parser; there is no "too large" error. There is often an apparently unrelated error message. Splitting it into two...
 - Some cases where blanks are significant
     - The functions `=Obj` and `=Hou` can cause problems, for example `a==Obj(...)` is parsed as `a == Obj(...)`,
       write `a= =Obj(...)` for assignment.

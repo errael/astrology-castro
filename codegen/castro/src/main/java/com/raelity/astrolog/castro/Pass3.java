@@ -109,7 +109,8 @@ String genSw_cmdExpr_arg(Switch_cmdContext ctx, List<String> bs)
 @Override
 String genSw_cmdName(Switch_cmdContext ctx, String name, List<String> bs)
 {
-    // just return the expr, ignore the name
+    // It's weird, just return the expr, ignore the name.
+    // The name is handled elsewhere. (PassOutput::collectSwitchCmds?)
     sb.setLength(0);
     for(String s : bs) {
         sb.append(s).append(' ');

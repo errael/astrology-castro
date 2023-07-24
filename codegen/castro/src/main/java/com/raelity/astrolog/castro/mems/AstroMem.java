@@ -264,7 +264,6 @@ public Iterator<Var> getErrorVars()
  When a var is allocated, update it in the set vars,
  add it to the layout.
  * 
- * @return true if allocation was successful
  * @throws OutOfMemory
  */
 public void allocate()

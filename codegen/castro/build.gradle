@@ -3,15 +3,11 @@ plugins {
     id 'org.frgaal.compiler'
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
+    id 'maven-publish'
+    id 'signing'
 }
 
 def main_class = 'com.raelity.astrolog.castro.Castro'
-
-repositories {
-    // Use Maven Central for resolving dependencies.
-    mavenCentral()
-    mavenLocal()
-}
 
 dependencies {
     // Use JUnit Jupiter for testing.
@@ -31,9 +27,47 @@ dependencies {
     implementation "org.netbeans.api:org-openide-util-lookup:RELEASE180"
 }
 
-//task runApp(type: JavaExec) {
-//    args '-v /ref/tools/astrolog.d/castro/grammar/x'
-//}
+task createProperties(dependsOn: processResources) {
+  doLast {
+    new File("$buildDir/resources/main/com/raelity/astrolog/castro/version.properties").withWriter { w ->
+        Properties p = new Properties()
+        p['version'] = project.version.toString()
+        p.store w, null
+    }
+  }
+}
+
+classes {
+    dependsOn createProperties
+}
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+    mavenLocal()
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
+//task javadocs19(type: Javadoc) {
+tasks.withType(Javadoc) {
+    executable = '/ref/openjdk/jdk-19/bin/javadoc'
+
+    exclude '**/astrolog/castro/antlr/**'
+
+    options.addBooleanOption('-enable-preview', true)
+    options.addStringOption('-release', '19')
+
+
+    failOnError false
+    options.addStringOption('Xdoclint:none', '-quiet')
+
+    options.addStringOption('encoding', 'UTF-8')
+    options.addStringOption('charSet', 'UTF-8')
+}
 
 application {
     mainClass = main_class
@@ -53,4 +87,66 @@ jar {
     duplicatesStrategy = 'exclude'
 
     from {configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it)} }
+}
+
+/*
+ * MAVEN PUBLISHING
+ */
+
+// Interesting, but what does it give you?
+// ext.admin = hasProperty('sonatypeUsername')
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            pom {
+                name = '"C" astrolog compiler'
+                description = 'Compile simple "C" like language to Astrolog'
+                inceptionYear = '2023'
+                url = 'http://www.raelity.com'
+                organization {
+                    name = 'Raelity Engineering'
+                    url = 'http://raelity.com'
+                }
+                issueManagement {
+                    system = 'GitHub'
+                    url = 'https://github.com/errael/astrology-castro/issues'
+                }
+                scm {
+                    //connection = 'scm:git:git://example.com/my-library.git'
+                    //developerConnection = 'scm:git:ssh://example.com/my-library.git'
+                    url = 'https://github.com/errael/astrology-castro'
+                }
+                //licenses {
+                //    license {
+                //        name = 'Mozilla Public License Version 1.1'
+                //        url = 'https://www.mozilla.org/MPL/1.1/'
+                //    }
+                //}
+                developers {
+                    developer {
+                        id = 'errael'
+                        name = 'Ernie Rael'
+                        email = 'errael@raelity.com'
+                        timezone = '-08, PST'
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            url 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+            credentials {
+                username = sonatypeUsername
+                password = sonatypePassword
+            }
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications.mavenJava
 }

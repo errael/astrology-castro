@@ -13,6 +13,7 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -86,6 +87,36 @@ private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 
 private static int optVerbose;
 
+public static String getVersionString()
+{
+    String version;
+    String resourceName = "com/raelity/astrolog/castro/version.properties";
+    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+    Properties props = new Properties();
+    try(InputStream resourceStream = loader.getResourceAsStream(resourceName)) {
+        props.load(resourceStream);
+
+    version = props.getProperty("version");
+
+    } catch(IOException ex) {
+        version = "#MissingReourceFile#";
+    }
+
+    return version;
+}
+
+public static String getAstrologVersionString()
+{
+    return "7.60";
+}
+
+@SuppressWarnings("UseOfSystemOutOrSystemErr")
+private static void version()
+{
+    System.out.printf("castro %s\n", getVersionString());
+    System.exit(0);
+}
+
 static String listEwarnOptions()
 {
     String ewarn = """
@@ -95,6 +126,7 @@ static String listEwarnOptions()
                 func-castro     function castro uses internally for code generation
                 var-rsv         assign a variable to reserved area
                 array-oob       access array out of bounds
+                octal-const     octal constant
             """;
     return ewarn;
 }
@@ -107,14 +139,15 @@ static void usage(String note)
     if(note != null)
         System.err.printf("%s: %s\n", cmdName, note);
     String usage = """
-            Usage: {cmdName} [-h] [--test] [-v] [-o outfile] infile+
+            Usage: {cmdName} [-h] [several-options] [-o outfile] infile+
                 infile may be '-' for stdin.
                 if outfile not specified, it is derived from infile.
                 -o outfile      allowed if exactly one infile, '-' is stdout
                 --mapname=mapname     Map file name is <mapname>.map.
                                         Default is derived from first infile.
-                --Ewarn=        Make the specified error a warning.
+                --Ewarn=ename   Make the specified error a warning.
                                 Default: warn for func-castro and var-rsv.
+                                Can do no-ename to turn warning to error.
                                 Use --Ewarn=junk for a list.
                 --formatoutput=opt1,... # comma separated list of:
                     1st two for switch and macro, next two for run
@@ -127,6 +160,7 @@ static void usage(String note)
                     Default is no options; switch/macro/run on a single line
                     which is compatible with all Astrolog versions.
                 --anonymous     no dates/versions in output files (for test golden)
+                --version       version
                 -h      output this message
 
                 The following options are primarily for debug. --gui is also fun to see
@@ -169,6 +203,7 @@ public static void main(String[] args)
         new LongOpt("Ewarn", LongOpt.REQUIRED_ARGUMENT, null, 6),
         new LongOpt("gui", LongOpt.NO_ARGUMENT, null, 7),
         new LongOpt("console", LongOpt.NO_ARGUMENT, null, 8),
+        new LongOpt("version", LongOpt.NO_ARGUMENT, null, 9),
     };
     Getopt g = new Getopt(cmdName, args, "o:hv", longOpts);
     
@@ -222,6 +257,7 @@ public static void main(String[] args)
         }
         case 7 -> gui = true;
         case 8 -> console = true;
+        case 9 -> version();
         default -> {
             usage();
         }
