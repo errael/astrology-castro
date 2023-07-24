@@ -7,20 +7,24 @@ DIR=${0%/*}
 
 set -e
 
-MAP=testing
-OUTPUT=results
 ASTROLOG=/junk/install/astrolog.d/base/astrolog
 
 astrolog() {
     $ASTROLOG "$@"
 }
 
-FILES="
+INFRA_MAP=infra_testing
+INFRA_OUTPUT=infra_results
+INFRA_FILES="
     expressions
     flow_control
     test_infra
     main
 "
+
+PRINTF_MAP=printf_testing
+PRINTF_OUTPUT=printf_results
+PRINTF_FILE=printf
 
 usage() {
     echo "$CMD [-l] [-h] [--clean]"
@@ -52,31 +56,45 @@ do
     esac
 done
 
-declare -a files=($FILES)
+typeset -i nErrors
 
-# echo ${files[@]/%/.as}
-# f1=(${files[@]/%/.as})
-# typeset -p f1
-# exit
+declare -a infra_files=($INFRA_FILES)
 
 # Running the tests from their directory, gives nice short names.
 cd $DIR
 
 
 Main() {
+    if ((cleanflag))
+    then
+        clean
+        return
+    fi
+
     run_all
+
+    if ((nErrors))
+    then
+        echo 
+        echo "Total error count: $nErrors"
+        exit 1
+    fi
 }
 
 typeset -A error_tests
 typeset -A error_files
 
 run_all() {
-    run_test
+    run_infra_tests
+    run_printf_tests
 }
 
 clean() {
-    rm -f ${files[@]/%/.as} ${files[@]/%/.def} ${files[@]/%/.map}
-    rm -f $MAP.map $OUTPUT
+    rm -f ${infra_files[@]/%/.as} ${infra_files[@]/%/.def} ${infra_files[@]/%/.map}
+    rm -f $INFRA_MAP.map $INFRA_OUTPUT
+
+    rm -f $PRINTF_FILE.as $PRINTF_FILE.def $PRINTF_FILE.map
+    rm -f $PRINTF_OUTPUT $PRINTF_OUTPUT-2 $PRINTF_OUTPUT-3
 }
 
 run_echo() {
@@ -84,28 +102,44 @@ run_echo() {
     "$@"
 }
 
-run_test() {
-    if ((cleanflag))
+report_errors() {
+    if (($1))
     then
-        clean
-        return
+        echo
+        echo "============================================================="
+        echo "                   FAIL: $2: $1 errors"
+        echo "============================================================="
+        echo
     fi
+}
 
-    run_echo castro --mapname=$MAP ${files[@]/%/.castro}
+run_printf_tests() {
+    run_echo castro $PRINTF_FILE.castro
+    run_echo astrolog -i $PRINTF_FILE.as > $PRINTF_OUTPUT
 
-    temp=(${files[@]/%/.as})
-    run_echo astrolog ${temp[@]/#/-i } > $OUTPUT
-    grep -E 'PASS|FAIL' $OUTPUT
+    grep PRINT $PRINTF_OUTPUT | tee $PRINTF_OUTPUT-2
 
-    if grep -q FAIL $OUTPUT
+    diff gold/$PRINTF_FILE.output-gold $PRINTF_OUTPUT-2 | tee $PRINTF_OUTPUT-3
+    local -i i=$(cat $PRINTF_OUTPUT-3 | wc -l)
+    report_errors $i printf
+    (( nErrors += i ))
+    #(( nErrors += $(cat $PRINTF_OUTPUT-3 | wc -l) ))
+}
+
+run_infra_tests() {
+
+    run_echo castro --mapname=$INFRA_MAP ${infra_files[@]/%/.castro}
+
+    temp=(${infra_files[@]/%/.as})
+    run_echo astrolog ${temp[@]/#/-i } > $INFRA_OUTPUT
+    grep -E 'PASS|FAIL' $INFRA_OUTPUT
+
+    if grep -q FAIL $INFRA_OUTPUT
     then
-        local a=$(grep FAIL $OUTPUT | wc -l)
-        echo
-        echo "============================================================="
-        echo "                      FAIL: $a errors"
-        echo "============================================================="
-        echo
-        exit 1
+        local -i i=$(grep FAIL $INFRA_OUTPUT | wc -l)
+        report_errors $i infra
+        ((nErrors += i))
+        #((nErrors += $(grep FAIL $INFRA_OUTPUT | wc -l) ))
     fi
 }
 

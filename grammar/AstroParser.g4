@@ -95,14 +95,18 @@ switch_cmd
     | assign=AssignString l=lval  str+=String + 
     ;
 
-// No blanks in sw_name, check-report in compiler code.
+// No blanks in sw_name, check-report in codegen.
 // "-YYT" (not "- YYT"), "-80" (not "- 80"), "~FA" (not "~ FA"), ...
 
 sw_name
     : pre=('-' | '=' | '_' )?
-            ( id=IdentifierDigitNondigit |  id=Identifier | id=IntegerConstant)
+            ( id=IdentifierDigitNondigit |  id=Identifier
+                | id=IntegerConstant | id=BinaryConstant
+                | id=HexadecimalConstant | id=OctalConstant)
     | pre=('-' | '=' | '_' )? tilde='~'
-            (id=IdentifierDigitNondigit |  id=Identifier | id=IntegerConstant)
+            (id=IdentifierDigitNondigit |  id=Identifier | id=IntegerConstant
+                | id=IntegerConstant | id=BinaryConstant
+                | id=HexadecimalConstant | id=OctalConstant)
     | tilde='~'
     ;
 
@@ -189,7 +193,7 @@ lval locals[Token id]
     | altid=Identifier                {$id = $altid;} #lvalMem
     ;
 
-integer : i=IntegerConstant | i=BinaryConstant | i=HexadecimalConstant ;
+integer : i=IntegerConstant | i=BinaryConstant | i=HexadecimalConstant | i=OctalConstant ;
 
 float : f=DecimalFloatingConstant ;
 

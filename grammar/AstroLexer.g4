@@ -132,7 +132,7 @@ Identifier
 IntegerConstant
     //:   DecimalConstant
     :   NonzeroDigit Digit*
-    | '0'+      // a zero constant was handled by octal constant
+    //| '0'+      // need this so DigitSequence doesn't fire
     //|   Digit+
     ;
 
@@ -186,9 +186,9 @@ BinaryConstant
 //    ;
 
 //fragment
-//OctalConstant
-//    :   '0' OctalDigit*
-//    ;
+OctalConstant
+    :   '0' OctalDigit*
+    ;
 
 //fragment
 HexadecimalConstant
@@ -205,10 +205,10 @@ NonzeroDigit
     :   [1-9]
     ;
 
-//fragment
-//OctalDigit
-//    :   [0-7]
-//    ;
+fragment
+OctalDigit
+    :   [0-7]
+    ;
 
 fragment
 HexadecimalDigit

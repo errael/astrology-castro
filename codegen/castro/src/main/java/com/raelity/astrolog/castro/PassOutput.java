@@ -288,7 +288,7 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
 
     // check/fixup for special castro functions
     for(int pIdx = 0; pIdx < lsc.size(); pIdx++) {
-        if(lsc.get(pIdx).name != null && lsc.get(pIdx).getText().equals("printf_hack"))
+        if(lsc.get(pIdx).name != null && lsc.get(pIdx).getText().equalsIgnoreCase("cprintf"))
             hackPrintf(quote, lsc.subList(pIdx, lsc.size()),
                        cmdPart.subList(pIdx, cmdPart.size()));
     }
@@ -308,7 +308,7 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
  * The list args are typically sublists.
  * <p>
  * There must be at least 3 elements: <br>
- * 0 - printf_hack <br>
+ * 0 - cprintf <br>
  * 1 - format string <br>
  * 2 - expression array
  */
@@ -316,7 +316,7 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
 {
     if(lsc.size() < 2    // must be room for "formatstr, exprs are optional
             || lsc.get(1).string == null) {
-        reportError(lsc.get(0), "printf_hack \"%%s %%d %%f\" {~ arg1; ... }");
+        reportError(lsc.get(0), "cprintf \"%%s %%d %%f\" {~ arg1; ... }");
         return;
     }
     // The expr_arg is optional, since "printf 'foo'" should work.
@@ -348,7 +348,7 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
             switch(c) {
             case '%' -> sb_tmp.append(c);
             case 's' -> fmtSpec = (char)('a' + fmtArgs);
-            case 'd','f' -> fmtSpec = (char)('A' + fmtArgs);
+            case 'd','i','f','g' -> fmtSpec = (char)('A' + fmtArgs);
             default ->
                 reportError(lsc.get(1), "'%%%c' invalid format specifier", c);
             }
