@@ -29,7 +29,7 @@ This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpre
 
 ###      Differences from "C"
 
-`castro` has a weird looking printf, see [printf.castro](https://github.com/errael/astrology-castro/tree/main/examples.d/printf.castro) for a description that compiles and runs.
+`castro` has a weird looking printf, see [printf.castro](examples.d/printf.castro) for a description that compiles and runs. And see [printf](#printf) in this file.
 <!--
 <details>
 <summary>statement differences</summary>
@@ -79,11 +79,12 @@ Use `castro --gui ...` or `castro --console ...` to see how a file is parsed.
 
 When multiple files are compiled together, the `.map` base file name defaults to the first file in the input file list; it is explicitly specifed with the `--mapname=base`.
 
-There's examples.d, astrotest.d and test.d with their gold files.
+There's [examples.d](examples.d), [astrotest.d](astrotest.d), and [test.d](test.d). test.d checks
+lowlevel functionality and has gold files.
 
 ### Working with multiple files.
 
-Compiling multiple files together is the simplest way to resolve symbolic references between files. Examine [multi-file test](https://github.com/errael/astrology-castro/tree/main/astrotest.d) which is compiled and then run on astrolog. In that directory do `./run_tests`, or do
+Compiling multiple files together is the simplest way to resolve symbolic references between files. Examine [astrotest.d](astrotest.d) which is compiled and then run on astrolog. In that directory do `./run_tests`, or do
 ```
 castro --mapname=testing expressions.castro flow_control.castro test_infra.castro main.castro
 astrolog -i expressions.as -i flow_control.as -i test_infra.as -i main.as
@@ -182,7 +183,11 @@ All `Astrolog` commands that start with `~`, except `~0`, `_~0`, take an `AstroE
 
 Note that `@12` assigns 12 to the switch address which binds it to **F12**; it is optional. `Astrolog` versions after v7.60 are expected to support `command switch macro` numbers outside the function key range, as it does with the `AstroExpression macro`.
 
-See [printf.castro](https://github.com/errael/astrology-castro/tree/main/examples.d/printf.castro)
+####    printf
+
+**Warning**: printf uses the lower memory locations for the printf arguments, up to 10: `%a`, `%b`, `%c`, ..., `%i`, `%j`. Beware of overlap.
+
+See [printf.castro](examples.d/printf.castro)
 for a description which compiles and runs. The original idea was a function that looked like:
 ```
     printf("aspect %d, orb %d, 1st string <%s>\n", aspect, orb, &var_strings)
@@ -202,8 +207,8 @@ Variable declarations take on one of the following forms
 ```
 var var_name1;            // automatically allocate
 var var_name2[4];         // automatically allocate
-var var_name1 @100;
-var var_name2[4] @101;
+var var_name3 @100;
+var var_name4[4] @101;
 ```
 
 <!--

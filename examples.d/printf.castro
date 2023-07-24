@@ -4,12 +4,18 @@
  * where
  *      format_string - %d or %f to print a number (they are equivelent).
  *                      %s to print a string, use its address as the arg.
- *      arguments     - is one AstroExpression per format specifier.
- * compile and try this example with
+ *      arguments     - One AstroExpression per format specifier.
+ *                      Arguments is optional.
+ *
+ * WARNING: printf_hack puts the arguments in Astrolog memory
+ *          %a, %b, %c, ..., %i, %j. printf_hack limits the number of
+ *          arguments to 10.
+ *
+ * Compile and try this example with
  *      castro printf.castro
  *      astrolog -i printf.as
  * see output
- *      some primes 11 19 3 a string Some Random String DID IT
+ *      Some primes: 11, 19, 3; a string: <Some Random String>. DID IT!
  */
 
 var str1;
@@ -20,6 +26,7 @@ switch printf_example {
 
     printf_hack "Some primes: %d, %f, %d; a string: <%s>. DID IT!\n"
                 {~ v1; v1 + v2; v1 - v2; &str1; }
+    printf_hack "This has no args.\n"
 }
 
 run { ~1 { Switch(printf_example); } }
