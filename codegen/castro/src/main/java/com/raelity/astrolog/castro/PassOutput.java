@@ -4,6 +4,7 @@ package com.raelity.astrolog.castro;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
@@ -313,15 +314,21 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
  */
 private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cmdPart)
 {
-    if((2 >= lsc.size()    // must be room for "formatstr and exprs
-            || lsc.get(1).string == null)
-            || lsc.get(2).expr_arg == null) {
-        reportError(lsc.get(0), "printf_hack \"%%s%%d%%f\" {~ arg1; ... }");
+    if(lsc.size() < 2    // must be room for "formatstr, exprs are optional
+            || lsc.get(1).string == null) {
+        reportError(lsc.get(0), "printf_hack \"%%s %%d %%f\" {~ arg1; ... }");
         return;
     }
+    // The expr_arg is optional, since "printf 'foo'" should work.
+    List<String> eArgs = Collections.emptyList();
+    // Note that expr_arg is never an empty list
+    if(lsc.size() >= 3 && lsc.get(2).expr_arg != null)
+        eArgs = switchCommandExpressions.get(lsc.get(2));
+
+    // Convert the format string to something -YYT understands
+    // and count the number of args in the format string while doing it.
     StringBuilder sb_tmp = new StringBuilder();
     String fmt = lsc.get(1).string.getText();
-    List<String> eArgs = switchCommandExpressions.get(lsc.get(2));
     int fmtArgs = 0;
     int state = 1;
     for(int i = 0; i < fmt.length(); i++) {
@@ -334,7 +341,7 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
                 continue;   // skipping the initial '%'
             }
             if(c == '\'' || c == '"')
-                continue;   // discard quotes, can't generally have them in -YYT
+                continue;   // discard quotes, can't generally have them in -YYT?
             sb_tmp.append(c);
         }
         case 2 -> {
@@ -343,7 +350,7 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
             case 's' -> fmtSpec = (char)('a' + fmtArgs);
             case 'd','f' -> fmtSpec = (char)('A' + fmtArgs);
             default ->
-                reportError(lsc.get(1), "'%%%c' invalid format specifier.", c);
+                reportError(lsc.get(1), "'%%%c' invalid format specifier", c);
             }
             if(fmtSpec != 0) {
                 fmtArgs++;
@@ -352,28 +359,42 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
             state = 1;
         }
         }
+        if(fmtArgs > 10) {
+            reportError(lsc.get(1), "'%d' too many printf arguments, limit 10",
+                                    fmtArgs);
+            return;
+        }
     }
     if(fmtArgs != eArgs.size()) {
-        reportError(lsc.get(1), "printf arg count: fmt %d, expr %d.",
+        reportError(lsc.get(1), "printf arg count: fmt %d, expr %d",
                                 fmtArgs, eArgs.size());
         return;
     }
     sb_tmp.append(' ');
     String yytFormatString = sb_tmp.toString();
     sb_tmp.setLength(0);
-    sb_tmp.append("~1 ").append(quote).append(' ');
-    for(int i = 0; i < eArgs.size(); i++) {
-        sb_tmp.append('=').append((char)('a' + i)).append(' ').append(eArgs.get(i));
+    if(fmtArgs > 0) {
+        sb_tmp.append("~1 ").append(quote).append(' ');
+        for(int i = 0; i < eArgs.size(); i++)
+            sb_tmp.append('=').append((char)('a' + i))
+                    .append(' ').append(eArgs.get(i));
+        removeTrailingBlanks(sb_tmp).append(quote).append(' ');
     }
-    removeTrailingBlanks(sb_tmp).append(quote).append(' ');
 
-    cmdPart.set(0, "");
-    cmdPart.set(1, sb_tmp.toString());
+    //There are either 2 or 3 things to overwrite, depending on nArgs
 
+    // load the printf args
+    cmdPart.set(0, sb_tmp.toString());
+
+    // execute the output
     sb_tmp.setLength(0);
     sb_tmp.append("-YYT ").append(quote).append(yytFormatString);
     removeTrailingBlanks(sb_tmp).append(quote);
-    cmdPart.set(2, sb_tmp.toString());
+    cmdPart.set(1, sb_tmp.toString());
+
+    // If there were args, then clear 3rd item
+    if(fmtArgs != 0)
+        cmdPart.set(2, "");
 }
 
 private void createStringAssignmenCommand(StringBuilder lsb,
