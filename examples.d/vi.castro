@@ -1,0 +1,10 @@
+/*
+ * To start with the vi bindings to move around the maze:
+ *      castro mazegame.castro vi.castro
+ *      astrolog -i vi.as -i mazegame.as
+ */
+
+// ~1 { nav_ptr = MacroAddress(nav_vi); }
+run {
+    ~1 { nav_ptr = 41; }
+}

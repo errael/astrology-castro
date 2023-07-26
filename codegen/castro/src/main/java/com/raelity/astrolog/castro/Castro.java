@@ -110,6 +110,11 @@ public static String getAstrologVersionString()
     return "7.60";
 }
 
+public static String getCompactAstrologVersionString()
+{
+    return getAstrologVersionString().replace(".", "");
+}
+
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 private static void version()
 {
@@ -151,6 +156,8 @@ static void usage(String note)
                                 Use --Ewarn=junk for a list.
                 --formatoutput=opt1,... # comma separated list of:
                     1st two for switch and macro, next two for run
+                        min             - no extra/blank lines
+                        qflip           - quote flip default inner/outer
                         bslash          - split into new-line/backslash lines
                         nl              - split into lines
                         indent          - indent lines
@@ -159,6 +166,7 @@ static void usage(String note)
                         debug           - precede macro output with original text
                     Default is no options; switch/macro/run on a single line
                     which is compatible with all Astrolog versions.
+                    "min"/"qflip" usable with any Astrolog version.
                 --anonymous     no dates/versions in output files (for test golden)
                 --version       version
                 -h      output this message
@@ -225,15 +233,7 @@ public static void main(String[] args)
             String optarg = g.getOptarg();
             String[] opts = optarg.split(",");
             for(String opt : opts) {
-                OutputOptions oo = switch(opt) {
-                case "bslash" -> OutputOptions.SM_BACKSLASH;
-                case "nl" -> OutputOptions.SM_NEW_LINES;
-                case "indent" -> OutputOptions.SM_INDENT;
-                case "run_nl" -> OutputOptions.RUN_NEW_LINES;
-                case "run_indent" -> OutputOptions.RUN_INDENT;
-                case "debug" -> OutputOptions.SM_DEBUG;
-                case null, default -> null;
-                };
+                OutputOptions oo = OutputOptions.parse(opt);
                 if(oo == null)
                     usage("Unknown output option '"+opt+"'");
                 oset.add(oo);

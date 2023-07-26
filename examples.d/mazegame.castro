@@ -1,0 +1,206 @@
+/*
+ * Do "castro mazegame.castro"; "astrolog -i mazegame.as"
+ *
+ * To use the vi bindings to move around the maze:
+ *      castro mazegame.castro vi.castro
+ *      astrolog -i vi.as -i mazegame.as
+ */
+
+copy {; This is a port to castro of "mazegame.as" from Astrolog:
+; https://github.com/CruiserOne/Astrolog/blob/2676d1c63d22c66513c38f032a189e990ad2011e/mazegame.as
+; https://github.com/CruiserOne/Astrolog/blob/master/mazegame.as
+}
+
+/*
+ * Automatic allocation will stop before 40, start the unbounded maze at 40.
+ * By setting this, there's an error if try to alocate 40 or greater.
+ */
+layout memory { limit 40; }
+
+/*
+ * Start switch alloc after unshifted function keys
+ */
+layout switch { base 13; }
+
+/*
+ * xF0 is the zero base for the X11 function keys input value, see ~XQ,
+ * first function key is F1 at 201.
+ *      Shift-F1    - 213
+ *      Control-F1  - 225
+ *      Alt-F1      - 237   (Shift-Control on some systems)
+ */
+var xF0 {200};
+
+// There are two key-sets for navigation, this poin to a macro
+var nav_ptr; // navigation macro, change by F6
+
+// maze is a giant array, far bigger than 2
+var maze[2] @40;
+
+switch welcome @1 {
+    // insure a valid nav_ptr, don't change if already set
+    ~1 { if ((nav_ptr != 40) & (nav_ptr != 41)) nav_ptr = 40; }
+
+    cprintf 'Welcome to Astrolog Mazes! (castro):)\n'
+    ~1 { if (nav_ptr == 40) Switch(print_nav_wasd) else Switch(print_nav_vi); }
+    cprintf 'Press F1 to display this help text.\n'
+    cprintf 'Press F2 to create new Maze.\n'
+    cprintf 'Press F3 to create smaller Maze.\n'
+    cprintf 'Press F4 to create larger Maze.\n'
+    cprintf 'Press F5 to restart current Maze.\n'
+}
+switch print_nav_wasd  {
+    cprintf 'Use w/a/s/d keys to move the dot through the Maze to the finish.\n\n'
+}
+switch print_nav_vi  {
+    cprintf 'Use h/j/k/l keys to move the dot through the Maze to the finish.\n\n'
+}
+
+// public function keys
+switch sw2   @2  { -n ~1 { Macro(2); Macro(3); } }
+switch sw3   @3  { ~1 { if (d > 1) d -= 1; } -M 2 }
+switch sw4   @4  { ~1 { if (d < 25) d += 1; } -M 2 }
+switch sw5   @5  { -n ~1 { a = 1; b = 0; k = 0; } }
+
+// The nav keys are mapped to F6-F9
+switch left  @6  { ~1 { a -= 1; if (Macro(6)) a += 1; } }
+switch right @7  { ~1 { a += 1; if (Macro(6)) a -= 1; } }
+switch up    @8  { ~1 { b -= 1; if (Macro(6)) b += 1; } }
+switch down  @9  { ~1 { b += 1; if (Macro(6)) b -= 1; } }
+switch sw10  @10 { -n -n1 ~1 { l = 0; } }
+
+switch done {
+    // 86400 == 24 * 60 * 60 == number of seconds in a day.
+    ~1 { u = Int((JulianT() - t) * 8640000.0); x = u / 100; y = Int(u % 100); }
+    -YYT 'Congratulations, you made it through the Maze in \X.\Y seconds! :)\n\nHave an a-Maze-ing day! :)\n'
+
+    // Alternately, can use cprintf if willing to use tmp variables
+    // ~1 { u = Int((JulianT() - t) * 8640000.0); }
+    // // Two args, so %a, %b are used
+    // cprintf 'Congratulations, you made it through the Maze in %d.%d seconds! :)\n\n'
+    //         {~ u / 100; Int(u % 100); }
+    // cprintf 'Have an a-Maze-ing day! :)\n'
+}
+
+switch hourglass @12 { _Wh }
+
+
+macro m1 @1 {
+    DCol(K_Green);
+    for (y = 0; c - 1)
+        for (x = 0; c - 1) {
+            v = h + x * e;
+            w = h + y * e;
+            if (!maze[y * c + x])
+                DBlock(v - f, w - f, v + f - 1, w + f - 1);
+        }
+}
+
+macro m2 @2 {
+    c = d * 2 + 1;
+    g = d * d - 1;
+    t = k ? JulianT() : Tim();
+    s = RndSeed(Fract(t * 10000.0) * 10000.0);
+    for (y = 0; c - 1)
+        for (x = 0; c - 1)
+            maze[y * c + x] = 0;
+}
+
+macro m3 @3 {
+    a = 1; b = 1;
+    maze[b * c + a] = 1;
+    while (g)
+        Macro(4);
+    maze[1] = 1;
+    a = c - 2; b = c - 1;
+    Macro(6);
+    *z = 1;
+    a = 1; b = 0;
+}
+
+macro m4 @4 {
+    r = Rnd(0, 3);
+    x = a; y = b;
+    if (Odd(r)) {
+        x += r <= 1 ? 2 : -2;
+    } else {
+        y += r <= 0 ? 2 : -2;
+    }
+    if (Tween(x, 0, c - 1) & Tween(y, 0, c - 1))
+        Macro(5);
+}
+
+macro m5 @5 {
+    z = &maze + y * c + x;
+    if (!*z) {
+        *z = 1;
+        maze[((y + b) >> 1) * c + ((x + a) >> 1)] = 1;
+        g -= 1;
+    }
+    a = x; b = y;
+}
+
+macro m6 @6 {
+    if (b >= c)
+        Switch(10);
+    z = &maze + (b < 0 ? 0 : b * c + a);
+    !*z;
+}
+
+macro nav_wasd @40 {
+    if (z == 119) z = xF0 + 8;  // w --> up
+    if (z == 97)  z = xF0 + 6;  // a --> left
+    if (z == 115) z = xF0 + 9;  // s --> down
+    if (z == 100) z = xF0 + 7;  // d --> right
+}
+
+// hjkl are the vi/vim navigation keys
+macro nav_vi @41 {
+    if (z == 107) z = xF0 + 8;  // k --> up
+    if (z == 104) z = xF0 + 6;  // h --> left
+    if (z == 106) z = xF0 + 9;  // j --> down
+    if (z == 108) z = xF0 + 7;  // l --> right
+}
+
+run {
+    ~Q2 {
+        f = (Min(_Xwx(), _Xwy()) - 1) / (d * 12) + 1;
+        e = f * 2;
+        h = (Min(_Xwx(), _Xwy()) - (c - 1) * e) / 2;
+        DCol(K_Red);
+        v = h + a * e;
+        w = h + b * e;
+        DDisk(v - f, w - f, v + f - 1, w + f - 1);
+        Macro(1);
+    }
+}
+run {
+    ~Q3 {
+        if (!k) {
+            k = 1;
+            Switch(welcome);
+            t = JulianT();
+        }
+        if (!l) {
+            l = 1;
+            Switch(done);
+        }
+    }
+}
+
+run { ~XQ { Macro(nav_ptr[0]); } }
+
+run {
+    ~WQ {
+        if (z == 40082) z = 40152;
+        if (z == 40131) z = 40150;
+        if (z == 40281) z = 40153;
+        if (z == 40086) z = 40151;
+    }
+}
+
+run {
+    ~1 { d = 10; f = 5; l = 1; if (WIN()) Switch(hourglass); }
+    =b0 =Xe
+    -M 2
+}

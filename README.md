@@ -1,5 +1,10 @@
-# astrology-castro - v0.1.0 early beta
-`castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression` (and WYSIWYG). `castro` is a standalone tool; its output is a `.as` file that can be used with `Astrolog`'s command switch `-i <filename>`. Some motivating factors for `castro` were familiar expression syntax (avoid writing and maintaining the prefix notation expressions), automatic memory allocation, referring to things by name rather than address.
+# astrology-castro - v1 beta.1
+`castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression` (and WYSIWYG). `castro` is a standalone tool; its output is a `.as` file that can be used with `Astrolog`'s command switch `-i <filename>`. `castro` easily interoperates with existing `Astrolog` command switch files.
+
+Some motivating factors for `castro`
+- familiar expression syntax (avoid writing and maintaining the prefix notation expressions),
+- referring to things by name rather than address.
+- automatic memory allocation
 
 Here's a simple example. Note that the switch, macro and variable definitions could be in 3 different files. As in `Astrolog`, function names are case insensitive. _Switch and macro names are case sensitive_.
 ```
@@ -25,15 +30,28 @@ which generates
 
 This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpression` basics. See [discussions](https://github.com/errael/astrology-castro/discussions) for musings on possible extensions.
 
-`castro` has a `layout` directive which constrains the allocated address; in addition, it is possible to assign addresses.
+For more examples, there is [mazegame ported to castro](examples.d/mazegame.castro). All of the examples from `Astrolog` website under [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express) are shown as `castro` code in [AstroExpressionDocsCommandSwitches.castro](examples.d/AstroExpressionDocsCommandSwitches.castro) There's [examples.d](examples.d); [astrotest.d](astrotest.d) executes on astrolog and has a simple expect/result infrastructure; [test.d](test.d) checks lowlevel functionality and has gold files.
+
+###     Interoperability
+
+`castro` works with existing `command switch` files and their declared switch/macro/variables.
+
+`castro` has a [layout directive](#layout) which constrains the addresses which it automatically allocate to specified areas; in addition, it is possible to assign addresses. In order to reference items _defined in an existing command switch file_, use
+```
+switch a_switch @33;     // in a non castro file there's: -M0 33 "..."
+macro a_macro @50;       // in a non castro file there's: ~M 50 "..."
+var a_var @60;
+```
+To assign `switch`/`macro` in a `castro` file to a specific adress:
+```
+switch b_switch @44 { ... }     // from another file: '-M 44' or '~1 "Switch 44"'
+macro b_macro @55 { ... }       // from another file: '~1 "Macro 55"'
+```
 
 ###      Differences from "C"
 
 `castro` has a weird looking printf, see [castro printf](#castro-printf). And examples [printf.castro](examples.d/printf.castro) for a description that compiles and runs.
-<!--
-<details>
-<summary>statement differences</summary>
--->
+
 ####    statement/expression differences
 
 - Everything has a value, `if`, `while`, `do`, `for`, `repeat`, `{}`, assignments, expressions as described in the `Astrolog` documentation.
@@ -42,26 +60,17 @@ This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpre
 - No user defined functions, only builtin functions.
 - Address of and indirect, `&var_name` and `*var_name` supported;
   `&` and `*` are only used with an identifier, nothing more complex.
-- Integer constants are decimal, hex (0x), binary(0b). Octal not supported.
+- Integer constants are decimal, hex (0x), binary(0b). Octal is not supported.
 - Floating constants are decimal ###.###, exponents not supported.
-<!--
-</details>
 
-<details>
-<summary>variable differences</summary>
--->
 ####    variable differences
 
 - Single char variable names 'a' to 'z' are pre-declared.
   AstroExpression hooks use as much as %u ... %z.
-  [castro printf](#castro-printf)printf uses as much as %a ... %j.
+  [castro printf](#castro-printf) uses as much as %a ... %j.
 - Variables are declared with `var`, for example `var foo;`
-- A variable is integer or float depending on usage. `AstroLog` truncates as needed.
+- A variable is integer or float depending on usage. `Astrolog` truncates as needed.
 - A variable declaration may assign the variable or array to a specific location; append `@integer`, for example `var foo @100;` and `var bar[10] @200;`; this assigns `foo` to location 100 and array `bar` starts at location 200.
-<!--
-</details>
--->
-
 
 ##      Running castro
 
@@ -71,6 +80,7 @@ Requires jre-11 or later. The released jar is executable, use a script named cas
 CASTRO_JAR=/lib/castro-0.1.0.jar
 java -jar $CASTRO_JAR "$@"
 ```
+Do `castro -h` to see help/usage.
 
 Running `castro`  on a file produces 3 output files. For example, if there's `foo.castro` then executing `castro foo.castro` creates
 - `foo.as` can be executed by `Astrolog` with `-i foo.as`
@@ -80,9 +90,6 @@ Running `castro`  on a file produces 3 output files. For example, if there's `fo
 Use `castro --gui ...` or `castro --console ...` to see how a file is parsed.
 
 When multiple files are compiled together, the `.map` base file name defaults to the first file in the input file list; it is explicitly specifed with the `--mapname=base`.
-
-There's [examples.d](examples.d), [astrotest.d](astrotest.d), and [test.d](test.d). test.d checks
-lowlevel functionality and has gold files.
 
 ### Working with multiple files.
 
@@ -123,7 +130,7 @@ These are the top level statements
 - `run` results in inline top level command switches. Parsed like `switch`, but not embedded in a `-M0`.
 - `copy` literally copies text to the output file with no interpretation or changes.
 
-`castro` identifiers are the same as with `"C"`, likewise operators have the same precedence as with `"C"`; blanks and newlines are just white space.
+`castro` identifiers are the same as with `"C"`, likewise operators have the same precedence as with `"C"`; blanks and newlines are whitespace.
 
 ###     layout
 `layout` statement specifies, on a per file basis, the addresses that automatic allocation can use for `memory`, `macro`, and `switch` addresses.
@@ -211,14 +218,9 @@ Variable declarations take on one of the following forms
 ```
 var var_name1;            // automatically allocate
 var var_name2[4];         // automatically allocate
-var var_name3 @100;
-var var_name4[4] @101;
+var var_name3 @100;       // assign variable to address 100
+var var_name4[4] @101;    // assign array variable to addresses 101-104
 ```
-
-<!--
-<details>
-<summary>numeric and string initialization examples</summary>
--->
 
 #####   Initializing numeric variables
 
@@ -247,11 +249,6 @@ switch someSwitch {
 ```
 Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `setstrings`, `AssignStrings`, or `assignstrings`.
 
-<!--
-</details>
--->
-
-
 ##      TODO
 - Handle single file, out of normally multi-file, compilation. Uses something like the .map file as input; maybe a `--extern-file` option. Not sure this is an essential feature. May be too confusing; just compile them all.
 - Warn if switch/macro used before defined in same file.
@@ -259,6 +256,9 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
     run { ~1 { switch(some_switch); }
     switch some_switch { -YYT "Boo\n" }
 ```
+- Optimize `a = b - 1;` to `=a Dec b`
+- Capture/extract known constants from astrolog, only allow valid constants.
+- Treat function that take no args as builtin variables? Then could use `Mon` instead of `Mon()`.
 
 
 ##     Warnings/Oddities:
