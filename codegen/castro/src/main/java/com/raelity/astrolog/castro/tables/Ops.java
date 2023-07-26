@@ -37,6 +37,17 @@ public static String astroCode(int token)
     return operations.ops.get(token);
 }
 
+/** Plus to Inc, Minus to Dec; used for optim "+/- 1".
+ * @return AstroExpression function name for optim corresponding to token */
+public static String astroCodeOpByOne(int token)
+{
+    return switch(token) {
+    case Plus -> "Inc";
+    case Minus -> "Dec";
+    default -> throw new IllegalArgumentException();
+    };
+}
+
 public static boolean isAnyOp(String astroCode)
 {
     return operations.ops.inverse().containsKey(astroCode);

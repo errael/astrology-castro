@@ -34,6 +34,8 @@ import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Ops;
 import com.raelity.astrolog.castro.tables.Ops.Flow;
 
+import static com.raelity.astrolog.castro.Constants.constant;
+import static com.raelity.astrolog.castro.Constants.isConstant;
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
@@ -87,6 +89,11 @@ private String astroControlOp(Flow op)
 private String astroOp(int token)
 {
     return Ops.astroCode(token);
+}
+
+private String astroOpByOne(int token)
+{
+    return Ops.astroCodeOpByOne(token);
 }
 
 private String astroAssignOp(int token)
@@ -269,8 +276,16 @@ String genQuestColonOp(ExprQuestOpContext ctx,
 String genBinOp(ExprBinOpContext ctx, Token opToken, String lhs, String rhs)
 {
     sb.setLength(0);
-    sb.append(astroOp(opToken.getType())).append(' ')
-            .append(lhs).append(rhs);
+    Integer i = null;
+    // Optim: turn "lhs + 1", "lhs - 1" into "Inc lhs", "Dec lhs"
+    int op = opToken.getType();
+    if((op == Plus || op == Minus)
+            && (i = expr2constInt(ctx.r)) != null
+            && i == 1)
+        sb.append(astroOpByOne(op)).append(' ').append(lhs);
+    else
+        sb.append(astroOp(op)).append(' ')
+                .append(lhs).append(rhs);
     return sb.toString();
 }
 
@@ -356,6 +371,10 @@ private StringBuilder lvalAssignment(StringBuilder lsb, LvalContext lval_ctx)
 String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String rhs)
 {
     sb.setLength(0);
+    if( isConstant(ctx.l.id)) {
+        reportError(ctx, "'%s' is a constant, can't write", ctx.l.id.getText());
+        return ctx.l.id.getText();
+    }
     int opType = opToken.getType();
     if(opType == Assign) {
         // Just a simple assign
@@ -398,8 +417,11 @@ String genLval(LvalMemContext ctx)
     sb.setLength(0);
     
     AstroMem space = lval2MacoSwitchSpace(ctx);
+    String constant;
     if(space != null)
         sb.append(String.valueOf(space.getVar(ctx.id.getText()).getAddr())).append(' ');
+    else if((constant = constant(ctx.getText())) != null)
+        sb.append(constant).append(' ');
     else
         sb.append('@').append(lvalReadVar(ctx.id.getText())).append(' ');
     return sb.toString();

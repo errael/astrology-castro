@@ -1,0 +1,128 @@
+
+
+
+~ <string>: Display AstroExpression.
+    "~ 'Sqr Div 9.0 4.0'"
+
+~g <string>: Filter aspect configurations.  For example, to only display grand crosses and grand trines, do:
+    ~g "Or Equ @v 1 Equ @v 4"
+
+~a <string>: Adjust aspect powers. For example, to triple the power of any aspect involving an object in the sign Sagittarius, do:
+    ~a "If Or Equ LonSign ObjLon @w S_Sag Equ LonSign ObjLon @y S_Sag =z Mul @z 3"
+
+~a0 <string>: Notify aspect list summary. For example, if you animate a bunch of aspect list charts, you can keep track of the highest total power displayed (i.e. store it in custom variable @a) with:
+    ~a0 "If Gt @z @a =a @z"
+
+~m <string>: Filter midpoints. For example, to only display midpoints located within 30 degrees of the Sun’s position, do:
+    ~m "Lt LonDist @y ObjLon O_Sun 30.0"
+
+~ma <string>: Filter aspects to midpoints. For example, to only display tight aspects to the Sun or Moon, do:
+    ~ma "And Lt Abs @z 2.0 Lte @y O_Moo"
+
+~j <string>: Adjust object influence powers. For example, to give an extra 100 power to completely unaspected planets, do:
+    ~j "=n 0 For %i 0 Objs If And Neq @i @x GridNam Min @i @x Max @i @x =n Inc @n If Lte @n 0 =z Add @z 100.0"
+
+~j0 <string>: Adjust sign influence powers. For example, to give an extra 200 relative power to fire signs, do:
+    ~j0 "If Equ Mod @y 4 1 =z Add @z 200.0"
+
+~7 <string>: Notify Ray chart. For example, if you animate a bunch of esoteric charts, you can keep track of the count of each possible personality Ray in custom variables @a through @g with:
+    ~7 " =u %y = Var @u Inc Var Var @u"
+
+~L <string>: Filter latitude crossings. For example, to only display latitude crossings involving the Ascendant that are within 10 degrees of the current chart’s latitude do:
+    ~L "And Lt Abs Sub @v Lat1 10 Or Equ @x O_Asc Equ @z O_Asc"
+
+~E <string>: Filter ephemeris output. For example, to do a stellium search and only display ephemeris lines in which there are at least 5 planets in the same sign, do:
+    astrolog -n -Ey ~E "For %m 1 Signs = @m 0 For %m 0 Objs If ObjOn @m = LonSign ObjLon @m Inc Var LonSign ObjLon @m =n 0 For %m 1 Signs =n Max @n Var @m Gte @n 5"
+
+~P <string>: Filter Arabic parts. For example, to only display parts that lie in the 10th house, do:
+    ~P "Equ LonHouse @z 10"
+
+~Zd <string>: Filter rising and setting times. For example, to only show rising events within 10 degrees of due East, do:
+    ~Zd "And Equ @y 0 Lt LonDist @z 0.0 10.0"
+
+~d <string>: Filter transit to transit events. For example, to display eclipses for this year (at least those in effect when corresponding aspect is exact) do:
+    astrolog -n -dy =Yu ~d "Gt @y 0"
+
+~dv <string>: Determine void of course times. For example, to detect and display void of course Sun times (i.e. the period between the last aspect the Sun makes before the Sun enters the next sign) instead of void of course Moons, do:
+    ~dv "=z ?: @v And Equ @w O_Sun Equ @x -1 And Equ @w O_Sun Gt @x 0"
+
+~t <string>: Filter transit to natal events. For example, to only display transit events taking place on weekends, do:
+    ~t "=a DayWeek Mon Day Yea Or Equ @a 0 Equ @a 6"
+
+~O <string>: Adjust object position. For example, to invert all zodiac positions 180 degrees for charts in the southern hemisphere located south of the equator, do:
+    ~O "=w Add @w 180.0 Lt Lat 0.0"
+
+~C <string>: Adjust house cusp position. For example, Astrolog supports Null houses or the “0 Aries” system, an equal house system in which the 1st house cusp is always 0Aries. Suppose you want a “0 Leo” house system in which the 1st house cusp is always 0Leo? This can be done with:
+    ~C "=y Mul Sub Add S_Leo @x 2 30.0"
+
+~A <string>: Redefine aspect orb. For example, to have separating aspects have 70% the orb of applying aspects, do:
+    ~A "If Gt @y 0.0 =z Mul @z 0.70"
+
+~p[0] <string>: Adjust progression. For example, to have progressions move at a logarithmic rate (fast early in life, and continually slowing down over time) in the manner presented by A.T. Mann, do:
+    ~p0 "=z Mul Sgn2 Sub @x @y Sub Mul Log10 Add Div Div Abs Sub @x @y 365.242199 0.076661459 10 120 120"
+
+~kO <string>: Customize object color. For example, to make planets colored the same as the zodiac sign they’re located within, do:
+    ~kO "=z ObjCol Dec Add O_Asc LonSign ObjLon @y"
+
+~kA <string>: Customize aspect color. For example, to change the color of aspect lines involving the Sun or Moon to magenta, do:
+    ~kA "If Or Lte @w O_Moo Lte @y O_Moo =z K_Mag"
+
+~kv <string>: Adjust wheel section color. For example, to give signs colors of the rainbow, but with red starting at the Sun’s position in the zodiac, do:
+    ~kv "If Equ @x 0 =z Blend _YXk ?: _Xr K_White K_Black Hue Sub Mul Dec @y 30 ObjLon O_Sun Div _XI1 100.0"
+
+~F[O/C/A] <string>: Font adjustment. For example, to randomly display sign glyphs using one of the first three fonts available, do:
+    ~F "=w Rnd 1 3 =v Add @u ?: Equ @w 1 93 ?: Equ @w 2 64 ?: Lte @u 9 48 ?: Equ @u 10 38 ?: Equ @u 11 34 49"
+
+~v <string>: Adjust object ordering. For example, to always display Ceres between Mars and Jupiter (instead of after all the main planets) do:
+    ~v "If Equ @z O_Cer =z O_Mar"
+
+~v3 <string>: Adjust sign division. For example, to mark terms using the Chaldean method, in which the five subdivisions of each sign are progressively one degree smaller, do:
+    ~v3 "=a 64735 =b 47356 =c 73564 =d 56473 =w Sub 8 @y =z Mod Div Var Inc Mod Dec @x 4 Pow 10 Sub 4 @y 10"
+
+~XL <string>: Adjust city color. For example, to only draw those cities within 45 degrees of the chart location, do:
+    ~XL "If Gt PolDist Lon Lat @x @y 45 =z -1"
+
+~Xt <string>: Notify sidebar. For example, if you want the current obliquity of the ecliptic and the right ascension of the MC to always be displayed in the sidebar, do:
+    -YXt "Obliquity: \A\nRAMC: \B" ~Xt "=a Oblique =b RAMC"
+
+~XQ <string>: Adjust key. For example, to disable the Escape and Ctrl+c keys so they don’t exit the program, do:
+    ~XQ "If Or Equ @z 27 Equ @z 3 =z -1"
+
+~WQ <string>: Adjust menu command. For example, to make the w/a/s/d keys behave the same as the arrow keys, do:
+    ~WQ "If Equ @z 40082 =z 40289 If Equ @z 40131 =z 40244 If Equ @z 40281 =z 40290 If Equ @z 40086 =z 40243"
+
+~U <string>: Filter extra star output. For example, to only display stars brighter than magnitude 3.0 (which will reduce the number of stars from over 1000 to 172) do:
+    ~U "Lt @z 3.0"
+
+~U0 <string>: Filter extra asteroid output. For example, to only display asteroids that are located within 10 great circle degrees from the Sun, do:
+    ~U0 "Lt PolDist @x @y ObjLon O_Sun ObjLat O_Sun 10.0"
+
+~q[1-2] <string>: Notify chart cast.
+
+~Q[1-3] <string>: Notify chart display.
+
+~5s <string>: Adjust chart list custom sort order. For example, to sort by Sun/Moon angle (which will place New Moon charts first in the list and Full Moon charts last) do:
+    ~5s "LonDist ObjLon O_Sun ObjLon O_Moo" -5s
+
+~5f <string>: Adjust chart list custom filter. For example, to only show charts from the chart list which have the “Moon in the 7th house and Jupiter aligned [Conjunct] with Mars”, do:
+    ~5f "And Equ ObjHouse O_Moo 7 Equ AspLon O_Jup O_Mar -1 A_Con" -5f "" ""
+
+~5Y <string>: Notify chart list enumeration. For example, to check which chart in the chart list forms the most Trine aspects to a natal chart (i.e. to transfer that chart to slot #2), first load the natal chart in slot #1, then do:
+    ~5Y "DoGrid2 False =c 0 For %i 0 Objs If ObjOn @i For %j 0 Objs If ObjOn @j Do =e GridNam @i @j If Equ @e A_Tri =c Inc @c If Gt @c @d Do =d @c =a List1" ~1 "=d 0" -Y52 -qL2 ~@a
+
+~5i <string>: Filter Astrodatabank import. For example, to only load ADB chart records for people who have at least three different psychological conditions at the same time, do:
+    ~2 1 ">Diagnoses : Psychological :"
+    -Y5I 1 1 -~5i "Gte @a 3"
+
+~2[0] <index> <string>: String and string list setting. For example, to set custom string 4 to “Apple”, 5 to “Banana”, and 6 to “Carrot”, do:
+    ~20 4 ";Apple;Banana;Carrot"
+
+~0: Disable AstroExpressions. The ~0 switch disables all AstroExpression hooks in the current program session, which means “_~0” can be used to reenable them.
+    ~0
+    _~0
+
+command switches can use AstroExpressions.
+    =R "~=b 0 For %a 0 Objs If ObjOn @a Do =b @a =a Objs @b"
+
+AstroExpressions are effectively their own programming language, which means that they can do general computing tasks not related to astrology, such as implement games. To demonstrate this, the script file mazegame.as in the source subdirectory of any Astrolog download contains a sample game in which a random Maze is drawn over the wheel chart, and you use the keyboard to solve the Maze. You can change the size of the Maze, and the time it takes you to get through is displayed upon reaching the exit. :)
+

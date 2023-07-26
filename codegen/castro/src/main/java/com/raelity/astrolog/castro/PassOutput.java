@@ -97,16 +97,25 @@ public PassOutput(AstroParseResult apr)
 @Override
 public void exitMacro(MacroContext ctx)
 {
-    sb.setLength(0);
-    sb.append("; MACRO ").append(ctx.id.getText());
-    if(ctx.addr != null) {
-        sb.append(' ').append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
+    if(!smOutputOpts.contains(GENERAL_MIN)) {
+        sb.setLength(0);
+        sb.append("; MACRO ").append(ctx.id.getText());
+        if(ctx.addr != null) {
+            sb.append(' ').append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
+        }
+        out.printf("\n%s\n", sb.toString());
     }
-    //sb.append('(').append(ctx.bs.size()).append(')');
-    out.printf("\n%s\n", sb.toString());
     
-    char quote = '"';
-    char outerQuote = '\'';
+    // Can change the quote preference to facilite diff
+    char quote;
+    char outerQuote;
+    if(smOutputOpts.contains(GENERAL_QFLIP)) {
+        quote = '\'';
+        outerQuote = '\"';
+    } else {
+        quote = '"';
+        outerQuote = '\'';
+    }
     
     sb.setLength(0);
     sb.append("~M ")
@@ -125,13 +134,14 @@ public void exitMacro(MacroContext ctx)
 @Override
 public void exitSwitch(SwitchContext ctx)
 {
-    sb.setLength(0);
-    sb.append("; SWITCH ").append(ctx.id.getText());
-    if(ctx.addr != null) {
-        sb.append(' ').append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
+    if(!smOutputOpts.contains(GENERAL_MIN)) {
+        sb.setLength(0);
+        sb.append("; SWITCH ").append(ctx.id.getText());
+        if(ctx.addr != null) {
+            sb.append(' ').append("@").append(apr.prefixExpr.removeFrom(ctx.addr));
+        }
+        out.printf("\n%s\n", sb.toString());
     }
-    //sb.append('(').append(ctx.sc.size()).append(')');
-    out.printf("\n%s\n", sb.toString());
     
     boolean hasSingleQuote = false;
     boolean hasDoubleQuote = false;
@@ -156,8 +166,15 @@ public void exitSwitch(SwitchContext ctx)
     }
     
     
-    char quote = hasSingleQuote ? '\'' : '"';
-    char outerQuote = hasSingleQuote ? '"' : '\'';
+    char quote;
+    char outerQuote;
+    if(smOutputOpts.contains(GENERAL_QFLIP)) {
+        quote = hasDoubleQuote ? '"' : '\'';
+        outerQuote = hasDoubleQuote ? '\'' : '"';
+    } else {
+        quote = hasSingleQuote ? '\'' : '"';
+        outerQuote = hasSingleQuote ? '"' : '\'';
+    }
     
     sb.setLength(0);
     sb.append("-M0 ")
@@ -177,12 +194,14 @@ public void exitSwitch(SwitchContext ctx)
 @Override
 public void exitRun(RunContext ctx)
 {
-    sb.setLength(0);
-    sb.append("; RUN ");
-    
-    out.printf("\n%s", sb.toString());
-    if(!runOutputOpts.contains(SM_NEW_LINES))
-        out.printf("\n");
+    if(!smOutputOpts.contains(GENERAL_MIN)) {
+        sb.setLength(0);
+        sb.append("; RUN ");
+        
+        out.printf("\n%s", sb.toString());
+        if(!runOutputOpts.contains(SM_NEW_LINES))
+            out.printf("\n");
+    }
     
     sb.setLength(0);
     collectSwitchCmds(sb, '"', runOutputOpts, apr, ctx.switch_cmd());
@@ -192,7 +211,9 @@ public void exitRun(RunContext ctx)
 @Override
 public void exitCopy(CopyContext ctx)
 {
-    out.printf("\n; COPY\n");
+    if(!smOutputOpts.contains(GENERAL_MIN)) {
+        out.printf("\n; COPY\n");
+    }
     String s = ctx.getChild(1).getText();
     s = s.replace("\\}", "}");
     out.printf("%s\n", s);

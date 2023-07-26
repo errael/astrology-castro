@@ -22,6 +22,7 @@ import org.antlr.v4.runtime.tree.xpath.XPath;
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroWarningOptions;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.IntegerContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.lib.CentralLookup;
@@ -36,6 +37,9 @@ import static com.raelity.astrolog.castro.antlr.AstroParser.BinaryConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.HexadecimalConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.OctalConstant;
+import static com.raelity.astrolog.castro.tables.Functions.FUNC_ID_MACRO;
+import static com.raelity.astrolog.castro.tables.Functions.FUNC_ID_SWITCH;
+import static com.raelity.astrolog.castro.tables.Functions.eqfunc;
 
 /**
  *
@@ -69,21 +73,27 @@ public static boolean isBuiltinVar(String text)
     return c >= 'a' && c <= 'z';
 }
 
-public static int parseInt(Token token)
+record RS(int radix, String s){};
+private static RS radixString(Token token)
 {
+    // strip off the first two chars if 0x or 0b
     String s = token.getText();
     return switch(token.getType()) {
-    case IntegerConstant -> Integer.parseInt(s);
-    case BinaryConstant -> Integer.parseInt(s.substring(2), 2);
-    case HexadecimalConstant -> Integer.parseInt(s.substring(2), 16);
-    case OctalConstant -> {
-        int i = Integer.parseInt(s, 8);
-        if(i != 0)
-            reportError(OCTAL_CONST, token, "'%s' Octal constant", s);
-        yield i;
-    }
+    case IntegerConstant -> new RS(10, s);
+    case BinaryConstant -> new RS(2, s.substring(2));
+    case HexadecimalConstant -> new RS(16, s.substring(2));
+    case OctalConstant -> new RS(8, s);
     default -> throw new IllegalArgumentException();
     };
+}
+
+public static int parseInt(Token token)
+{
+    RS rs = radixString(token);
+    int i = Integer.parseInt(rs.s, rs.radix);
+    if(rs.radix == 8 && i != 0)
+        reportError(OCTAL_CONST, token, "'%s' Octal constant", token.getText());
+    return i;
 }
 
 public static List<String> collectAssignStrings(Switch_cmdContext sc_ctx)
@@ -107,34 +117,6 @@ public static StringBuilder writeRegister(StringBuilder sb, int addr)
         sb.append("= ").append(addr);
     return sb;
 }
-
-// /** lval must be a fixed location, no expr involved. */
-// public static int lvalVarAddr(StringBuilder lsb, ParserRuleContext ctx,
-//                                         Token id, ExprContext idx,
-//                                         AstroParseResult apr, Registers registers)
-// {
-//     if(apr == null)
-//         apr = lookup(AstroParseResult.class);
-//     if(registers == null)
-//         registers = lookup(Registers.class);
-// 
-//     String lvalName = id.getText();
-//     int addr = registers.getVar(lvalName).getAddr();
-// 
-//     boolean resolved = false;
-//     if(idx == null)
-//         resolved = true;
-//     else {
-//         IntegerContext constVal = expr2const(apr, idx);
-//         if(constVal != null) {
-//             addr += Integer.parseInt(constVal.getText());
-//             resolved = true;
-//         }
-//     }
-//     if(!resolved)
-//         Util.reportError(ctx, "'%s' must be a fixed location", ctx.getText());
-//     return addr;
-// }
 
 public static Func_callContext lvalArg2Func(ParserRuleContext ctx)
 {
@@ -170,8 +152,8 @@ public static AstroMem func_call2MacoSwitchSpace(ParserRuleContext ctx)
     if(fc_ctx.args.size() != 1)
         return null;
     String funcName = fc_ctx.id.getText();
-    return "switch".equalsIgnoreCase(funcName)? lookup(Switches.class)
-           : "macro".equalsIgnoreCase(funcName) ? lookup(Macros.class)
+    return eqfunc(FUNC_ID_SWITCH, funcName) ? lookup(Switches.class)
+           : eqfunc(FUNC_ID_MACRO, funcName) ? lookup(Macros.class)
              : null;
 }
 
@@ -186,7 +168,8 @@ public static Integer expr2constInt(ParseTree pt)
     Collection<ParseTree> constVal = xpathConstInt.evaluate(pt);
     if(constVal.isEmpty())
         return null;
-    return Integer.valueOf(constVal.iterator().next().getText());
+    IntegerContext i_ctx = (IntegerContext)constVal.iterator().next();
+    return parseInt(i_ctx.i);
 }
 
 private static XPath xpathFuncArgLval;

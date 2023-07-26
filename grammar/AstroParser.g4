@@ -156,14 +156,14 @@ expr returns [int fBlock = 0]
 //}
     : func_call                         #exprFunc
     | ('+'|'-'|'!'|'~') expr            #exprUnOp
-    | expr ('*'|'/'|'%') expr               #exprBinOp
-    | expr ('+'|'-') expr                   #exprBinOp
-    | expr ('<<'|'>>') expr                 #exprBinOp
-    | expr ('<'|'<='|'>'|'>=') expr         #exprBinOp
-    | expr ('=='|'!=') expr                 #exprBinOp
-    | expr ('&') expr                       #exprBinOp
-    | expr ('^') expr                       #exprBinOp
-    | expr ('|') expr                       #exprBinOp
+    | l=expr ('*'|'/'|'%') r=expr               #exprBinOp
+    | l=expr ('+'|'-') r=expr                   #exprBinOp
+    | l=expr ('<<'|'>>') r=expr                 #exprBinOp
+    | l=expr ('<'|'<='|'>'|'>=') r=expr         #exprBinOp
+    | l=expr ('=='|'!=') r=expr                 #exprBinOp
+    | l=expr ('&') r=expr                       #exprBinOp
+    | l=expr ('^') r=expr                       #exprBinOp
+    | l=expr ('|') r=expr                       #exprBinOp
     | <assoc=right> expr '?' expr ':' expr      #exprQuestOp
     | l=lval ao=('='|'+='|'-='|'*='|'/='|'%='|'<<='|'>>='|'&='|'^='|'|=')
                                                         e=expr #exprAssOp
