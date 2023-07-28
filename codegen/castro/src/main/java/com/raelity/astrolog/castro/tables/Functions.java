@@ -8,15 +8,85 @@ package com.raelity.astrolog.castro.tables;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
+import com.raelity.astrolog.castro.mems.AstroMem;
+import com.raelity.astrolog.castro.mems.Macros;
+import com.raelity.astrolog.castro.mems.Switches;
+
+import static com.raelity.astrolog.castro.Error.FUNC_CASTRO;
+import static com.raelity.astrolog.castro.Util.lookup;
+import static com.raelity.astrolog.castro.Util.macroSwitchFuncArgs;
+import static com.raelity.astrolog.castro.Util.reportError;
 
 public class Functions
 {
 public static final String FUNC_ID_SWITCH = "switch";
 public static final String FUNC_ID_MACRO = "macro";
 
+    /**
+     * In addition to astrolog functions, there can be magic castro functions;
+     * this represents a specific function, including it's name,
+     * and how to generate code for it.
+     */
+    abstract public static class Function
+    {
+    public abstract String name();
+    public abstract int narg();
+    public abstract boolean error();
+    /** Check for special func args; returns true if OK and no further
+     * checking needed. Typically meaningfull where unusual arguments
+     * are expected, like switch/macro name. A false return doesn't
+     * mean there's a problem, only that further checking is expected.
+     */
+    public abstract boolean checkReportSpecialFuncArgs(Func_callContext ctx);
+     /* @return null for variable, else macro/switch memSpace */
+    public abstract AstroMem targetMemSpace();
+    public abstract StringBuilder genFuncCall(
+            StringBuilder sb, ExprFuncContext ctx, List<String> args);
+
+    @Override
+    public String toString()
+    {
+        return "Function{name:" + name() + '}';
+    }
+
+    }
+
+public static void addFunction(Function f, String... aliases)
+{
+    if(functions.funcsModifiableMap.putIfAbsent(
+            f.name().toLowerCase(Locale.ROOT), f) != null)
+        throw new IllegalArgumentException();
+    for(String alias : aliases) {
+        functions.addAlias(alias, f.name());
+    }
+}
+
+/** dummyFunction is a singleton DummyFunction */
+private static Function dummyFunction = new DummyFunction();
+
+/**
+ * @return Function for the name
+ */
+// TODO: extend to handl magic functions
+// TODO: return replace function (do translate() here)
+public static Function get(String funcName)
+{
+    String lcName = funcName.toLowerCase(Locale.ROOT);
+    String alias = functions.aliasFuncs.get(lcName);
+    if(alias != null)
+        lcName = alias;
+    Function f = functions.funcs.get(lcName);
+    return f != null ? f : dummyFunction;
+}
+
+// TODO: should this be Function.equals(Function)?
 public static boolean eqfunc(String s1, String s2)
 {
     Objects.nonNull(s1);
@@ -27,29 +97,6 @@ public static boolean eqfunc(String s1, String s2)
 public static boolean funcSwitchOrMacro(String funcName)
 {
     return eqfunc(FUNC_ID_SWITCH, funcName) || eqfunc(FUNC_ID_MACRO, funcName);
-}
-
-/** @return number of arguments for func; null if func does not exist */
-public static Integer narg(String funcName)
-{
-    Info info = functions.funcs.get(funcName.toLowerCase(Locale.ROOT));
-    return info != null ? info.narg : null;
-}
-
-public static String name(String funcName)
-{
-    Info info = functions.funcs.get(funcName.toLowerCase(Locale.ROOT));
-    return info != null ? info.name : null;
-}
-
-/** Convert castro function name to AstroExpression name.
- * This is only used in cases where a name can be replaced without requiring
- * a code rewrite.
- * @return the astro name; if no replacement return the input funcName.
- */
-public static String translate(String funcName)
-{
-    return functions.replaceFuncs.getOrDefault(funcName, name(funcName));
 }
 
 // Would like a read only unioun of regular maps and unknown maps.
@@ -79,9 +126,9 @@ public static boolean isCastroFunction(String funcName)
 // singleton
 private static final Functions functions = new Functions();
 
-private final Map<String, Info> funcsModifiableMap;
-private final Map<String, Info> funcs;
-private final Map<String,String> replaceFuncs;
+private final Map<String, Function> funcsModifiableMap;
+private final Map<String, Function> funcs;
+private final Map<String,String> aliasFuncs;
 private final Map<String,Object> unknownFuncs;
 
 private Functions() {
@@ -90,28 +137,107 @@ private Functions() {
     this.funcsModifiableMap = new HashMap<>(700);
     this.funcs = Collections.unmodifiableMap(funcsModifiableMap);
     this.unknownFuncs = new HashMap<>();
-    this.replaceFuncs = new HashMap<>();
+    this.aliasFuncs = new HashMap<>();
     new AstrologFunctions(this).createEntries();
     // Provide "evaluate both sides" semantics for "?:" if wanted.
-    addWithReplacement("QuestColon", "?:", 3, "E_IEE");
-    addWithReplacement("AssignObj", "=Obj", 4, "R_IIII");
-    addWithReplacement("AssignHou", "=Hou", 4, "R_IIII");
+    addAlias("QuestColon", "?:");
+    addAlias("AssignObj", "=Obj");
+    addAlias("AssignHou", "=Hou");
 }
 
-private void addWithReplacement(String castroName, String astroName, int narg, String types)
+private void addAlias(String castroName, String astroName)
 {
-    add(castroName, narg, types);
-    replaceFuncs.put(castroName, astroName);
+    if(aliasFuncs.putIfAbsent(castroName.toLowerCase(Locale.ROOT),
+                              astroName.toLowerCase(Locale.ROOT)) != null)
+        throw new IllegalArgumentException();
 }
-
-/** name is the "documented" case */
-record Info(String name, int narg){};
 
 /** key is lower case. Save original name and nargs. */
 void add(String funcName, int narg, String types)
 {
     Objects.nonNull(types);
-    funcsModifiableMap.put(funcName.toLowerCase(Locale.ROOT), new Info(funcName, narg));
+    funcsModifiableMap.put(funcName.toLowerCase(Locale.ROOT),
+                           new AstrologFunction(funcName, narg));
 }
+
+    private static class DummyFunction extends Function
+    {
+    @Override
+    public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
+                                     List<String> args)
+        { sb.append("#DummyFunctionCall#");  return sb;}
+    @Override public String name() { return "#DummyFunction#"; }
+    @Override public int narg() { return 0; }
+    @Override public boolean error() { return true; }
+    @Override public boolean checkReportSpecialFuncArgs(Func_callContext ctx) { return false; }
+    @Override public AstroMem targetMemSpace() { return null; }
+    }
+
+    /** Astrolog builtin function */
+    // TODO: equals? Only need to check funcName
+    static class AstrologFunction extends Function
+    {
+    private final String funcName;
+    private final int narg;
+
+    AstrologFunction(String funcName, int narg)
+    {
+        this.funcName = funcName;
+        this.narg = narg;
+    }
+
+    @Override public String name() { return funcName; }
+    @Override public int narg() { return narg; }
+    @Override public boolean error() { return false; }
+
+    @Override
+    public AstroMem targetMemSpace()
+    {
+        return eqfunc(FUNC_ID_SWITCH, funcName) ? lookup(Switches.class)
+               : eqfunc(FUNC_ID_MACRO, funcName) ? lookup(Macros.class)
+                 : null;
+    }
+
+    @Override
+    public boolean checkReportSpecialFuncArgs(Func_callContext ctx)
+    {
+        boolean checksCompleteAndGood;
+        if(funcSwitchOrMacro(ctx.id.getText())) {
+            AstroMem memSpace = targetMemSpace();
+            checksCompleteAndGood = macroSwitchFuncArgs(ctx, memSpace);
+            
+            //List<ParseTree> l = List.copyOf(expr2Lvals(ctx.args.get(0)));
+            //if(memSpace != null
+            //        && !l.isEmpty()
+            //        && l.get(0) instanceof LvalMemContext
+            //        && memSpace.getVar(ctx.args.get(0).getText()) == null) {
+            //    reportError(ctx, "'%s' is not a defined %s",
+            //                     ctx.args.get(0).getText(),
+            //                memSpace.memSpaceName.equals(MEM_SWITCHES)
+            //                    ? "switch" : "macro");
+            //    checksCompleteAndGood = false;
+            //} else
+            //    checksCompleteAndGood = true;
+        } else
+            checksCompleteAndGood = false;
+        return checksCompleteAndGood;
+    }
+
+    @Override
+    public StringBuilder genFuncCall(
+            StringBuilder sb, ExprFuncContext ctx, List<String> args)
+    {
+        if(Ops.isAnyOp(funcName))
+            reportError(FUNC_CASTRO, ctx.fc.id,
+                        "using castro operator '%s' as a function",
+                        ctx.fc.id.getText());
+        sb.append(funcName).append(' ');
+
+        for(String arg : args) {
+            sb.append(arg);
+        }
+        return sb;
+    }
+    }
 
 }

@@ -3,12 +3,10 @@
 package com.raelity.astrolog.castro;
 
 
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import com.raelity.antlr.ParseTreeUtil;
@@ -20,21 +18,18 @@ import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Sw_nameContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
-import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Registers;
+import com.raelity.astrolog.castro.tables.Functions;
+import com.raelity.astrolog.castro.tables.Functions.Function;
 
 import static com.raelity.astrolog.castro.Constants.isConstant;
-import static com.raelity.astrolog.castro.Util.expr2Lvals;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.lvalArg2Func;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUMMY;
-import static com.raelity.astrolog.castro.Util.func_call2MacoSwitchSpace;
 import static com.raelity.astrolog.castro.Util.getText;
 import static com.raelity.astrolog.castro.antlr.AstroLexer.Tilde;
-import static com.raelity.astrolog.castro.mems.Switches.MEM_SWITCHES;
-import static com.raelity.astrolog.castro.tables.Functions.funcSwitchOrMacro;
 
 ////////////////////////////////////////////////////////////////////
 // TODO: In addition to vars, check switch/macro
@@ -186,22 +181,26 @@ private boolean checkReportMacroSwitchFuncArgs(Func_callContext ctx)
     Boolean  ok = macroSwitch_func_callChecked.get(ctx);
     if(ok != null)
         return ok;
-    if(funcSwitchOrMacro(ctx.id.getText())) {
-        AstroMem memSpace = func_call2MacoSwitchSpace(ctx);
-        
-        List<ParseTree> l = List.copyOf(expr2Lvals(ctx.args.get(0)));
-        if(memSpace != null
-                && !l.isEmpty()
-                && l.get(0) instanceof LvalMemContext
-                && memSpace.getVar(ctx.args.get(0).getText()) == null) {
-            reportError(ctx, "'%s' is not a defined %s", ctx.args.get(0).getText(),
-                        memSpace.memSpaceName.equals(MEM_SWITCHES)
-                        ? "switch" : "macro");
-            ok = false;
-        } else
-            ok = true;
-    } else
-        ok = false;
+
+    Function f = Functions.get(ctx.id.getText());
+    ok = f.checkReportSpecialFuncArgs(ctx);
+    //Function f = Functions.get(ctx.id.getText());
+    //if(funcSwitchOrMacro(ctx.id.getText())) {
+    //    AstroMem memSpace = func_call2MacoSwitchSpace(ctx);
+    //    
+    //    List<ParseTree> l = List.copyOf(expr2Lvals(ctx.args.get(0)));
+    //    if(memSpace != null
+    //            && !l.isEmpty()
+    //            && l.get(0) instanceof LvalMemContext
+    //            && memSpace.getVar(ctx.args.get(0).getText()) == null) {
+    //        reportError(ctx, "'%s' is not a defined %s", ctx.args.get(0).getText(),
+    //                    memSpace.memSpaceName.equals(MEM_SWITCHES)
+    //                    ? "switch" : "macro");
+    //        ok = false;
+    //    } else
+    //        ok = true;
+    //} else
+    //    ok = false;
     macroSwitch_func_callChecked.put(ctx, ok);
     return ok;
 }

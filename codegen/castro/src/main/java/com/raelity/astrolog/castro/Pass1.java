@@ -39,6 +39,7 @@ import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 import com.raelity.astrolog.castro.tables.Functions;
+import com.raelity.astrolog.castro.tables.Functions.Function;
 
 import static com.raelity.antlr.ParseTreeUtil.hasErrorNode;
 import static com.raelity.astrolog.castro.Error.*;
@@ -275,16 +276,15 @@ public void exitRsv_loc(Rsv_locContext ctx)
 @Override
 public void exitExprFunc(ExprFuncContext ctx)
 {
-    Func_callContext fc_ctx = ctx.func_call();
-    Integer narg = Functions.narg(fc_ctx.id.getText());
-    if(narg == null) {
+    Func_callContext fc_ctx = ctx.fc;
+    Function f = Functions.get(fc_ctx.id.getText());
+    if(f.error()) {
         reportError(FUNC_UNK, fc_ctx.id, "unknown function '%s'", fc_ctx.id.getText());
         Functions.recordCastroFunction(fc_ctx.id.getText());
-        return;
     }
-    if(fc_ctx.args.size() != narg && !Functions.isCastroFunction(fc_ctx.id.getText()))
+    if(fc_ctx.args.size() != f.narg() && !Functions.isCastroFunction(fc_ctx.id.getText()))
         reportError(FUNC_NARG, fc_ctx, "function '%s' argument count, expect %d not %d",
-                    fc_ctx.id.getText(), narg, fc_ctx.args.size());
+                    fc_ctx.id.getText(), f.narg(), fc_ctx.args.size());
 }
 
 /** build the LineMap */
