@@ -18,6 +18,8 @@ import com.raelity.astrolog.castro.Castro.CastroMapName;
 import com.raelity.astrolog.castro.Castro.MacrosAccum;
 import com.raelity.astrolog.castro.Castro.RegistersAccum;
 import com.raelity.astrolog.castro.Castro.SwitchesAccum;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.OutOfMemory;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
@@ -25,6 +27,8 @@ import com.raelity.astrolog.castro.mems.AstroMem.Var.VarState;
 import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
+import com.raelity.astrolog.castro.tables.Functions;
+import com.raelity.astrolog.castro.tables.Functions.Function;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
@@ -63,6 +67,8 @@ private static boolean parsePass;
 /** @return false if there is an error */
 static boolean compile(List<String> inputFiles, String outName)
 {
+    addCastroFunctions();
+
     // the Accum have info for all the files
     addLookup(new RegistersAccum(new Registers(), new Registers(), new Registers(), new Registers()));
     addLookup(new MacrosAccum(new Macros(), new Macros(), new Macros(), new Macros()));
@@ -418,5 +424,52 @@ private static void applyLayoutsAndAllocate()
         mem.allocate();
     }
 }
+
+private static void addCastroFunctions()
+{
+    Functions.addFunction(new MacroAddress(), "MAddr");
+    Functions.addFunction(new SwitchAddress(), "SAddr");
+}
+
+    private static class MacroAddress extends SwitchMacroAdress
+    {
+    private MacroAddress() { super("MacroAddress"); }
+    @Override public AstroMem targetMemSpace() { return lookup(Macros.class); }
+    }
+
+    private static class SwitchAddress extends SwitchMacroAdress
+    {
+    private SwitchAddress() { super("SwitchAddress"); }
+    @Override public AstroMem targetMemSpace() { return lookup(Switches.class); }
+    }
+
+    private static abstract class SwitchMacroAdress extends Function
+    {
+    private final String name;
+
+    public SwitchMacroAdress(String name)
+    {
+        this.name = name;
+    }
+
+    @Override
+    public boolean checkReportSpecialFuncArgs(Func_callContext ctx)
+    {
+        return macroSwitchFuncArgs(ctx, targetMemSpace());
+    }
+
+    @Override
+    public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
+                                     List<String> args)
+    {
+        sb.append(args.size() == 1 ? args.get(0) : "#" + name() + "#");
+        return sb;
+    }
+
+    @Override public String name() { return name; }
+    @Override public int narg() { return 1; }
+    @Override public boolean error() { return false; }
+
+    }
 
 }

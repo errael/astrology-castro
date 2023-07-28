@@ -30,6 +30,8 @@ import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Switches;
+import com.raelity.astrolog.castro.tables.Functions;
+import com.raelity.astrolog.castro.tables.Functions.Function;
 
 import static com.raelity.antlr.ParseTreeUtil.getNthParent;
 import static com.raelity.astrolog.castro.Error.OCTAL_CONST;
@@ -37,6 +39,7 @@ import static com.raelity.astrolog.castro.antlr.AstroParser.BinaryConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.HexadecimalConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.OctalConstant;
+import static com.raelity.astrolog.castro.mems.Switches.MEM_SWITCHES;
 import static com.raelity.astrolog.castro.tables.Functions.FUNC_ID_MACRO;
 import static com.raelity.astrolog.castro.tables.Functions.FUNC_ID_SWITCH;
 import static com.raelity.astrolog.castro.tables.Functions.eqfunc;
@@ -138,23 +141,41 @@ public static AstroMem lval2MacoSwitchSpace(ParserRuleContext ctx)
     Func_callContext fc_ctx = lvalArg2Func(ctx);
     if(fc_ctx == null)
         return null;
-    return func_call2MacoSwitchSpace(fc_ctx);
+    Function f = Functions.get(fc_ctx.id.getText());
+    return f.targetMemSpace();
+    //return func_call2MacoSwitchSpace(fc_ctx);
 }
 
-/** Check the func_call is switch() or macro() with one arg.
- * @return address space of either switch or macro, else null
- */
-public static AstroMem func_call2MacoSwitchSpace(ParserRuleContext ctx)
+// /** Check the func_call is switch() or macro() with one arg.
+//  * @return address space of either switch or macro, else null
+//  */
+// public static AstroMem func_call2MacoSwitchSpace(ParserRuleContext ctx)
+// {
+//     if(!(ctx instanceof Func_callContext fc_ctx))
+//         return null;
+//     // TODO: Put switches/macro in apr, then pass in apr
+//     if(fc_ctx.args.size() != 1)
+//         return null;
+//     String funcName = fc_ctx.id.getText();
+//     return eqfunc(FUNC_ID_SWITCH, funcName) ? lookup(Switches.class)
+//            : eqfunc(FUNC_ID_MACRO, funcName) ? lookup(Macros.class)
+//              : null;
+// }
+
+public static boolean macroSwitchFuncArgs(Func_callContext ctx, AstroMem memSpace)
 {
-    if(!(ctx instanceof Func_callContext fc_ctx))
-        return null;
-    // TODO: Put switches/macro in apr, then pass in apr
-    if(fc_ctx.args.size() != 1)
-        return null;
-    String funcName = fc_ctx.id.getText();
-    return eqfunc(FUNC_ID_SWITCH, funcName) ? lookup(Switches.class)
-           : eqfunc(FUNC_ID_MACRO, funcName) ? lookup(Macros.class)
-             : null;
+    if(ctx.args.isEmpty())
+        return false;
+    List<ParseTree> l = List.copyOf(expr2Lvals(ctx.args.get(0)));
+    if(memSpace != null
+            && !l.isEmpty()
+            && l.get(0) instanceof LvalMemContext
+            && memSpace.getVar(ctx.args.get(0).getText()) == null) {
+        reportError(ctx, "'%s' is not a defined %s", ctx.args.get(0).getText(),
+                    memSpace.memSpaceName.equals(MEM_SWITCHES) ? "switch" : "macro");
+        return false;
+    }
+    return true;
 }
 
 private static XPath xpathConstInt;

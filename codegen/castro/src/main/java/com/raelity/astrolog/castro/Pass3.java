@@ -31,6 +31,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.TermAddressOfContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.tables.Functions;
+import com.raelity.astrolog.castro.tables.Functions.Function;
 import com.raelity.astrolog.castro.tables.Ops;
 import com.raelity.astrolog.castro.tables.Ops.Flow;
 
@@ -234,21 +235,15 @@ String genFuncCallOp(ExprFuncContext ctx, String _funcName, List<String> args)
 {
     sb.setLength(0);
     // TODO: send funcname(narg) to annotations stream
-    String funcName = Functions.translate(_funcName);
-    if(Ops.isAnyOp(funcName))
-        reportError(FUNC_CASTRO, ctx.func_call().id,
-                    "using castro operator '%s' as a function",
-                    ctx.func_call().id.getText());
-    sb.append(Functions.translate(funcName)).append(' ');
-    for(String arg : args) {
-        sb.append(arg);
-    }
-    return sb.toString();
+
+    Function f = Functions.get(_funcName);
+    return f.genFuncCall(sb, ctx, args).toString();
 }
 
 @Override
 String genUnOp(ExprUnOpContext ctx, Token opToken, String expr)
 {
+    // TODO: optim: if "- const", generate "-const"
     sb.setLength(0);
     int opType = opToken.getType();
     switch(opType) {

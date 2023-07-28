@@ -154,7 +154,7 @@ expr returns [int fBlock = 0]
 //@after {
 //    $fBlock = $stop.getType() == RightBrace ? 1 : 0;
 //}
-    : func_call                         #exprFunc
+    : fc=func_call                      #exprFunc
     | ('+'|'-'|'!'|'~') expr            #exprUnOp
     | l=expr ('*'|'/'|'%') r=expr               #exprBinOp
     | l=expr ('+'|'-') r=expr                   #exprBinOp
