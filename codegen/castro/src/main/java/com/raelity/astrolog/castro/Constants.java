@@ -7,10 +7,11 @@ package com.raelity.astrolog.castro;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.antlr.v4.runtime.Token;
 
-import static com.raelity.astrolog.castro.Constants.ConstantType.BUILTIN;
+import static com.raelity.astrolog.castro.Constants.ConstantType.*;
 
 /**
  * Handle constants. There are Astrolog Builtin constants.
@@ -25,9 +26,19 @@ private Constants() { }
 
 private static final Map<String, Info> constants = new HashMap<>();
 static {
-    constants.put("true", new Info("True", BUILTIN));
-    constants.put("false", new Info("False", BUILTIN));
-    constants.put("signs", new Info("Signs", BUILTIN));
+    constants.put("true", new Info("True", ASTROLOG));
+    constants.put("false", new Info("False", ASTROLOG));
+    constants.put("signs", new Info("Signs", ASTROLOG));
+
+    //      F0          - 200   (not a function key, but good for math)
+    //      F1          - 201
+    //      Shift-F1    - 213
+    //      Control-F1  - 225
+    //      Alt-F1      - 237   (Shift-Control on some systems)
+
+    // TODO: add all the function keys individually
+    /** the "base" for X function keys. Add 1 for F1... */
+    constants.put("fk_f0", new Info("FK_F0", "200", CASTRO));
 }
 private static String firstLetter = "moahskwz";
 
@@ -39,62 +50,70 @@ public static boolean isConstant(Token token)
 
 public static boolean isConstant(String id)
 {
-    return findConstant(id) != null;
+    return constant(id) != null;
 }
 
+public static String constantName(String _id)
+{
+    String id = _id.toLowerCase(Locale.ROOT);
+    if(hasBuiltinPrefix(id))
+        return id;
+    Info info = constants.get(id);
+    if(Boolean.FALSE) Objects.nonNull(info.type); // avoid not read warning
+    return info != null ? info.id : null;
+}
+
+/**
+ * For a builtin constant, return the name and let Astrolog handle it;
+ * Otherwise return the value of the constant.
+ * @return the value of the constant */
+// TODO: should return "best case" value in all cases. (there's a pun in there)
+public static String constant(String _id)
+{
+    String id = _id.toLowerCase(Locale.ROOT);
+    if(hasBuiltinPrefix(id))
+        return id;
+    Info info = constants.get(id);
+    return info != null ? info.val : null;
+}
+
+/** id MUST BE LOWER CASE */
 private static boolean hasBuiltinPrefix(String id)
 {
     // If id is at least 3 chars, and 2nd char is '_' and
     // first char is one of the magic chars, then return the id.
+    // TODO: verify all ascii chars
     // TODO: keep a lookup table of all possible constants
     //       captured from Astrolog source.
     return id.length() > 2 && id.charAt(1) == '_'
-            && firstLetter.indexOf(Character.toLowerCase(id.charAt(0))) >= 0;
-}
-
-// private static String findBuiltinConstant(String id)
-// {
-//     if(hasBuiltinPrefix(id))
-//         return id;
-//     Info info = constants.get(id.toLowerCase(Locale.ROOT));
-//     return info.type == BUILTIN ? info.val : null;
-// }
-// private static boolean isBuiltinConstant(String id)
-// {
-// 
-// }
-
-// TODO: should return "best case" value. (there's a pun in there)
-private static String findConstant(String id)
-{
-    if(hasBuiltinPrefix(id))
-        return id;
-    Info info = constants.get(id.toLowerCase(Locale.ROOT));
-    return info != null ? info.val : null;
-}
-
-/**
- * For a builtin constant, return the name and let Astrolog handle it.
- * Otherwise retrun the value of the constant. (there is no otherwise for now)
- * @return the value of the constant */
-public static String constant(String name)
-{
-    return findConstant(name);
+            && firstLetter.indexOf(id.charAt(0)) >= 0;
 }
 
 enum ConstantType {
-    BUILTIN,
+    ASTROLOG,
+    CASTRO,
     USER,
-}
+    }
 
     private static class Info {
+    private final String id;
     private final String val;
     private final ConstantType type;
 
+    /** For ASTROLOG */
     public Info(String val, ConstantType type)
     {
+        this.id = val;
         this.val = val;
         this.type = type;
     }
+    /** For CASTRO/USER */
+    public Info(String id, String val, ConstantType type)
+    {
+        this.id = id;
+        this.val = val;
+        this.type = type;
+    }
+
     }
 }

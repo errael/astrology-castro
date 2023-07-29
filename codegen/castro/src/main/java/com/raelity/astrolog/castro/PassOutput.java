@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import com.raelity.astrolog.castro.Castro.CastroOutputOptions;
@@ -23,6 +24,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Var1Context;
 import com.raelity.astrolog.castro.antlr.AstroParser.VarArrayContext;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
+import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
@@ -36,6 +38,7 @@ import static com.raelity.astrolog.castro.Util.expr2constInt;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.Util.writeRegister;
+import static com.raelity.astrolog.castro.mems.Registers.VAR_CPRINTF_SAVE;
 
 /**
  * Generate and Output the Astrolog code, as a .as file,
@@ -328,10 +331,10 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
  * Modify cmdPart to do the printf.
  * The list args are typically sublists.
  * <p>
- * There must be at least 3 elements: <br>
+ * There must be at least 2 elements, the third is optional: <br>
  * 0 - cprintf <br>
  * 1 - format string <br>
- * 2 - expression array
+ * 2 - optional expression array
  */
 private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cmdPart)
 {
@@ -393,12 +396,34 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
     }
     sb_tmp.append(' ');
     String yytFormatString = sb_tmp.toString();
+
     sb_tmp.setLength(0);
+
+    Var save_area = null;
     if(fmtArgs > 0) {
-        sb_tmp.append("~1 ").append(quote).append(' ');
+        sb_tmp.append("~1 ").append(quote);
+
+        // save/restore variables used by printf if there's a save area
+        save_area = registers.getVar(VAR_CPRINTF_SAVE);
+        if(save_area != null) {
+            if(fmtArgs > save_area.getSize())
+            {
+                reportError(lsc.get(0), "too many cprintf args '%d' for %s",
+                            fmtArgs, VAR_CPRINTF_SAVE);
+                save_area = null;
+            } else {
+                int addr = save_area.getAddr();
+                for(int i = 0; i < fmtArgs; i++) {
+                    sb_tmp.append("= ").append(addr + i).append(' ')
+                            .append("@").append((char)('a' + i)).append(' ');
+                }
+            }
+        }
+
         for(int i = 0; i < eArgs.size(); i++)
             sb_tmp.append('=').append((char)('a' + i))
                     .append(' ').append(eArgs.get(i));
+
         removeTrailingBlanks(sb_tmp).append(quote).append(' ');
     }
 
@@ -411,11 +436,25 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
     sb_tmp.setLength(0);
     sb_tmp.append("-YYT ").append(quote).append(yytFormatString);
     removeTrailingBlanks(sb_tmp).append(quote);
+
     cmdPart.set(1, sb_tmp.toString());
+    sb_tmp.setLength(0);
+
+
+    if(save_area != null && fmtArgs != 0) {
+        // restore the registers
+        sb_tmp.append("~1 ").append(quote);
+        int addr = save_area.getAddr();
+        for(int i = 0; i < fmtArgs; i++) {
+            sb_tmp.append("=").append((char)('a' + i)).append(' ')
+                    .append("@").append(addr + i).append(' ');
+        }
+        removeTrailingBlanks(sb_tmp).append(quote).append(' ');
+    }
 
     // If there were args, then clear 3rd item
     if(fmtArgs != 0)
-        cmdPart.set(2, "");
+        cmdPart.set(2, sb_tmp.toString());
 }
 
 private void createStringAssignmenCommand(StringBuilder lsb,

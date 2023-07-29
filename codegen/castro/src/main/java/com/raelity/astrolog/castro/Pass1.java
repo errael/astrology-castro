@@ -42,6 +42,7 @@ import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
 
 import static com.raelity.antlr.ParseTreeUtil.hasErrorNode;
+import static com.raelity.astrolog.castro.Constants.constantName;
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.LineMap.WriteableLineMap.createLineMap;
 import static com.raelity.astrolog.castro.Util.checkReport;
@@ -139,6 +140,10 @@ void declareVar(ParserRuleContext _ctx)
     if(hasErrorNode(idNode) || hasErrorNode(addrNode))
         return;
     Token id = idNode.getSymbol();
+    if(Constants.isConstant(id)) {
+        reportError(_ctx, "'%s is a constant, can not declare as a variable", constantName(id.getText()));
+        return;
+    }
     int addr = addrNode == null ? -1 : parseInt(addrNode.i);
     Var var = registers.declare(id, size, addr);
     checkReport(var);
@@ -278,13 +283,23 @@ public void exitExprFunc(ExprFuncContext ctx)
 {
     Func_callContext fc_ctx = ctx.fc;
     Function f = Functions.get(fc_ctx.id.getText());
-    if(f.error()) {
+    if(f.isInvalid()) {
         reportError(FUNC_UNK, fc_ctx.id, "unknown function '%s'", fc_ctx.id.getText());
-        Functions.recordCastroFunction(fc_ctx.id.getText());
+        Functions.recordUnknownFunction(fc_ctx.id.getText());
     }
-    if(fc_ctx.args.size() != f.narg() && !Functions.isCastroFunction(fc_ctx.id.getText()))
-        reportError(FUNC_NARG, fc_ctx, "function '%s' argument count, expect %d not %d",
-                    fc_ctx.id.getText(), f.narg(), fc_ctx.args.size());
+    if(!fc_ctx.strs.isEmpty()) {
+        if(fc_ctx.strs.size() != f.narg()
+                && !Functions.isUnknownFunction(fc_ctx.id.getText()))
+            reportError(FUNC_NARG, fc_ctx,
+                        "function '%s' argument count, expect %d not %d",
+                        fc_ctx.id.getText(), f.narg(), fc_ctx.strs.size());
+    } else {
+        if(fc_ctx.args.size() != f.narg()
+                && !Functions.isUnknownFunction(fc_ctx.id.getText()))
+            reportError(FUNC_NARG, fc_ctx,
+                        "function '%s' argument count, expect %d not %d",
+                        fc_ctx.id.getText(), f.narg(), fc_ctx.args.size());
+    }
 }
 
 /** build the LineMap */

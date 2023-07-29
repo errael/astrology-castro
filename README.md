@@ -32,6 +32,9 @@ This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpre
 
 For more examples, there is [mazegame ported to castro](examples.d/mazegame.castro). All of the examples from `Astrolog` website under [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express) are shown as `castro` code in [AstroExpressionDocsCommandSwitches.castro](examples.d/AstroExpressionDocsCommandSwitches.castro) There's [examples.d](examples.d); [astrotest.d](astrotest.d) executes on astrolog and has a simple expect/result infrastructure; [test.d](test.d) checks lowlevel functionality and has gold files.
 
+####    Check out the cheat sheet
+[cheat sheet](#cheat-sheet)
+
 ###     Interoperability
 
 `castro` works with existing `command switch` files and their declared switch/macro/variables.
@@ -204,7 +207,12 @@ Note that `@12` assigns 12 to the switch address which binds it to **F12**; it i
 ```
 Example: `cprintf "v1 %d, v2 %d" {~ 3 + 4; 7 + 4; }`
 
-**Warning**: printf uses the lower memory locations for the printf arguments, up to 10: `%a`, `%b`, `%c`, ..., `%i`, `%j`. Beware of interference with program variables. Recall that Astrolog uses up to %u ... %z for processing AstroExpression hooks.
+`cprintf` optionally does a **save/restore of the variables** it uses. It does this by looking for an array variable named `cprintf_save_area` and using it if found.
+```
+var cprintf_save_area[10];  // save area for cprintf temps, up to 10.
+```
+
+**Warning**: printf uses the lower memory locations for the printf arguments, up to 10: `%a`, `%b`, `%c`, ..., `%i`, `%j`. Beware of interference with program variables. Declare `cprintf_save_area` if this is a concern. Recall that Astrolog uses up to %u ... %z when processing AstroExpression hooks.
 
 ###     run
 The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
@@ -292,3 +300,121 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
     `ex5` does `{ a += 1; } -3;` three times. The result of first two subtractions are thrown away, the last is the value of the `repeat(3)`.
 
     _A prefix notation predence/parenthesis free language can be nice and does have advantages._
+
+##      Cheat Sheet
+
+### switch and macro statements
+
+And see [Flow Control Statements](#flow-control-statements) used in macro.
+The last expression of a macro is the _return_ value.
+```
+macro macroName { aspect = 7; orb = 2; } // returns 2
+```
+
+The `~` command switches take an AstroExpression as an argument.
+```
+switch switchName { ~1 { aspect = 7; orb = 2; } }
+```
+A regular switch command can take an AstroExpression as a value, use `{~ ... }`.
+```
+switch switchName { -Ao {~ aspect; } {~ orb; }
+```
+
+### castro functions
+See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
+
+| Function Name | Alias | usage ex | note |
+| ------------- | ----- | ---- | -- |
+| SwitchAdress  | SAddr | SAddr(switchName) | The address of a switch |
+| MacroAdress   | MAddr | MAddr(macroName) | The address of a macro |
+| CharacterCode | CharC | CharC("a") | must be a single character string |
+
+### castro constants
+See [mazegame](examples.d/mazegame.castro) for example usage.
+
+`FK_F0` - 200 is the zero base for the X11 function keys input value,
+see ~XQ at [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express).
+
+Only FK_F0 is a defined constant. The following is for reference.
+| key | switch slot | fkey number | note |
+| --- | ----------- | ----------- | ---- |
+|FK_F0      | --- | 200  | not a function key, but works well with math
+|F1         | 1   | 201  |
+|Shift-F1   | 13  | 213  |
+|Control-F1 | 25  | 225  |
+|Alt-F1     | 37  | 237  | Shift-Control on some systems
+
+```
+switch func_key @3 { ... }    // This switch invoked by pressing F3
+// hook so when 'a' key (ascii 97) is pressed, map it to F3
+run { ~XQ { if (z == CharC("a") z = FK_F0 + SAddr(func_key); } }
+```
+### variables & layout
+```
+layout memory { base 101; limit 111; reserve 104, 106:108; }
+```
+    Also layout for switch/macro. Limit is exclusive, all else inclusive
+
+```
+var a {123};    // init builtin variable a to 123
+var var1 @30;   // declare variable var1 assigned to specific location
+var var2 {567}; // declare/init var2 to 567
+```
+
+### cprintf
+See [printf](astrotest.d/printf.castro) for example usage.
+
+```
+var cprintf_save_area[10];  // save area for cprintf temps, up to 10.
+
+var str;
+switch cpr {
+    SetString str "a string"
+    cprintf "%d %s\n" {~ x + y; &str; }
+}
+```
+
+### castro command help
+```
+Usage: castro [-h] [several-options] [-o outfile] infile+
+    infile may be '-' for stdin.
+    if outfile not specified, it is derived from infile.
+    -o outfile      allowed if exactly one infile, '-' is stdout
+    --mapname=mapname     Map file name is <mapname>.map.
+                            Default is derived from first infile.
+    --Ewarn=ename   Make the specified error a warning.
+                    Default: warn for func-castro and var-rsv.
+                    Can do no-ename to turn warning to error.
+                    Use --Ewarn=junk for a list.
+    --formatoutput=opt1,... # comma separated list of:
+            min             - no extra/blank lines
+            qflip           - quote flip default inner/outer
+            bslash          - split into new-line/backslash lines
+            nl              - split into lines
+            indent          - indent lines
+            run_nl          - split into lines
+            run_indent      - indent lines
+            debug           - precede macro output with original text
+        Default is no options; switch/macro/run on a single line
+        which is compatible with all Astrolog versions.
+        "min"/"qflip" usable with any Astrolog version.
+    --anonymous     no dates/versions in output files (for test golden)
+    --version       version
+    -h      output this message
+
+    The following options are primarily for debug. --gui is also fun to see
+    and may provide insight. It shows how the program is parsed. Only uses
+    the first file and does not generate any compilation output files.
+    --gui           show AST in GUI
+    --console       show the AST in the console
+    --test  output prefix parse data
+    -v      output more info
+
+Errors that can be made warnings
+    func-unk        unknown function
+    func-narg       number of arguments to function
+    func-castro     function castro uses internally for code generation
+    var-rsv         assign a variable to reserved area
+    array-oob       access array out of bounds
+    octal-const     octal constant
+```

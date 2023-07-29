@@ -2,3 +2,5 @@ PRINTF-1: 3 11 19 string-1
 PRINTF-2: no args
 PRINTF-3: 19 11 3
 PRINTF-4: string-1 string-2 string-3 string-4
+PRINTF-5: a=551 b=552 c=553 d=554 e=555
+PRINTF-6: a=551 b=552 c=553 d=554 e=555

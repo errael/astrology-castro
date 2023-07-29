@@ -16,6 +16,8 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 public class Registers extends AstroMem
 {
 public static final String MEM_REGISTERS = "Registers";
+public static final String VAR_CPRINTF_SAVE = "cprintf_save_area";
+
 public Registers()
 {
     super(MEM_REGISTERS, lookup(RegistersAccum.class));
