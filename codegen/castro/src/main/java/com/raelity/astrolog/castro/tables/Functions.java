@@ -36,17 +36,32 @@ public static final String FUNC_ID_MACRO = "macro";
      */
     abstract public static class Function
     {
-    public abstract String name();
-    public abstract int narg();
-    public abstract boolean error();
-    /** Check for special func args; returns true if OK and no further
-     * checking needed. Typically meaningfull where unusual arguments
+    protected final String funcName;
+    protected final int narg;
+
+    public Function(String funcName, int narg)
+    { this.funcName = funcName; this.narg = narg; }
+
+    public final String name() { return funcName; }
+    public final int narg() { return narg; }
+
+    /** Invalid means that this Function definition itself has a problem;
+     * it can't be used.
+     */
+    public abstract boolean isInvalid();
+
+    /** Check for special func args; returns true if no further
+     * checking needed, doesn't mean there's not an error.
+     * Typically meaningfull where unusual arguments
      * are expected, like switch/macro name. A false return doesn't
      * mean there's a problem, only that further checking is expected.
      */
-    public abstract boolean checkReportSpecialFuncArgs(Func_callContext ctx);
+    public abstract boolean isDoneReportSpecialFuncArgs(Func_callContext ctx);
+
      /* @return null for variable, else macro/switch memSpace */
     public abstract AstroMem targetMemSpace();
+
+    /** generate code for this function call */
     public abstract StringBuilder genFuncCall(
             StringBuilder sb, ExprFuncContext ctx, List<String> args);
 
@@ -54,6 +69,27 @@ public static final String FUNC_ID_MACRO = "macro";
     public String toString()
     {
         return "Function{name:" + name() + '}';
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int hash = 3;
+        hash = 79 * hash + Objects.hashCode(this.funcName);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if(this == obj)
+            return true;
+        if(obj == null)
+            return false;
+        if(getClass() != obj.getClass())
+            return false;
+        final Function other = (Function)obj;
+        return Objects.equals(this.funcName, other.funcName);
     }
 
     }
@@ -74,14 +110,12 @@ private static Function dummyFunction = new DummyFunction();
 /**
  * @return Function for the name
  */
-// TODO: extend to handl magic functions
-// TODO: return replace function (do translate() here)
 public static Function get(String funcName)
 {
     String lcName = funcName.toLowerCase(Locale.ROOT);
-    String alias = functions.aliasFuncs.get(lcName);
-    if(alias != null)
-        lcName = alias;
+    String realName = functions.aliasFuncs.get(lcName);
+    if(realName != null)
+        lcName = realName;
     Function f = functions.funcs.get(lcName);
     return f != null ? f : dummyFunction;
 }
@@ -109,7 +143,7 @@ public static boolean funcSwitchOrMacro(String funcName)
  * Keep a set of special function names. And add the unknown
  * to the main map to keep the rest of the code simple.
  */
-public static void recordCastroFunction(String funcName)
+public static void recordUnknownFunction(String funcName)
 {
     String lc = funcName.toLowerCase(Locale.ROOT);
     if(functions.funcs.containsKey(lc) || functions.unknownFuncs.containsKey(lc))
@@ -118,7 +152,7 @@ public static void recordCastroFunction(String funcName)
     functions.add(lc, 0, "R_");
 }
 
-public static boolean isCastroFunction(String funcName)
+public static boolean isUnknownFunction(String funcName)
 {
     return functions.unknownFuncs.containsKey(funcName.toLowerCase(Locale.ROOT));
 }
@@ -139,6 +173,11 @@ private Functions() {
     this.unknownFuncs = new HashMap<>();
     this.aliasFuncs = new HashMap<>();
     new AstrologFunctions(this).createEntries();
+
+    // TODO: Replace Macro()/Switch()
+    replaceWith(new MacroFunction());
+    replaceWith(new SwitchFunction());
+
     // Provide "evaluate both sides" semantics for "?:" if wanted.
     addAlias("QuestColon", "?:");
     addAlias("AssignObj", "=Obj");
@@ -152,6 +191,13 @@ private void addAlias(String castroName, String astroName)
         throw new IllegalArgumentException();
 }
 
+private void replaceWith(Function f)
+{
+    // Something should already be there
+    if(funcsModifiableMap.put(f.name().toLowerCase(Locale.ROOT), f) == null)
+        throw new IllegalArgumentException();
+}
+
 /** key is lower case. Save original name and nargs. */
 void add(String funcName, int narg, String types)
 {
@@ -162,65 +208,40 @@ void add(String funcName, int narg, String types)
 
     private static class DummyFunction extends Function
     {
+    public DummyFunction()
+    { super("#DummyFunction#", 0); }
+
     @Override
     public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
                                      List<String> args)
         { sb.append("#DummyFunctionCall#");  return sb;}
-    @Override public String name() { return "#DummyFunction#"; }
-    @Override public int narg() { return 0; }
-    @Override public boolean error() { return true; }
-    @Override public boolean checkReportSpecialFuncArgs(Func_callContext ctx) { return false; }
+    @Override public boolean isInvalid() { return true; }
+    @Override public boolean isDoneReportSpecialFuncArgs(Func_callContext ctx) { return false; }
     @Override public AstroMem targetMemSpace() { return null; }
     }
 
-    /** Astrolog builtin function */
+    /** Handles almost all Astrolog builtin functions */
     // TODO: equals? Only need to check funcName
     static class AstrologFunction extends Function
     {
-    private final String funcName;
-    private final int narg;
 
     AstrologFunction(String funcName, int narg)
     {
-        this.funcName = funcName;
-        this.narg = narg;
+        super(funcName, narg);
     }
 
-    @Override public String name() { return funcName; }
-    @Override public int narg() { return narg; }
-    @Override public boolean error() { return false; }
+    @Override public boolean isInvalid() { return false; }
 
     @Override
     public AstroMem targetMemSpace()
     {
-        return eqfunc(FUNC_ID_SWITCH, funcName) ? lookup(Switches.class)
-               : eqfunc(FUNC_ID_MACRO, funcName) ? lookup(Macros.class)
-                 : null;
+        return null;
     }
 
     @Override
-    public boolean checkReportSpecialFuncArgs(Func_callContext ctx)
+    public boolean isDoneReportSpecialFuncArgs(Func_callContext ctx)
     {
-        boolean checksCompleteAndGood;
-        if(funcSwitchOrMacro(ctx.id.getText())) {
-            AstroMem memSpace = targetMemSpace();
-            checksCompleteAndGood = macroSwitchFuncArgs(ctx, memSpace);
-            
-            //List<ParseTree> l = List.copyOf(expr2Lvals(ctx.args.get(0)));
-            //if(memSpace != null
-            //        && !l.isEmpty()
-            //        && l.get(0) instanceof LvalMemContext
-            //        && memSpace.getVar(ctx.args.get(0).getText()) == null) {
-            //    reportError(ctx, "'%s' is not a defined %s",
-            //                     ctx.args.get(0).getText(),
-            //                memSpace.memSpaceName.equals(MEM_SWITCHES)
-            //                    ? "switch" : "macro");
-            //    checksCompleteAndGood = false;
-            //} else
-            //    checksCompleteAndGood = true;
-        } else
-            checksCompleteAndGood = false;
-        return checksCompleteAndGood;
+        return true;
     }
 
     @Override
@@ -238,6 +259,49 @@ void add(String funcName, int narg, String types)
         }
         return sb;
     }
+    }
+
+    private static class SwitchFunction extends SwitchMacroFunction
+    {
+    public SwitchFunction() { super("Switch"); }
+
+    @Override public AstroMem targetMemSpace() { return lookup(Switches.class); }
+    }
+
+    private static class MacroFunction extends SwitchMacroFunction
+    {
+    public MacroFunction() { super("Macro"); }
+
+    @Override public AstroMem targetMemSpace() { return lookup(Macros.class); }
+    }
+
+    private static abstract class SwitchMacroFunction extends Function
+    {
+
+    public SwitchMacroFunction(String name)
+    {
+        super(name, 1);
+    }
+
+    @Override
+    public boolean isDoneReportSpecialFuncArgs(Func_callContext ctx)
+    {
+        return macroSwitchFuncArgs(ctx, targetMemSpace());
+    }
+
+    @Override
+    public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
+                                     List<String> args)
+    {
+        if(args.size() == 1)
+            sb.append(name()).append(' ').append(args.get(0));
+        else
+            sb.append("#").append(name()).append(":args# ");
+        return sb;
+    }
+
+    @Override public boolean isInvalid() { return false; }
+
     }
 
 }

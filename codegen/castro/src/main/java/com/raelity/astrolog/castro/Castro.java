@@ -155,7 +155,6 @@ static void usage(String note)
                                 Can do no-ename to turn warning to error.
                                 Use --Ewarn=junk for a list.
                 --formatoutput=opt1,... # comma separated list of:
-                    1st two for switch and macro, next two for run
                         min             - no extra/blank lines
                         qflip           - quote flip default inner/outer
                         bslash          - split into new-line/backslash lines

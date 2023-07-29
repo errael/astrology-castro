@@ -37,7 +37,6 @@ import com.raelity.astrolog.castro.tables.Ops.Flow;
 
 import static com.raelity.astrolog.castro.Constants.constant;
 import static com.raelity.astrolog.castro.Constants.isConstant;
-import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Assign;

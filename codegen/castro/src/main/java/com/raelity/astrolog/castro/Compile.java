@@ -12,6 +12,8 @@ import java.util.List;
 
 import com.google.common.collect.RangeSet;
 
+import org.antlr.v4.runtime.Token;
+
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroLineMaps;
 import com.raelity.astrolog.castro.Castro.CastroMapName;
@@ -429,14 +431,62 @@ private static void addCastroFunctions()
 {
     Functions.addFunction(new MacroAddress(), "MAddr");
     Functions.addFunction(new SwitchAddress(), "SAddr");
+    Functions.addFunction(new CharacterCode(), "CharC");
 }
 
+    private static class CharacterCode extends Function
+    {
+    public CharacterCode()
+    {
+        super("CharacterCode", 1);
+    }
+
+    @Override
+    public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
+                                     List<String> args)
+    {
+        boolean isError = true;
+        // There's one arg, should have three characters like "a"
+        Token charCodeToken = ctx.fc.strs.get(0);
+        String charCodeString = ctx.fc.strs.get(0).getText();
+        if(charCodeString.length() < 3)
+            reportError(charCodeToken, "empty string");
+        else if(charCodeString.length() > 3)
+            reportError(charCodeToken, "'%s' only a single character allowed",
+                        charCodeString.substring(1, charCodeString.length()-1));
+        else {
+            char charCode = charCodeString.charAt(1);
+            if(charCode < ' ' || charCode > '~')
+                reportError(ctx.fc, "'%c' must be in range ' ' to '~'", charCode);
+            else {
+                sb.append((int)charCode).append(' ');
+                isError = false;
+            }
+        }
+        if(isError)
+            sb.append("#CHARCODE# ");
+        return sb;
+    }
+    
+    @Override
+    public boolean isDoneReportSpecialFuncArgs(Func_callContext ctx)
+    {
+        return true;
+    }
+
+    @Override public AstroMem targetMemSpace() { return null; }
+    @Override public boolean isInvalid() { return false; }
+
+    }
+
+    /** Generate the address of given macro. */
     private static class MacroAddress extends SwitchMacroAdress
     {
     private MacroAddress() { super("MacroAddress"); }
     @Override public AstroMem targetMemSpace() { return lookup(Macros.class); }
     }
 
+    /** Generate the address of given switch. */
     private static class SwitchAddress extends SwitchMacroAdress
     {
     private SwitchAddress() { super("SwitchAddress"); }
@@ -445,30 +495,31 @@ private static void addCastroFunctions()
 
     private static abstract class SwitchMacroAdress extends Function
     {
-    private final String name;
 
     public SwitchMacroAdress(String name)
     {
-        this.name = name;
+        super(name, 1);
     }
 
     @Override
-    public boolean checkReportSpecialFuncArgs(Func_callContext ctx)
+    public boolean isDoneReportSpecialFuncArgs(Func_callContext ctx)
     {
-        return macroSwitchFuncArgs(ctx, targetMemSpace());
+        isMacroSwitchFuncArgLval(ctx, targetMemSpace());
+        return true; // No further checking required
     }
 
     @Override
     public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
                                      List<String> args)
     {
-        sb.append(args.size() == 1 ? args.get(0) : "#" + name() + "#");
+        if(args.size() == 1)
+            sb.append(args.get(0));
+        else
+            sb.append("#").append(name()).append(":args# ");
         return sb;
     }
 
-    @Override public String name() { return name; }
-    @Override public int narg() { return 1; }
-    @Override public boolean error() { return false; }
+    @Override public boolean isInvalid() { return false; }
 
     }
 

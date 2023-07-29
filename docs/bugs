@@ -1,8 +1,0 @@
-
-Use of true/false gives
-    Error: expressions.castro:134:16 '    ~1 { expr = true;
-        result=macro(test_qc1); expect = 7;
-        macro(check); }' unknown variable 'true' (first occurance)
-They are functions, so must be true()/false().
-Would be nice to treat true/false a constant rather than a var.
-

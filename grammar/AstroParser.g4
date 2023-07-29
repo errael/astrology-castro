@@ -146,6 +146,7 @@ func_call
     : id=Identifier '(' (args+=expr (',' args+=expr)*)? ')'
     // Note no '(' in following rule, it's embedded in TrickyFunc
     | id=TrickyFunc (args+=expr (',' args+=expr)*)? ')'
+    | id=StringFunc (strs+=String (',' strs+=String)*)? ')'
     ;
 
 // TODO: make '*' indirection in expr

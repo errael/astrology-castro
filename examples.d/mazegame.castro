@@ -20,9 +20,10 @@ copy {
 layout memory { limit 40; }
 
 /*
- * Start switch alloc after unshifted function keys
+ * Start switch allocation over the last chunk of function keys.
+ * Start at Alt-F1.
  */
-layout switch { base 13; }
+layout switch { base 37; }
 
 /** Start macro allocation somewhere random */
 layout macro { base 55; }
@@ -37,15 +38,6 @@ layout macro { base 55; }
  */
 var maze[2] @40;
 
-/*
- * xF0 is the zero base for the X11 function keys input value, see ~XQ,
- * first function key is F1 at 201.
- *      Shift-F1    - 213
- *      Control-F1  - 225
- *      Alt-F1      - 237   (Shift-Control on some systems)
- */
-var xF0 {200};
-
 // There are two sets of keys for navigation, this point to a macro
 var nav_ptr; // address of current navigation macro, change by F6
 
@@ -56,8 +48,8 @@ var nav_ptr; // address of current navigation macro, change by F6
  *      b - up/down current position
  *      c - width/height of maze (maze is square)
  *
- *      k - clear it for one-shot flag to give welcome message
- *      l - clear it for one-shot flag to report time and finished message
+ *      k - one-shot flag, clear it to give welcome message
+ *      l - one-shot flag, clear it to report time and finished message
  */
 
 var navmsgs[2];
@@ -138,7 +130,7 @@ macro create_paths {
     a = 1; b = 1;
     maze[b * c + a] = 1;
     while (g)
-        Macro(create_path_A);
+        Macro(create_paths_A);
     maze[1] = 1;
     a = c - 2; b = c - 1;
     Macro(z_is_wall);
@@ -146,7 +138,7 @@ macro create_paths {
     a = 1; b = 0;
 }
 
-macro create_path_A {
+macro create_paths_A {
     r = Rnd(0, 3);
     x = a; y = b;
     if (Odd(r)) {
@@ -155,10 +147,10 @@ macro create_path_A {
         y += r <= 0 ? 2 : -2;
     }
     if (Tween(x, 0, c - 1) & Tween(y, 0, c - 1))
-        Macro(create_path_B);
+        Macro(create_paths_B);
 }
 
-macro create_path_B {
+macro create_paths_B {
     z = &maze + y * c + x;
     if (!*z) { // a wall
         *z = 1; // clear the wall
@@ -181,19 +173,21 @@ macro z_is_wall {
     !*z;
 }
 
+// TODO: use cascading ?:
 macro nav_wasd {
-    if (z == 119) z = xF0 + SAddr(up);      // w --> up
-    if (z == 97)  z = xF0 + SAddr(left);    // a --> left
-    if (z == 115) z = xF0 + SAddr(down);    // s --> down
-    if (z == 100) z = xF0 + SAddr(right);   // d --> right
+    if (z == CharC('w')) z = FK_F0 + SAddr(up);      // w --> up
+    if (z == CharC('a')) z = FK_F0 + SAddr(left);    // a --> left
+    if (z == CharC('s')) z = FK_F0 + SAddr(down);    // s --> down
+    if (z == CharC('d')) z = FK_F0 + SAddr(right);   // d --> right
 }
 
 // hjkl are the vi/vim navigation keys
+// TODO: use cascading ?:
 macro nav_vi {
-    if (z == 107) z = xF0 + SAddr(up);      // k --> up
-    if (z == 104) z = xF0 + SAddr(left);    // h --> left
-    if (z == 106) z = xF0 + SAddr(down);    // j --> down
-    if (z == 108) z = xF0 + SAddr(right);   // l --> right
+    if (z == CharC('k')) z = FK_F0 + SAddr(up);      // k --> up
+    if (z == CharC('h')) z = FK_F0 + SAddr(left);    // h --> left
+    if (z == CharC('j')) z = FK_F0 + SAddr(down);    // j --> down
+    if (z == CharC('l')) z = FK_F0 + SAddr(right);   // l --> right
 }
 
 run {

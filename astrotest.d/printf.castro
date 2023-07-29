@@ -3,6 +3,14 @@ var str1[4];
 var v1 {11};
 var v2 {8};
 
+var a {551};
+var b {552};
+var c {553};
+var d {554};
+var e {555};
+
+var cprintf_save_area[10];
+
 switch printf_example {
     setstring str1[0] "string-1" "string-2" "string-3" "string-4"
 
@@ -18,6 +26,11 @@ switch printf_example {
 
     cprintf "PRINTF-4: %s %s %s %s\n"
                     {~ &str1; &str1 + 1; &str1 + 2; &str1 + 3; }
+
+    -YYT "PRINTF-5: a=\A b=\B c=\C d=\D e=\E\n" 
+
+    cprintf "PRINTF-6: a=%d b=%d c=%d d=%d e=%d\n" {~ a; b; c; d; e; }
+    //-YYT "PRINTF-7: a=\A b=\B c=\C d=\D e=\E\n" 
 }
 
 run { ~1 { Switch(printf_example); } }

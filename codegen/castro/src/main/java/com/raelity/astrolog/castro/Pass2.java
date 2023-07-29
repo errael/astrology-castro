@@ -71,9 +71,8 @@ private void checkReportUnknownVar(LvalContext ctx, Token token)
     if(var != null)
         return;
     Func_callContext fc_ctx = lvalArg2Func(ctx);
-    if(fc_ctx != null)
-        if(checkReportMacroSwitchFuncArgs(fc_ctx))
-            return;
+    if(fc_ctx != null && isDoneReportSpecialFuncArgs(fc_ctx))
+        return;
     if(isConstant(token)) {
         if(!(ctx instanceof LvalMemContext))
             reportError(token, "constant '%s' used as a variable", token.getText());
@@ -165,50 +164,29 @@ private Matcher enaDisMatcher(String input)
     return matcher;
 }
 
-// cache the result to avoid giving the same error twice; small perf gain.
+// cache the result to avoid giving the same error twice.
 private TreeProps<Boolean> macroSwitch_func_callChecked = new TreeProps<>();
 
-/** Check switch()/macro() lval arg; it should be defined switch/macro.
- * Note that expressions are ok, for like a jump table.
- * Note returns false if func is not switch or macro.
- * @return true if switch/macro with good arg else false
+/** Check special func args (like for Macro()/Switch()).
+ * The return does not indicate if an error occurred.
+ * @return true if no more checking needed
  */
-// TODO: the semantics of the return don't feel quite right?
-//       and the callChecked, only fully checked if switch/macro.
-//       It's pass2/private so maybe ok given usage.
-private boolean checkReportMacroSwitchFuncArgs(Func_callContext ctx)
+private boolean isDoneReportSpecialFuncArgs(Func_callContext ctx)
 {
-    Boolean  ok = macroSwitch_func_callChecked.get(ctx);
-    if(ok != null)
-        return ok;
+    Boolean  checkComplete = macroSwitch_func_callChecked.get(ctx);
+    if(checkComplete != null)
+        return checkComplete;
 
     Function f = Functions.get(ctx.id.getText());
-    ok = f.checkReportSpecialFuncArgs(ctx);
-    //Function f = Functions.get(ctx.id.getText());
-    //if(funcSwitchOrMacro(ctx.id.getText())) {
-    //    AstroMem memSpace = func_call2MacoSwitchSpace(ctx);
-    //    
-    //    List<ParseTree> l = List.copyOf(expr2Lvals(ctx.args.get(0)));
-    //    if(memSpace != null
-    //            && !l.isEmpty()
-    //            && l.get(0) instanceof LvalMemContext
-    //            && memSpace.getVar(ctx.args.get(0).getText()) == null) {
-    //        reportError(ctx, "'%s' is not a defined %s", ctx.args.get(0).getText(),
-    //                    memSpace.memSpaceName.equals(MEM_SWITCHES)
-    //                    ? "switch" : "macro");
-    //        ok = false;
-    //    } else
-    //        ok = true;
-    //} else
-    //    ok = false;
-    macroSwitch_func_callChecked.put(ctx, ok);
-    return ok;
+    checkComplete = f.isDoneReportSpecialFuncArgs(ctx);
+    macroSwitch_func_callChecked.put(ctx, checkComplete);
+    return checkComplete;
 }
 
 @Override
 public void exitFunc_call(Func_callContext ctx)
 {
-    checkReportMacroSwitchFuncArgs(ctx);
+    isDoneReportSpecialFuncArgs(ctx);
 }
 
 

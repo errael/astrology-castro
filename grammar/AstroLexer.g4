@@ -2,7 +2,7 @@
 
 lexer grammar AstroLexer;
 
-tokens { TrickyFunc }
+tokens { TrickyFunc, StringFunc }
 
 @lexer::members {
     int braces = 0;
@@ -15,12 +15,18 @@ REPORT2 : 'REPORT2' {System.out.printf("REPORT2: braces: %d\n", braces);} -> ski
 REPORT3 : 'REPORT3' {System.out.printf("REPORT3: braces: %d\n", braces);} -> skip ;
 REPORT4 : 'REPORT4' {System.out.printf("REPORT4: braces: %d\n", braces);} -> skip ;
 
-// TODO: use AssignObj/AssignHouse instead of "=" ?
 // Handle these as functions
-AssignObj : '=' [Oo] [Bb] [Jj] [ \t\r\n]* '(' {setText("=Obj");} -> type(TrickyFunc) ;
-AssignHouse : '=' [Hh] [Oo] [Uu] [ \t\r\n]* '(' {setText("=Hou");} -> type(TrickyFunc) ;
+AssignObj options { caseInsensitive=true; } : '=Obj' [ \t\r\n]* '('
+                                    {setText("=Obj");} -> type(TrickyFunc) ;
+AssignHouse options { caseInsensitive=true; } : '=Hou' [ \t\r\n]* '('
+                                    {setText("=Hou");} -> type(TrickyFunc) ;
+
+CharacterCode options { caseInsensitive=true; } : ( 'CharacterCode' | 'CharC' )
+                [ \t\r\n]* '(' {setText("CharacterCode");} -> type(StringFunc) ;
+
 AssignString : 'AssignString' | 'assignstring' | 'SetString' | 'setstring'
              | 'AssignStrings' | 'assignstrings' | 'SetStrings' | 'setstrings' ;
+
 
 SW_ARG : '{~'       {braces++;} ;
 
@@ -347,6 +353,35 @@ LineComment
 //LINE_COMMENT
 //	: '//' ~[\r\n]* -> channel(HIDDEN)
 //	;
+
+/*
+fragment A : [aA]; // match either an 'a' or 'A'
+fragment B : [bB];
+fragment C : [cC];
+fragment D : [dD];
+fragment E : [eE];
+fragment F : [fF];
+fragment G : [gG];
+fragment H : [hH];
+fragment I : [iI];
+fragment J : [jJ];
+fragment K : [kK];
+fragment L : [lL];
+fragment M : [mM];
+fragment N : [nN];
+fragment O : [oO];
+fragment P : [pP];
+fragment Q : [qQ];
+fragment R : [rR];
+fragment S : [sS];
+fragment T : [tT];
+fragment U : [uU];
+fragment V : [vV];
+fragment W : [wW];
+fragment X : [xX];
+fragment Y : [yY];
+fragment Z : [zZ];
+*/
 
 mode COPY_CAPTURE;
 
