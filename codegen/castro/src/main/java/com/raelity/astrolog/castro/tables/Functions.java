@@ -20,6 +20,7 @@ import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Switches;
 
 import static com.raelity.astrolog.castro.Error.FUNC_CASTRO;
+import static com.raelity.astrolog.castro.Error.FUNC_NARG;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.macroSwitchFuncArgs;
 import static com.raelity.astrolog.castro.Util.reportError;
@@ -48,7 +49,7 @@ public static final String FUNC_ID_MACRO = "macro";
     /** Invalid means that this Function definition itself has a problem;
      * it can't be used.
      */
-    public abstract boolean isInvalid();
+    public boolean isInvalid() { return false; }
 
     /** Check for special func args; returns true if no further
      * checking needed, doesn't mean there's not an error.
@@ -59,7 +60,25 @@ public static final String FUNC_ID_MACRO = "macro";
     public abstract boolean isDoneReportSpecialFuncArgs(Func_callContext ctx);
 
      /* @return null for variable, else macro/switch memSpace */
-    public abstract AstroMem targetMemSpace();
+    public AstroMem targetMemSpace() { return null; }
+
+    /**
+     * Check for correct number of args.
+     * This impl assumes expr args; see override in StringFunction,
+     * for string args.
+     * @return true if nargs is OK, else false if bad num args.
+     */
+    public boolean checkReportArgs(Func_callContext ctx)
+    {
+        if(ctx.args.size() != narg()
+                && !Functions.isUnknownFunction(ctx.id.getText())) {
+            reportError(FUNC_NARG, ctx,
+                        "function '%s' argument count, expect %d not %d",
+                        ctx.id.getText(), narg(), ctx.args.size());
+            return false;
+        }
+        return true;
+    }
 
     /** generate code for this function call */
     public abstract StringBuilder genFuncCall(
@@ -90,6 +109,28 @@ public static final String FUNC_ID_MACRO = "macro";
             return false;
         final Function other = (Function)obj;
         return Objects.equals(this.funcName, other.funcName);
+    }
+
+    }
+
+    abstract public static class StringArgsFunction extends Function
+    {
+    public StringArgsFunction(String funcName, int narg)
+    {
+        super(funcName, narg);
+    }
+
+    @Override
+    public boolean checkReportArgs(Func_callContext ctx)
+    {
+        if(ctx.strs.size() != narg()
+                && !Functions.isUnknownFunction(ctx.id.getText())) {
+            reportError(FUNC_NARG, ctx,
+                        "function '%s' argument count, expect %d not %d",
+                        ctx.id.getText(), narg(), ctx.strs.size());
+            return false;
+        }
+        return true;
     }
 
     }
@@ -217,7 +258,6 @@ void add(String funcName, int narg, String types)
         { sb.append("#DummyFunctionCall#");  return sb;}
     @Override public boolean isInvalid() { return true; }
     @Override public boolean isDoneReportSpecialFuncArgs(Func_callContext ctx) { return false; }
-    @Override public AstroMem targetMemSpace() { return null; }
     }
 
     /** Handles almost all Astrolog builtin functions */
@@ -229,8 +269,6 @@ void add(String funcName, int narg, String types)
     {
         super(funcName, narg);
     }
-
-    @Override public boolean isInvalid() { return false; }
 
     @Override
     public AstroMem targetMemSpace()
@@ -261,6 +299,7 @@ void add(String funcName, int narg, String types)
     }
     }
 
+    /* ************************************************************* */
     private static class SwitchFunction extends SwitchMacroFunction
     {
     public SwitchFunction() { super("Switch"); }
@@ -275,6 +314,7 @@ void add(String funcName, int narg, String types)
     @Override public AstroMem targetMemSpace() { return lookup(Macros.class); }
     }
 
+    /* ************************************************************* */
     private static abstract class SwitchMacroFunction extends Function
     {
 
@@ -300,8 +340,6 @@ void add(String funcName, int narg, String types)
         return sb;
     }
 
-    @Override public boolean isInvalid() { return false; }
-
-    }
+    } // SwitchMacroFunction
 
 }
