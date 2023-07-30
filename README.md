@@ -7,7 +7,7 @@ Some motivating factors for `castro`
 - automatic memory allocation
 
 #####    There's a cheat sheet
-For those who like to play around before reading the docs [cheat sheet](#cheat-sheet).
+For those who like to play around before reading the docs: [cheat sheet](#cheat-sheet).
 
 Here's a simple example. Note that the switch, macro and variable definitions could be in 3 different files. As in `Astrolog`, function names are case insensitive. _Switch and macro names are case sensitive_.
 ```
@@ -53,7 +53,7 @@ macro b_macro @55 { ... }       // from another file: '~1 "Macro 55"'
 
 ###      Differences from "C"
 
-`castro` has a weird looking printf, see [castro printf](#castro-printf). And examples [printf.castro](examples.d/printf.castro) for a description that compiles and runs.
+`castro` has a weird looking printf, see [castro printf](#castro-printf). And examples [cprintf.castro](examples.d/cprintf.castro) for a description that compiles and runs.
 
 ####    statement/expression differences
 
@@ -70,7 +70,8 @@ macro b_macro @55 { ... }       // from another file: '~1 "Macro 55"'
 
 - Single char variable names 'a' to 'z' are pre-declared.
   AstroExpression hooks use as much as %u ... %z.
-  [castro printf](#castro-printf) uses as much as %a ... %j.
+  [castro printf](#castro-printf) uses as much as %a ... %j but there is a
+  way to have cprintf automatically preserve variables.
 - Variables are declared with `var`, for example `var foo;`
 - A variable is integer or float depending on usage. `Astrolog` truncates as needed.
 - A variable declaration may assign the variable or array to a specific location; append `@integer`, for example `var foo @100;` and `var bar[10] @200;`; this assigns `foo` to location 100 and array `bar` starts at location 200.
@@ -101,6 +102,7 @@ Compiling multiple files together is the simplest way to resolve symbolic refere
 castro --mapname=testing expressions.castro flow_control.castro test_infra.castro main.castro
 astrolog -i expressions.as -i flow_control.as -i test_infra.as -i main.as
 ```
+
 main.castro is simply
 ```
 run {
@@ -115,7 +117,9 @@ and loaded last to make sure all the macro and switch are loaded/defined before 
 var test_name[2] @102;    // [ALLOC] test_infra.castro
 var cond @200;    // [ALLOC] flow_control.castro
 ```
-note that each line has the file name in which the variable is declared. To run this under released Astrolog-7.60, remove the `layout switch` directives.
+note that each line has the file name in which the variable is declared.
+**Warning**: Astrlog 7.6.0 limits switch address to 48, some tests won't run.
+Remove the `layout switch` directives to improve results.
 
 After moving definitions and code around in a file and re-compiling there is no change in the allocated addresses. If nothing is added, removed or renamed, or resized (only variables have a size) then their address does not change no matter the order of their declaration.
 
@@ -212,7 +216,7 @@ Example: `cprintf "v1 %d, v2 %d" {~ 3 + 4; 7 + 4; }`
 var cprintf_save_area[10];  // save area for cprintf temps, up to 10.
 ```
 
-**Warning**: printf uses the lower memory locations for the printf arguments, up to 10: `%a`, `%b`, `%c`, ..., `%i`, `%j`. Beware of interference with program variables. Declare `cprintf_save_area` if this is a concern. Recall that Astrolog uses up to %u ... %z when processing AstroExpression hooks.
+**Warning**: cprintf uses the lower memory locations for the cprintf arguments, up to 10: `%a`, `%b`, `%c`, ..., `%i`, `%j`, by default these are changed. Declare `cprintf_save_area` to avoid interference.
 
 ###     run
 The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
@@ -270,7 +274,6 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
 
 
 ##     Warnings/Oddities:
-- `True()`/`False()` are `Astrolog` **functions**; the `()` must be present.
 - `castro` checks for valid `AstroExpression` function names. There is no such check for valid switch commands; if that information becomes available, `castro` will use it.
 - Too long switch or macro don't fit in `Astrolog`'s parser; there is no "too large" error. There is often an apparently unrelated error message. Splitting it into two...
 - Some cases where blanks are significant
@@ -305,8 +308,14 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
 
 ### switch and macro statements
 
+- `macro` declares/defines an `AstroExpression macro` with `~M`.
+- `switch` declares/defines a `command switch macro` with `-M0`.
+- Quoted string can not have embedded quotes of any type.
+
 And see [Flow Control Statements](#flow-control-statements) used in macro.
 The last expression of a macro is the _return_ value.
+Use `&arr + expr` because &arr[expr] doesn't work.
+
 ```
 macro macroName { aspect = 7; orb = 2; } // returns 2
 ```
@@ -315,11 +324,25 @@ The `~` command switches take an AstroExpression as an argument.
 ```
 switch switchName { ~1 { aspect = 7; orb = 2; } }
 ```
-A regular switch command can take an AstroExpression as a value, use `{~ ... }`.
+A regular switch command can take an AstroExpression value as a parameter, use `{~ ... }`.
 ```
 switch switchName { -Ao {~ aspect; } {~ orb; }
 ```
+
+### variables & layout
 [Declare/initialize numeric/string variables](#variables)
+
+```
+layout memory { base 101; limit 111; reserve 104, 106:108; }
+```
+
+Also can specify `layout` for `switch`/`macro`. `limit` is exclusive, all else inclusive
+
+```
+var a {123};    // init builtin variable a to 123
+var var1 @30;   // declare variable var1 assigned to specific location
+var var2 {567}; // declare/init var2 to 567
+```
 
 ### castro functions
 See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
@@ -330,6 +353,7 @@ See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
 | MacroAdress   | MAddr | MAddr(macroName) | The address of a macro |
 | KeyCode       | KeyC | KeyC("a") | "a" is ascii val 97, takes range ' ' - '~' |
 | Switch2KeyCode | Sw2KC | Sw2KC(switchName) | see ~XQ hook. switch address range 1 - 48 |
+| SizeOf       | ----- | SizeOf(varname) | the number of locations used by the variable |
 
 
 Astrolog associates switch commands at adresses 1 - 48 with function keys
@@ -341,6 +365,8 @@ run { ~XQ { if (z == KeyC("a") z = Sw2KC(func_key_demo); } }
 
 ### castro constants
 See [mazegame](examples.d/mazegame.castro) for example usage.
+
+Integer constants: `201`, `0xc9`, `0b11001001`.
 
 `FK_F0` - 200 is the zero base for the X11 function keys input value,
 see ~XQ at [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express).
@@ -364,20 +390,9 @@ run { ~XQ { if (z == KeyC("a") z = FK_F0 + SAddr(func_key); } }
 run { ~XQ { if (z == KeyC("a") z = Sw2KC(SAddr(func_key)); } }
 run { ~XQ { if (z == KeyC("a") z = Sw2KC(func_key); } }
 -->
-### variables & layout
-```
-layout memory { base 101; limit 111; reserve 104, 106:108; }
-```
-    Also layout for switch/macro. Limit is exclusive, all else inclusive
-
-```
-var a {123};    // init builtin variable a to 123
-var var1 @30;   // declare variable var1 assigned to specific location
-var var2 {567}; // declare/init var2 to 567
-```
 
 ### cprintf
-See [printf](astrotest.d/printf.castro) for example usage.
+See [cprintf](astrotest.d/cprintf.castro) for example usage.
 
 ```
 var cprintf_save_area[10];  // save area for cprintf temps, up to 10.
@@ -426,10 +441,11 @@ Usage: castro [-h] [several-options] [-o outfile] infile+
     -v      output more info
 
 Errors that can be made warnings
-    func-unk        unknown function
-    func-narg       number of arguments to function
-    func-castro     function castro uses internally for code generation
-    var-rsv         assign a variable to reserved area
-    array-oob       access array out of bounds
-    octal-const     octal constant
+    func-unk     unknown function
+    func-narg    wrong number of function arguments
+    func-castro  function used internally for code generation
+    var-rsv      assign variable to reserved area
+    array-oob    array index out of bounds
+    octal-const  octal constant
+    inner-quote  inner quote in string
 ```

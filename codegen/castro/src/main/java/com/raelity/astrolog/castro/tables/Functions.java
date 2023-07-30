@@ -49,7 +49,9 @@ public static final String FUNC_ID_MACRO = "macro";
     /** Invalid means that this Function definition itself has a problem;
      * it can't be used.
      */
-    public boolean isInvalid() { return false; }
+    public boolean isInvalid() {
+        return false;
+    }
 
     /** Check for special func args; returns true if no further
      * checking needed, doesn't mean there's not an error.
@@ -57,10 +59,15 @@ public static final String FUNC_ID_MACRO = "macro";
      * are expected, like switch/macro name. A false return doesn't
      * mean there's a problem, only that further checking is expected.
      */
-    public abstract boolean isDoneReportSpecialFuncArgs(Func_callContext ctx);
+    public boolean isDoneReportSpecialFuncArgs(Func_callContext ctx)
+    {
+        return false;
+    }
 
      /* @return null for variable, else macro/switch memSpace */
-    public AstroMem targetMemSpace() { return null; }
+    public AstroMem targetMemSpace() {
+        return null;
+    }
 
     /**
      * Check for correct number of args.
@@ -257,11 +264,9 @@ void add(String funcName, int narg, String types)
                                      List<String> args)
         { sb.append("#DummyFunctionCall#");  return sb;}
     @Override public boolean isInvalid() { return true; }
-    @Override public boolean isDoneReportSpecialFuncArgs(Func_callContext ctx) { return false; }
     }
 
     /** Handles almost all Astrolog builtin functions */
-    // TODO: equals? Only need to check funcName
     static class AstrologFunction extends Function
     {
 
@@ -274,12 +279,6 @@ void add(String funcName, int narg, String types)
     public AstroMem targetMemSpace()
     {
         return null;
-    }
-
-    @Override
-    public boolean isDoneReportSpecialFuncArgs(Func_callContext ctx)
-    {
-        return true;
     }
 
     @Override

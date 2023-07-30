@@ -18,13 +18,14 @@ INFRA_OUTPUT=infra_results
 INFRA_FILES="
     expressions
     flow_control
+    functions
     test_infra
     main
 "
 
 PRINTF_MAP=printf_testing
 PRINTF_OUTPUT=printf_results
-PRINTF_FILE=printf
+PRINTF_FILE=cprintf
 
 usage() {
     echo "$CMD [-l] [-h] [--clean]"

@@ -91,7 +91,7 @@ switch welcome @1 {
 
 // UI function keys
 switch nav_keys @6 {
-    ~1 { cur_nav_idx = (cur_nav_idx + 1) % 2; }
+    ~1 { cur_nav_idx = (cur_nav_idx + 1) % sizeof(nav_info); }
     cprintf 'Current keys %s.\n' {~ &nav_info + cur_nav_idx; }
 }
 

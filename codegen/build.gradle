@@ -5,7 +5,7 @@
 allprojects {
 
     group = 'com.raelity.astrolog'
-    version = "0.5.0"
+    version = "0.6.0"
 
     afterEvaluate {
         if(project.hasProperty('java')) {

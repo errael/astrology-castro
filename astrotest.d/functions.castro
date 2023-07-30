@@ -1,0 +1,94 @@
+/*
+ * Check out functions defined by castro.
+ */
+
+
+/*
+ * This tests checks addresses.
+ * Keep all the allocation separate numbers.
+ */
+layout memory { base 301; limit 330; }
+layout macro { base 331; limit 360; }
+layout switch { base 361; limit 390; }
+
+switch test_functions {
+    ~1 {
+        Switch(test_address);
+        Switch(test_keycode);
+        Switch(test_sizeof);
+    }
+}
+
+macro a_m1 {
+    1234;
+}
+
+macro a_m2 {
+    5678;
+}
+
+switch a_s1 {
+    ~1 { Lat(); }
+}
+
+switch a_s2 {
+    ~1 { Lat(); }
+}
+
+switch Shift_F1 @13 {
+    ~1 { Lat(); }
+}
+
+var aa_v1[11];
+var aa_v2[7];
+
+switch test_address {
+    SetString test_name[0] "test_address"
+
+    SetString test_name[1] ": saddr(a_s1)"
+    ~1 { result = saddr(a_s1); expect = 361; macro(check); }
+
+    SetString test_name[1] ": saddr(a_s2)"
+    ~1 { result = saddr(a_s2); expect = 362; macro(check); }
+
+    SetString test_name[1] ": maddr(a_m1)"
+    ~1 { result = maddr(a_m1); expect = 331; macro(check); }
+
+    SetString test_name[1] ": maddr(a_m2)"
+    ~1 { result = maddr(a_m2); expect = 332; macro(check); }
+
+    SetString test_name[1] ": a_m1"
+    ~1 { result = macro(a_m2); expect = 5678; macro(check); }
+}
+
+switch test_keycode {
+    SetString test_name[0] "test_keycode"
+
+    SetString test_name[1] ": KeyC(A)"
+    ~1 { result = KeyC('A'); expect = 65; macro(check); }
+
+    SetString test_name[1] ": KeyC(#)"
+    ~1 { result = KeyC('#'); expect = 35; macro(check); }
+
+    SetString test_name[1] ": KeyC(f)"
+    ~1 { result = KeyC('f'); expect = 0x66; macro(check); }
+
+    SetString test_name[1] ": Sw2KC(Shift_F1)-1"
+    ~1 { result = Sw2KC(Shift_F1); expect = 213; macro(check); }
+
+    SetString test_name[1] ": Sw2KC(Shift_F1)-2"
+    ~1 { result = Sw2KC(Shift_F1); expect = FK_F0 + 13; macro(check); }
+}
+
+switch test_sizeof {
+    SetString test_name[0] "test_sizeof"
+
+    SetString test_name[1] ": aa_v1"
+    ~1 { result = sizeof(aa_v1); expect = 11; macro(check); }
+
+    SetString test_name[1] ": aa_v2"
+    ~1 { result = sizeof(aa_v2); expect = 7; macro(check); }
+
+    SetString test_name[1] ": v1 + v2 + 1"
+    ~1 { result = sizeof(aa_v1) + sizeof(aa_v2) + 1; expect = 19; macro(check); }
+}

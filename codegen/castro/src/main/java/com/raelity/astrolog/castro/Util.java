@@ -28,8 +28,6 @@ import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.lib.CentralLookup;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
-import com.raelity.astrolog.castro.mems.Macros;
-import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
 
@@ -42,6 +40,7 @@ import static com.raelity.astrolog.castro.antlr.AstroParser.OctalConstant;
 import static com.raelity.astrolog.castro.mems.Macros.MEM_MACROS;
 import static com.raelity.astrolog.castro.mems.Registers.MEM_REGISTERS;
 import static com.raelity.astrolog.castro.mems.Switches.MEM_SWITCHES;
+import static com.raelity.astrolog.castro.Error.INNER_QUOTE;
 
 /**
  *
@@ -60,6 +59,24 @@ private Util() { }
 // 
 //     return null;
 // }
+
+
+/**
+ * Strip leading/trailing quote and remove Embedded quotes.
+ * Remove Embedded quotes, report an error if one is found.
+ */
+// TODO: this is used from too many places.
+public static String cleanString(Token token)
+{
+    String s1 = token.getText();
+    String s2 = s1.replaceAll("[\"']", "");
+    // There should be extactly two less characters in the String
+    // for the leading/trailing quotes. If there are even less
+    // then there are embedded quotes.
+    if(s1.length() > s2.length() + 2)
+        reportError(INNER_QUOTE, token, "'%s' string has inner quotes, stripping", s1);
+    return s2;
+}
 
 public static boolean isBuiltinVar(Token id)
 {
@@ -98,14 +115,12 @@ public static int parseInt(Token token)
     return i;
 }
 
+/** Extract the string(s) without sourounding quotes. */
 public static List<String> collectAssignStrings(Switch_cmdContext sc_ctx)
 {
     ArrayList<String> strings = sc_ctx.str.stream()
-            .map((t) -> {
-                // get the text and strip the quotes
-                String s = t.getText();
-                return s.substring(1, s.length()-1);
-            }).collect(Collectors.toCollection(ArrayList::new));
+            .map((t) -> cleanString(t))
+            .collect(Collectors.toCollection(ArrayList::new));
     return strings;
 }
 

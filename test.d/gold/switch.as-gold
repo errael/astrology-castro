@@ -33,7 +33,7 @@
 
 ; SWITCH one
 -M0 1 ' 
-    "o<'n>e"  
+    "o<n>e"  
     stuff   
     -stuff   
     _stuff   

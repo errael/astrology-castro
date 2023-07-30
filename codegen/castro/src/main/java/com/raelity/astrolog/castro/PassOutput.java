@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import com.raelity.astrolog.castro.Castro.CastroOutputOptions;
@@ -33,6 +32,7 @@ import static com.raelity.antlr.ParseTreeUtil.getOriginalText;
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.GenPrefixExpr.switchCommandExpressions;
 import static com.raelity.astrolog.castro.OutputOptions.*;
+import static com.raelity.astrolog.castro.Util.cleanString;
 import static com.raelity.astrolog.castro.Util.collectAssignStrings;
 import static com.raelity.astrolog.castro.Util.expr2constInt;
 import static com.raelity.astrolog.castro.Util.lookup;
@@ -42,8 +42,8 @@ import static com.raelity.astrolog.castro.mems.Registers.VAR_CPRINTF_SAVE;
 
 /**
  * Generate and Output the Astrolog code, as a .as file,
- * for the top level macro/switch/run/copy; using the AstroExpression
- * compiled in pass3.
+ * for the top level macro/switch/run/copy; variable initialization.
+ * Use the AstroExpression compiled in pass3.
  * For the switch command expecially there is some
  * data massage going on to meet the Astrolog input requirements.
  */
@@ -108,6 +108,8 @@ public void exitMacro(MacroContext ctx)
         }
         out.printf("\n%s\n", sb.toString());
     }
+
+    // NOTE: a macro never has a string in it (AFAICT)
     
     // Can change the quote preference to facilite diff
     char quote;
@@ -162,10 +164,11 @@ public void exitSwitch(SwitchContext ctx)
             else
                 hasDoubleQuote = true;
         }
-        if(hasSingleQuote && hasDoubleQuote) {
-            reportError(sc_ctx, "both \" and ' quotes used in switch '%s'", ctx.id.getText());
-            break;
-        }
+        // MIXED_QUOTES
+        // if(hasSingleQuote && hasDoubleQuote) {
+        //     reportError(sc_ctx, "both \" and ' quotes used in switch '%s'", ctx.id.getText());
+        //     break;
+        // }
     }
     
     
@@ -285,7 +288,7 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
         lsb.setLength(0);
         Switch_cmdContext sc_ctx = lsc.get(i);
         if(sc_ctx.string != null) {
-            lsb.append(sc_ctx.getText());
+            lsb.append(quote).append(cleanString(sc_ctx.string)).append(quote);
         } else {
             String sc_text = apr.prefixExpr.removeFrom(sc_ctx);
             if(sc_ctx.name != null) {
