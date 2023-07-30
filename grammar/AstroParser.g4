@@ -142,11 +142,21 @@ paren_expr
    : '(' expr ')'
    ;
 
+// TODO: NOTE: default all string or all expr.
+//       but could handle cprintf("fmt", args);
+// func_arg : e=expr | s=String ;
+// func_call
+//     : ...
+//     | id=Identifier '(' (args+=func_arg (',' args+=func_arg)*)? ')'
+// Might be able to have that as a third alternative, the rule should
+// only be used if not all expr and not all strings. I guess it would
+// only backtrack when its mixed, which is infrequent.
+
 func_call
     : id=Identifier '(' (args+=expr (',' args+=expr)*)? ')'
+    | id=Identifier '(' (strs+=String (',' strs+=String)*)? ')'
     // Note no '(' in following rule, it's embedded in TrickyFunc
     | id=TrickyFunc (args+=expr (',' args+=expr)*)? ')'
-    | id=StringFunc (strs+=String (',' strs+=String)*)? ')'
     ;
 
 // TODO: make '*' indirection in expr

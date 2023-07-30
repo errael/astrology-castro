@@ -5,5 +5,5 @@
  */
 
 run {
-    ~1 { nav_ptr = MAddr(nav_vi); }
+    ~1 { cur_nav_idx = 1; }
 }

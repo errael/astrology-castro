@@ -23,6 +23,9 @@ import static com.raelity.astrolog.castro.Constants.ConstantType.*;
 public class Constants
 {
 private Constants() { }
+public static final int FK_F0_KEY_CODE = 200; 
+public static final int FK_FIRST = 1; 
+public static final int FK_LAST = 48; 
 
 private static final Map<String, Info> constants = new HashMap<>();
 static {
@@ -38,7 +41,7 @@ static {
 
     // TODO: add all the function keys individually
     /** the "base" for X function keys. Add 1 for F1... */
-    constants.put("fk_f0", new Info("FK_F0", "200", CASTRO));
+    constants.put("fk_f0", new Info("FK_F0", String.valueOf(FK_F0_KEY_CODE), CASTRO));
 }
 private static String firstLetter = "moahskwz";
 

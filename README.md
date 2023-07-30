@@ -6,6 +6,9 @@ Some motivating factors for `castro`
 - referring to things by name rather than address.
 - automatic memory allocation
 
+#####    There's a cheat sheet
+For those who like to play around before reading the docs [cheat sheet](#cheat-sheet).
+
 Here's a simple example. Note that the switch, macro and variable definitions could be in 3 different files. As in `Astrolog`, function names are case insensitive. _Switch and macro names are case sensitive_.
 ```
 var yearA;
@@ -31,9 +34,6 @@ which generates
 This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpression` basics. See [discussions](https://github.com/errael/astrology-castro/discussions) for musings on possible extensions.
 
 For more examples, there is [mazegame ported to castro](examples.d/mazegame.castro). All of the examples from `Astrolog` website under [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express) are shown as `castro` code in [AstroExpressionDocsCommandSwitches.castro](examples.d/AstroExpressionDocsCommandSwitches.castro) There's [examples.d](examples.d); [astrotest.d](astrotest.d) executes on astrolog and has a simple expect/result infrastructure; [test.d](test.d) checks lowlevel functionality and has gold files.
-
-####    Check out the cheat sheet
-[cheat sheet](#cheat-sheet)
 
 ###     Interoperability
 
@@ -319,6 +319,7 @@ A regular switch command can take an AstroExpression as a value, use `{~ ... }`.
 ```
 switch switchName { -Ao {~ aspect; } {~ orb; }
 ```
+[Declare/initialize numeric/string variables](#variables)
 
 ### castro functions
 See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
@@ -327,7 +328,16 @@ See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
 | ------------- | ----- | ---- | -- |
 | SwitchAdress  | SAddr | SAddr(switchName) | The address of a switch |
 | MacroAdress   | MAddr | MAddr(macroName) | The address of a macro |
-| CharacterCode | CharC | CharC("a") | must be a single character string |
+| KeyCode       | KeyC | KeyC("a") | "a" is ascii val 97, takes range ' ' - '~' |
+| Switch2KeyCode | Sw2KC | Sw2KC(switchName) | see ~XQ hook. switch address range 1 - 48 |
+
+
+Astrolog associates switch commands at adresses 1 - 48 with function keys
+```
+// 'a' keypress is mapped to execute func_key_demo
+switch func_key_demo { ... }
+run { ~XQ { if (z == KeyC("a") z = Sw2KC(func_key_demo); } }
+```
 
 ### castro constants
 See [mazegame](examples.d/mazegame.castro) for example usage.
@@ -338,17 +348,22 @@ see ~XQ at [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express)
 Only FK_F0 is a defined constant. The following is for reference.
 | key | switch slot | fkey number | note |
 | --- | ----------- | ----------- | ---- |
-|FK_F0      | --- | 200  | not a function key, but works well with math
-|F1         | 1   | 201  |
-|Shift-F1   | 13  | 213  |
-|Control-F1 | 25  | 225  |
-|Alt-F1     | 37  | 237  | Shift-Control on some systems
+|FK_F0      | ----- | 200  | not a function key, but works well with math
+|F1         | 1     | 201  |
+|Shift-F1   | 13    | 213  |
+|Control-F1 | 25    | 225  |
+|Alt-F1     | 37    | 237  | Shift-Control on some systems
 
 ```
 switch func_key @3 { ... }    // This switch invoked by pressing F3
 // hook so when 'a' key (ascii 97) is pressed, map it to F3
-run { ~XQ { if (z == CharC("a") z = FK_F0 + SAddr(func_key); } }
+run { ~XQ { if (z == KeyC("a") z = FK_F0 + SAddr(func_key); } }
 ```
+<!--
+// hook so when 'a' key (ascii 97) is pressed, map it to `switch func_key`
+run { ~XQ { if (z == KeyC("a") z = Sw2KC(SAddr(func_key)); } }
+run { ~XQ { if (z == KeyC("a") z = Sw2KC(func_key); } }
+-->
 ### variables & layout
 ```
 layout memory { base 101; limit 111; reserve 104, 106:108; }

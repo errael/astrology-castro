@@ -287,19 +287,7 @@ public void exitExprFunc(ExprFuncContext ctx)
         reportError(FUNC_UNK, fc_ctx.id, "unknown function '%s'", fc_ctx.id.getText());
         Functions.recordUnknownFunction(fc_ctx.id.getText());
     }
-    if(!fc_ctx.strs.isEmpty()) {
-        if(fc_ctx.strs.size() != f.narg()
-                && !Functions.isUnknownFunction(fc_ctx.id.getText()))
-            reportError(FUNC_NARG, fc_ctx,
-                        "function '%s' argument count, expect %d not %d",
-                        fc_ctx.id.getText(), f.narg(), fc_ctx.strs.size());
-    } else {
-        if(fc_ctx.args.size() != f.narg()
-                && !Functions.isUnknownFunction(fc_ctx.id.getText()))
-            reportError(FUNC_NARG, fc_ctx,
-                        "function '%s' argument count, expect %d not %d",
-                        fc_ctx.id.getText(), f.narg(), fc_ctx.args.size());
-    }
+    f.checkReportArgs(fc_ctx);
 }
 
 /** build the LineMap */

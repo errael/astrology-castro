@@ -20,6 +20,7 @@ import com.raelity.astrolog.castro.Castro.CastroMapName;
 import com.raelity.astrolog.castro.Castro.MacrosAccum;
 import com.raelity.astrolog.castro.Castro.RegistersAccum;
 import com.raelity.astrolog.castro.Castro.SwitchesAccum;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
@@ -31,12 +32,16 @@ import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
+import com.raelity.astrolog.castro.tables.Functions.StringArgsFunction;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 
 import static com.raelity.astrolog.castro.Castro.MAP_EXT;
+import static com.raelity.astrolog.castro.Constants.FK_F0_KEY_CODE;
+import static com.raelity.astrolog.castro.Constants.FK_FIRST;
+import static com.raelity.astrolog.castro.Constants.FK_LAST;
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.*;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
@@ -431,14 +436,16 @@ private static void addCastroFunctions()
 {
     Functions.addFunction(new MacroAddress(), "MAddr");
     Functions.addFunction(new SwitchAddress(), "SAddr");
-    Functions.addFunction(new CharacterCode(), "CharC");
+    Functions.addFunction(new KeyCode(), "KeyC");
+    Functions.addFunction(new Switch2KeyCode(), "Sw2KC");
 }
 
-    private static class CharacterCode extends Function
+    /* ************************************************************* */
+    private static class KeyCode extends StringArgsFunction
     {
-    public CharacterCode()
+    public KeyCode()
     {
-        super("CharacterCode", 1);
+        super("KeyCode", 1);
     }
 
     @Override
@@ -474,11 +481,42 @@ private static void addCastroFunctions()
         return true;
     }
 
-    @Override public AstroMem targetMemSpace() { return null; }
-    @Override public boolean isInvalid() { return false; }
+    } // KeyCode
 
+    /* ************************************************************* */
+    private static class Switch2KeyCode extends Function
+    {
+    public Switch2KeyCode()
+    {
+        super("Switch2KeyCode", 1);
+    }
+    
+    @Override
+    public boolean isDoneReportSpecialFuncArgs(Func_callContext ctx)
+    {
+        isMacroSwitchFuncArgLval(ctx, targetMemSpace());
+        return true;
     }
 
+    @Override public AstroMem targetMemSpace() { return lookup(Switches.class); }
+
+    @Override
+    public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
+                                     List<String> args)
+    {
+        ExprContext sw = ctx.fc.args.get(0);
+        int addr = targetMemSpace().getVar(sw.getText()).getAddr();
+        if(addr < FK_FIRST || addr > FK_LAST)
+            reportError(sw, "Switch '%s' @%d is not a function key address",
+                        sw.getText(), addr);
+
+        sb.append(FK_F0_KEY_CODE + addr).append(' ');
+        return sb;
+    }
+
+    } // Switch2KeyCode
+
+    /* ************************************************************* */
     /** Generate the address of given macro. */
     private static class MacroAddress extends SwitchMacroAdress
     {
@@ -486,6 +524,7 @@ private static void addCastroFunctions()
     @Override public AstroMem targetMemSpace() { return lookup(Macros.class); }
     }
 
+    /* ************************************************************* */
     /** Generate the address of given switch. */
     private static class SwitchAddress extends SwitchMacroAdress
     {
@@ -493,6 +532,7 @@ private static void addCastroFunctions()
     @Override public AstroMem targetMemSpace() { return lookup(Switches.class); }
     }
 
+    /* ************************************************************* */
     private static abstract class SwitchMacroAdress extends Function
     {
 
@@ -518,8 +558,6 @@ private static void addCastroFunctions()
             sb.append("#").append(name()).append(":args# ");
         return sb;
     }
-
-    @Override public boolean isInvalid() { return false; }
 
     }
 
