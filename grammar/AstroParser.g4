@@ -91,7 +91,6 @@ switch_cmd
     | name=sw_name b='{' bs+=astroExprStatement + '}'
     | name=sw_name
     | string=String
-    //| assign=AssignString '(' l=lval ',' str+=String (',' str+=String)* ')'
     | assign=AssignString l=lval  str+=String + 
     ;
 

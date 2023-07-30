@@ -10,16 +10,22 @@ package com.raelity.astrolog.castro;
  */
 public enum Error
 {
-FUNC_UNK("func-unk"),           // unknown function
-FUNC_NARG("func-narg"),         // wrong number of function arguments
-FUNC_CASTRO("func-castro"),     // internal function, used in code generation
-VAR_RSV("var-rsv"),             // assigning variable to reserved area
-ARRAY_OOB("array-oob"),         // array index out of bounds
-OCTAL_CONST("octal-const"),     // octal constant
+FUNC_UNK("func-unk",          "unknown function"),
+FUNC_NARG("func-narg",        "wrong number of function arguments"),
+FUNC_CASTRO("func-castro",    "function used internally for code generation"),
+VAR_RSV("var-rsv",            "assign variable to reserved area"),
+ARRAY_OOB("array-oob",        "array index out of bounds"),
+OCTAL_CONST("octal-const",    "octal constant"),
+INNER_QUOTE("inner-quote",    "inner quote in string stripped"),
+
+///// MIXED_QUOTES("mixed-quotes"),   // mixed quotes in command
+/////                               see MIXED_QUOTES in PassOutput
 ;
 private String name;
-Error(String name) {
+private String help;
+Error(String name, String help) {
     this.name = name;
+    this.help = help;
 }
 
 public record EParse(Error error, boolean negated){};
@@ -37,6 +43,8 @@ public static EParse parseErrorName(String _name)
     }
     return null;
 }
+
+public String help() { return help; }
 
 @Override
 public String toString()

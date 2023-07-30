@@ -9,19 +9,25 @@
  *
  * WARNING: cprintf puts the arguments in Astrolog memory
  *          %a, %b, %c, ..., %i, %j. cprintf limits the number of
- *          arguments to 10.
+ *          arguments to 10. Define cprintf_save_area as needed.
  *
  * Compile and try this example with
- *      castro printf.castro
- *      astrolog -i printf.as
+ *      castro cprintf.castro
+ *      astrolog -i cprintf.as
  * see output
  *      Some primes: 11, 19, 3; a string: <Some Random String>. DID IT!
  */
 
+/*
+ * optionally declare cprintf_save_area to so that cprintf does
+ * save/restore of variables that it usees.
+ */
+var cprintf_save_area[10];
+
 var str1;
 var v1 {11};
 var v2 {8};
-switch printf_example {
+switch cprintf_example {
     setstring str1 "Some Random String"
 
     cprintf "Some primes: %d, %f, %d; a string: <%s>. DID IT!\n"

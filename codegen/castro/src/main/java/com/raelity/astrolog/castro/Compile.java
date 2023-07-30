@@ -438,6 +438,7 @@ private static void addCastroFunctions()
     Functions.addFunction(new SwitchAddress(), "SAddr");
     Functions.addFunction(new KeyCode(), "KeyC");
     Functions.addFunction(new Switch2KeyCode(), "Sw2KC");
+    Functions.addFunction(new SizeOf());
 }
 
     /* ************************************************************* */
@@ -557,6 +558,25 @@ private static void addCastroFunctions()
         else
             sb.append("#").append(name()).append(":args# ");
         return sb;
+    }
+
+    }
+
+    /* ************************************************************* */
+    private static class SizeOf extends Function
+    {
+    public SizeOf()
+    {
+        super("SizeOf", 1);
+    }
+
+    @Override
+    public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
+                                     List<String> args)
+    {
+        ExprContext arg = ctx.fc.args.get(0);
+        int size = lookup(Registers.class).getVar(arg.getText()).getSize();
+        return sb.append(size). append(' ');
     }
 
     }

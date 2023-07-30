@@ -28,22 +28,25 @@ public static final int FK_FIRST = 1;
 public static final int FK_LAST = 48; 
 
 private static final Map<String, Info> constants = new HashMap<>();
+
+/** Most astrolog named constants start with one of the following letters. */
+private static String firstLetter = "moahskwz";
+
 static {
     constants.put("true", new Info("True", ASTROLOG));
     constants.put("false", new Info("False", ASTROLOG));
     constants.put("signs", new Info("Signs", ASTROLOG));
+
+    /** the "base" for X function keys. Add 1 for F1... */
+    constants.put("fk_f0", new Info("FK_F0", String.valueOf(FK_F0_KEY_CODE), CASTRO));
+    // TODO: add all the function keys individually
 
     //      F0          - 200   (not a function key, but good for math)
     //      F1          - 201
     //      Shift-F1    - 213
     //      Control-F1  - 225
     //      Alt-F1      - 237   (Shift-Control on some systems)
-
-    // TODO: add all the function keys individually
-    /** the "base" for X function keys. Add 1 for F1... */
-    constants.put("fk_f0", new Info("FK_F0", String.valueOf(FK_F0_KEY_CODE), CASTRO));
 }
-private static String firstLetter = "moahskwz";
 
 public static boolean isConstant(Token token)
 {
@@ -103,14 +106,14 @@ enum ConstantType {
     private final String val;
     private final ConstantType type;
 
-    /** For ASTROLOG */
+    /** For ASTROLOG, String val gets passed through. */
     public Info(String val, ConstantType type)
     {
         this.id = val;
         this.val = val;
         this.type = type;
     }
-    /** For CASTRO/USER */
+    /** For CASTRO/USER, id is generated as val. */
     public Info(String id, String val, ConstantType type)
     {
         this.id = id;

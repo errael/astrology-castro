@@ -124,16 +124,12 @@ private static void version()
 
 static String listEwarnOptions()
 {
-    String ewarn = """
-            Errors that can be made warnings
-                func-unk        unknown function
-                func-narg       number of arguments to function
-                func-castro     function castro uses internally for code generation
-                var-rsv         assign a variable to reserved area
-                array-oob       access array out of bounds
-                octal-const     octal constant
-            """;
-    return ewarn;
+    StringBuilder sb = new StringBuilder(500);
+    sb.append("Errors that can be made warnings\n");
+    for(Error e : Error.values())
+        sb.append(String.format("    %-12s %s\n", e.toString(), e.help()));
+
+    return sb.toString();
 }
 
 private static void usageExit() { System.exit(1); }
@@ -216,7 +212,7 @@ public static void main(String[] args)
     
     EnumSet<OutputOptions> oset = EnumSet.noneOf(OutputOptions.class);
     // Default warnings
-    EnumSet<Error> warnset = EnumSet.of(FUNC_CASTRO, VAR_RSV);
+    EnumSet<Error> warnset = EnumSet.of(FUNC_CASTRO, VAR_RSV, INNER_QUOTE);
     int c;
     while ((c = g.getopt()) != -1) {
         switch (c) {
