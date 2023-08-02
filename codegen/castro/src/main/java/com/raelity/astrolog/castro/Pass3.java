@@ -36,7 +36,6 @@ import com.raelity.astrolog.castro.tables.Ops;
 import com.raelity.astrolog.castro.tables.Ops.Flow;
 
 import static com.raelity.astrolog.castro.Constants.constant;
-import static com.raelity.astrolog.castro.Constants.isConstant;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Assign;
@@ -52,6 +51,7 @@ import static com.raelity.astrolog.castro.tables.Ops.astroCode;
 import static com.raelity.astrolog.castro.Util.expr2constInt;
 import static com.raelity.astrolog.castro.Util.parseInt;
 import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
+import static com.raelity.astrolog.castro.Constants.isConstantName;
 
 /**
  * Generate the AstroExpression code.
@@ -365,8 +365,8 @@ private StringBuilder lvalAssignment(StringBuilder lsb, LvalContext lval_ctx)
 String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String rhs)
 {
     sb.setLength(0);
-    if( isConstant(ctx.l.id)) {
-        reportError(ctx, "'%s' is a constant, can't write", ctx.l.id.getText());
+    if( isConstantName(ctx.l.id)) {
+        reportError(ctx, "'%s' is a constant name, can't write", ctx.l.id.getText());
         return ctx.l.id.getText();
     }
     int opType = opToken.getType();
@@ -411,12 +411,11 @@ String genLval(LvalMemContext ctx)
     sb.setLength(0);
     
     AstroMem space = lval2MacoSwitchSpace(ctx);
-    String constant;
     if(space != null)
         sb.append(String.valueOf(space.getVar(ctx.id.getText()).getAddr())).append(' ');
-    else if((constant = constant(ctx.getText())) != null)
-        sb.append(constant).append(' ');
-    else
+    else if(isConstantName(ctx.id)) {
+        sb.append(constant(ctx.id)).append(' ');
+    } else
         sb.append('@').append(lvalReadVar(ctx.id.getText())).append(' ');
     return sb.toString();
 }

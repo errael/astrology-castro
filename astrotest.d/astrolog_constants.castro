@@ -1,0 +1,69 @@
+/*
+ * Test astrolog constants.
+ */
+
+layout memory { base 401; limit 450; }
+layout macro { base 401; limit 450; }
+layout switch { base 401; limit 450; }
+
+switch test_astrolog_constants {
+    ~1 {
+        switch(test_astrolog_constants_simple);
+        switch(test_astrolog_constants_object);
+        switch(test_astrolog_constants_house);
+        switch(test_astrolog_constants_aspect);
+    }
+}
+
+switch test_astrolog_constants_simple {
+    SetString test_name[0] "test_astrolog_constants_simple"
+
+    SetString test_name[1] ": true"
+    ~1 { result = true; expect = 1; macro(check); }
+    SetString test_name[1] ": false"
+    ~1 { result = false; expect = 0; macro(check); }
+    SetString test_name[1] ": signs"
+    ~1 { result = signs; expect = 12; macro(check); }
+}
+
+switch test_astrolog_constants_object {
+    SetString test_name[0] "test_astrolog_constants_object"
+
+    SetString test_name[1] ": earth"
+    ~1 { result = o_earth; expect = 0; macro(check); }
+    SetString test_name[1] ": sun"
+    ~1 { result = o_SUn; expect = 1; macro(check); }
+    SetString test_name[1] ": uranus"
+    ~1 { result = o_Uranus; expect = 8; macro(check); }
+    SetString test_name[1] ": titan"
+    ~1 { result = O_TITAN; expect = 58; macro(check); }
+    SetString test_name[1] ": 1st"
+    ~1 { result = o_1st; expect = 22; macro(check); }
+    SetString test_name[1] ": 2nd"
+    ~1 { result = o_2nd; expect = 23; macro(check); }
+    SetString test_name[1] ": M.C."
+    ~1 { result = o_m_c; expect = 31; macro(check); }
+    SetString test_name[1] ": jupi"
+    ~1 { result = o_jupi; expect = 6; macro(check); }
+}
+
+switch test_astrolog_constants_house {
+    SetString test_name[0] "test_astrolog_constants_house"
+
+    SetString test_name[1] ": Equ"
+    ~1 { result = h_equ; expect = 2; macro(check); }
+
+    SetString test_name[1] ": Topo"
+    ~1 { result = h_top; expect = 8; macro(check); }
+}
+
+switch test_astrolog_constants_aspect {
+    SetString test_name[0] "test_astrolog_constants_aspect"
+
+    SetString test_name[1] ": Con"
+    ~1 { result = a_con; expect = 1; macro(check); }
+
+    // Edit the .as to change A_Con to A_Conju. Doesn't work.
+    SetString test_name[1] ": Conju"
+    ~1 { result = a_conju; expect = 1; macro(check); }
+}

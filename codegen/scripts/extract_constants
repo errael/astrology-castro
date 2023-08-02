@@ -1,0 +1,39 @@
+#!/bin/bash
+
+CMD=${0##*/}
+DIR=${0%/*}
+
+. $DIR/COMMON
+
+# Need dos2unix so /^$/ works
+
+dos2unix < $SRC_CONSTANTS | awk \
+'
+# months
+/CONST.*szMonth/,/};/ { print }
+
+# array: planets, positions, stars
+/CONST.*szObjName/,/};/ { print }
+# table: extra positions
+/CONST.*rgObjName/,/};/ { print }
+
+/CONST.*szAspectAbbrev\y/,/};/ { print }
+/CONST.*rgAspectName/,/};/ { print }
+/CONST.*szAspectName/,/};/ { print }
+
+/CONST.*szSystem/,/};/ { print }
+/CONST.*rgSystem/,/};/ { print }
+
+# Signs
+/CONST.*szSignName/,/};/ { print }
+
+### The code for looking up color is strange
+### /CONST.*szColor/,/};/ { print }
+### /CONST.*szElem/,/};/ { print }
+### /CONST.*szObjName/,/};/ { print }
+
+/CONST.*szDay/,/};/ { print }
+
+### pmOffset
+' 
+

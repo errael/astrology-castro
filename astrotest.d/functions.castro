@@ -73,6 +73,12 @@ switch test_keycode {
     SetString test_name[1] ": KeyC(f)"
     ~1 { result = KeyC('f'); expect = 0x66; macro(check); }
 
+    SetString test_name[1] ": KeyC( )"
+    ~1 { result = KeyC(' '); expect = 0x20; macro(check); }
+
+    SetString test_name[1] ": KeyC(~)"
+    ~1 { result = KeyC('~'); expect = 0x7e; macro(check); }
+
     SetString test_name[1] ": Sw2KC(Shift_F1)-1"
     ~1 { result = Sw2KC(Shift_F1); expect = 213; macro(check); }
 

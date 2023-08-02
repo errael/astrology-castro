@@ -19,6 +19,7 @@ INFRA_FILES="
     expressions
     flow_control
     functions
+    astrolog_constants
     test_infra
     main
 "

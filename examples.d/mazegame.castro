@@ -49,7 +49,7 @@ var maze[2] @50;
  *      l - one-shot flag, clear it to report time and finished message
  */
 
-var cprintf_save_area[10]; // don't let printf chnage builtin variables
+var cprintf_save_area[10]; // avoid cprintf changing builtin variables
 
 /*
  * There are multiple sets of keys for navigation; data in nav_info.
@@ -60,7 +60,7 @@ var cur_nav_idx;
 // Note that number/strings occupy the same location at the same time;
 // kind of like a struct with a number and a string.
 /*
- * Initialize with macro addresses for navigation.
+ * Initialize macro addresses for navigation.
  */
 var nav_info[] { MacroAddress(nav_wasd), MacroAddress(nav_vi) };
 
