@@ -50,6 +50,7 @@ import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.parseInt;
 import static com.raelity.astrolog.castro.Util.reportError;
+import static com.raelity.astrolog.castro.Constants.isConstantName;
 
 
 /** During parse, handle variable declarations, layout, valid function name;
@@ -140,8 +141,8 @@ void declareVar(ParserRuleContext _ctx)
     if(hasErrorNode(idNode) || hasErrorNode(addrNode))
         return;
     Token id = idNode.getSymbol();
-    if(Constants.isConstant(id)) {
-        reportError(_ctx, "'%s is a constant, can not declare as a variable", constantName(id.getText()));
+    if( isConstantName(id)) {
+        reportError(_ctx, "'%s is a constant name, can not declare as a variable", constantName(id));
         return;
     }
     int addr = addrNode == null ? -1 : parseInt(addrNode.i);

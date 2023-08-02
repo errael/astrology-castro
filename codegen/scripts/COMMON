@@ -1,0 +1,8 @@
+
+ASTROLOG_ROOT=/ref/tools/astrolog.d/Astrolog
+SRC_FUNCTIONS=$ASTROLOG_ROOT/express.cpp
+SRC_CONSTANTS=$ASTROLOG_ROOT/data.cpp
+
+CASTRO_ROOT=/src/astro/castro/codegen
+
+CASTRO_TABLES=$CASTRO_ROOT/castro/src/main/java/com/raelity/astrolog/castro/tables

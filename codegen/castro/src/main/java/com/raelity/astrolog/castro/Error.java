@@ -17,6 +17,7 @@ VAR_RSV("var-rsv",            "assign variable to reserved area"),
 ARRAY_OOB("array-oob",        "array index out of bounds"),
 OCTAL_CONST("octal-const",    "octal constant"),
 INNER_QUOTE("inner-quote",    "inner quote in string stripped"),
+CONST_AMBIG("const-ambig",    "constant id is ambiguous"),
 
 ///// MIXED_QUOTES("mixed-quotes"),   // mixed quotes in command
 /////                               see MIXED_QUOTES in PassOutput

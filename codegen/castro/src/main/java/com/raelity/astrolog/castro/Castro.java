@@ -212,7 +212,7 @@ public static void main(String[] args)
     
     EnumSet<OutputOptions> oset = EnumSet.noneOf(OutputOptions.class);
     // Default warnings
-    EnumSet<Error> warnset = EnumSet.of(FUNC_CASTRO, VAR_RSV, INNER_QUOTE);
+    EnumSet<Error> warnset = EnumSet.of(FUNC_CASTRO, VAR_RSV, INNER_QUOTE, CONST_AMBIG);
     int c;
     while ((c = g.getopt()) != -1) {
         switch (c) {

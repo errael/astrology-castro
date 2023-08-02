@@ -3,17 +3,15 @@
 CMD=${0##*/}
 DIR=${0%/*}
 
-ASTROLOG_ROOT=/ref/tools/astrolog.d/Astrolog
-SRC_FILE=$ASTROLOG_ROOT/express.cpp
+. $DIR/COMMON
 
-#CASTRO_ROOT=/ref/tools/astrolog.d/castro/AstroComp
-CASTRO_ROOT=/src/astro/castro/codegen
-# Target location
-
+exit_msg() {
+    echo "target: $CASTRO_TABLES/AstrologFunctions.java" >&2
+}
 
 extract() {
     #{funFalse, "False", 0, I_},
-    grep '^{fun' $SRC_FILE \
+    grep '^{fun' $SRC_FUNCTIONS \
         | sed -E 's/\{fun\w+,\s+(".*"),\s+([0-9]),\s+(\w+).*$/    f.add(\1, \2, "\3");/'
 
     #   | sed -E 's/\{fun\w+,\s+(".*"),\s+([0-9]).*$/    funcs.put(\1, \2);/'
@@ -47,5 +45,5 @@ cat <<"CODE"
 }
 CODE
 
-echo "target: $CASTRO_ROOT/castro/src/main/java/com/raelity/astrolog/castro/tables/AstrologFunctions.java" >&2
+exit_msg
 

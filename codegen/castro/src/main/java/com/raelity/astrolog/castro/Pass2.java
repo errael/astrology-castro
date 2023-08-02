@@ -23,13 +23,14 @@ import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
 
-import static com.raelity.astrolog.castro.Constants.isConstant;
+import static com.raelity.astrolog.castro.Constants.constant;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.lvalArg2Func;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUMMY;
 import static com.raelity.astrolog.castro.Util.getText;
 import static com.raelity.astrolog.castro.antlr.AstroLexer.Tilde;
+import static com.raelity.astrolog.castro.Constants.isConstantName;
 
 ////////////////////////////////////////////////////////////////////
 // TODO: In addition to vars, check switch/macro
@@ -73,9 +74,10 @@ private void checkReportUnknownVar(LvalContext ctx, Token token)
     Func_callContext fc_ctx = lvalArg2Func(ctx);
     if(fc_ctx != null && isDoneReportSpecialFuncArgs(fc_ctx))
         return;
-    if(isConstant(token)) {
-        if(!(ctx instanceof LvalMemContext))
-            reportError(token, "constant '%s' used as a variable", token.getText());
+    if(isConstantName(token)) {
+        String constant = constant(token);
+        if(constant != null && !(ctx instanceof LvalMemContext))
+            reportError(token, "constant name '%s' used as a variable", constant);
         return;
     } else
         reportError(token, "unknown variable '%s' (first occurance)",

@@ -208,10 +208,11 @@ Note that `@12` assigns 12 to the switch address which binds it to **F12**; it i
                     %s to print a string, use its address as the arg.
     arguments     - One AstroExpression per format specifier.
                     Arguments is optional.
+    var cprintf_save_area[10]; - Define this for cprintf to save/restore variables.
 ```
 Example: `cprintf "v1 %d, v2 %d" {~ 3 + 4; 7 + 4; }`
 
-`cprintf` optionally does a **save/restore of the variables** it uses. It does this by looking for an array variable named `cprintf_save_area` and using it if found.
+`cprintf` optionally does a **save/restore of the variables** it uses. It does this by looking for an array variable named `cprintf_save_area` and using it if found. Recursive use of cprintf will not restore reliably.
 ```
 var cprintf_save_area[10];  // save area for cprintf temps, up to 10.
 ```
@@ -222,7 +223,7 @@ var cprintf_save_area[10];  // save area for cprintf temps, up to 10.
 The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
 
 ###     copy
-The `copy{LITERALLY_COPIED_TO_OUTPUT}` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround. All whitespace, including newlines, is copied as is. Use '\}' to include a '}' in the output. It's unclear if this is needed, it does provide a way to redefine a macro/switch.
+The `copy{LITERALLY_COPIED_TO_OUTPUT}` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround. All whitespace, including newlines, is copied as is. Use '\\}' to include a '}' in the output. It's unclear if this is needed, it does provide a way to redefine a macro/switch.
 
 ###     Variables
 
@@ -268,23 +269,22 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
     run { ~1 { switch(some_switch); }
     switch some_switch { -YYT "Boo\n" }
 ```
-- Optimize `a = b - 1;` to `=a Dec b`
-- Capture/extract known constants from astrolog, only allow valid constants.
-- Treat function that take no args as builtin variables? Then could use `Mon` instead of `Mon()`.
 
 
 ##     Warnings/Oddities:
 - `castro` checks for valid `AstroExpression` function names. There is no such check for valid switch commands; if that information becomes available, `castro` will use it.
 - Too long switch or macro don't fit in `Astrolog`'s parser; there is no "too large" error. There is often an apparently unrelated error message. Splitting it into two...
 - Some cases where blanks are significant
-    - The functions `=Obj` and `=Hou` can cause problems, for example `a==Obj(...)` is parsed as `a == Obj(...)`,
-      write `a= =Obj(...)` for assignment.
+    - The functions `=Obj` and `=Hou` can cause problems, for example<br>
+      `a==Obj(...)` is parsed as `a == Obj(...)`, write `a= =Obj(...)` for assignment.
       `castro` provides `AssignObj(...)` and `AssignHou(...)` as unambiguous alternates.
     - `{~` starts an `AstroExpression` whose value is used as a parameter to a `command switch`,
       for example `=R {~ a+b; }`.
       But `{ ~ a+b; }`, with a space between `{` and `~`, parses as `{ (~a) + b; }`.
 
-- A `switch` is almost free form text, except inside `AstroExpression`s as with `~cmd {...}` and `-cmd {~ ... }`. If a command switch argument contains language special characters, like the `:` in `-zl "122W19:59" "47N36:35"` quote the word as shown.
+- A `switch` is almost free form text, except inside `AstroExpression`s as with<br>
+    `~cmd {...}` and `-cmd {~ ... }`. If a command switch argument contains language special characters,<br>
+    like the `:` in `-zl "122W19:59" "47N36:35"` quote the word as shown.
 
 - `;` ends an expression. Beware a missing `;`. Consider
     ```
@@ -308,13 +308,13 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
 
 ### switch and macro statements
 
-- `macro` declares/defines an `AstroExpression macro` with `~M`.
-- `switch` declares/defines a `command switch macro` with `-M0`.
+- `macro` defines an `AstroExpression macro` with `~M`.
+- `switch` defines a `command switch macro` with `-M0`.
 - Quoted string can not have embedded quotes of any type.
 
-And see [Flow Control Statements](#flow-control-statements) used in macro.
-The last expression of a macro is the _return_ value.
-Use `&arr + expr` because &arr[expr] doesn't work.
+And see [Flow Control Statements](#flow-control-statements) used in macro.<br>
+The last expression of a macro is the _return_ value.<br>
+Use `&arr + expr` because &arr[expr] isn't implemented.
 
 ```
 macro macroName { aspect = 7; orb = 2; } // returns 2
@@ -345,6 +345,7 @@ var var2 {567}; // declare/init var2 to 567
 ```
 
 ### castro functions
+
 See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
 
 | Function Name | Alias | usage ex | note |
@@ -363,15 +364,29 @@ switch func_key_demo { ... }
 run { ~XQ { if (z == KeyC("a") z = Sw2KC(func_key_demo); } }
 ```
 
-### castro constants
-See [mazegame](examples.d/mazegame.castro) for example usage.
+### constants
 
-Integer constants: `201`, `0xc9`, `0b11001001`.
+Integer constants: `201`, `0xc9`, `0b11001001`.<br>
+Constants are case insensitive.<br>
 
-`FK_F0` - 200 is the zero base for the X11 function keys input value,
+#### astrolog constants
+
+Identifiers that start with `M_`, `O_`, `A_`, `H_`, `S_`, `K_`, `W_`, `Z_`
+are AstrologConstants.<br>
+See [Astrolog Constants](docs/AstrologConstants.md) for tables of constants.
+
+The entire constant name is not needed,
+only 3 characters are required after the prefix;
+in a few instances more characters are needed to disambiguate.
+Except for `K_` and `Z_`, `castro` checks for valid constants;
+`K_` and `Z_` are passed through as is to `Astrolog`.
+
+#### castro constants
+
+`FK_F0` - the base for the X11 function key codes,
 see ~XQ at [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express).
 
-Only FK_F0 is a defined constant. The following is for reference.
+For function keys, only `FK_F0` is a defined constant. The following is for reference.
 | key | switch slot | fkey number | note |
 | --- | ----------- | ----------- | ---- |
 |FK_F0      | ----- | 200  | not a function key, but works well with math
@@ -382,7 +397,7 @@ Only FK_F0 is a defined constant. The following is for reference.
 
 ```
 switch func_key @3 { ... }    // This switch invoked by pressing F3
-// hook so when 'a' key (ascii 97) is pressed, map it to F3
+// hook so when 'a' key (ascii 97) is pressed, map it to `func_key` which is F3
 run { ~XQ { if (z == KeyC("a") z = FK_F0 + SAddr(func_key); } }
 ```
 <!--
@@ -404,48 +419,6 @@ switch cpr {
 }
 ```
 
-### castro command help
-```
-Usage: castro [-h] [several-options] [-o outfile] infile+
-    infile may be '-' for stdin.
-    if outfile not specified, it is derived from infile.
-    -o outfile      allowed if exactly one infile, '-' is stdout
-    --mapname=mapname     Map file name is <mapname>.map.
-                            Default is derived from first infile.
-    --Ewarn=ename   Make the specified error a warning.
-                    Default: warn for func-castro and var-rsv.
-                    Can do no-ename to turn warning to error.
-                    Use --Ewarn=junk for a list.
-    --formatoutput=opt1,... # comma separated list of:
-            min             - no extra/blank lines
-            qflip           - quote flip default inner/outer
-            bslash          - split into new-line/backslash lines
-            nl              - split into lines
-            indent          - indent lines
-            run_nl          - split into lines
-            run_indent      - indent lines
-            debug           - precede macro output with original text
-        Default is no options; switch/macro/run on a single line
-        which is compatible with all Astrolog versions.
-        "min"/"qflip" usable with any Astrolog version.
-    --anonymous     no dates/versions in output files (for test golden)
-    --version       version
-    -h      output this message
+### castro help output
 
-    The following options are primarily for debug. --gui is also fun to see
-    and may provide insight. It shows how the program is parsed. Only uses
-    the first file and does not generate any compilation output files.
-    --gui           show AST in GUI
-    --console       show the AST in the console
-    --test  output prefix parse data
-    -v      output more info
-
-Errors that can be made warnings
-    func-unk     unknown function
-    func-narg    wrong number of function arguments
-    func-castro  function used internally for code generation
-    var-rsv      assign variable to reserved area
-    array-oob    array index out of bounds
-    octal-const  octal constant
-    inner-quote  inner quote in string
-```
+See [output of `castro -h`](docs/CastroCommandHelp.md)
