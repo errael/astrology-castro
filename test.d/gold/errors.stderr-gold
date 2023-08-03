@@ -1,0 +1,2 @@
+Error: errors.castro:10:8 '    c = o_xxxx;' constant 'o_xxxx' not found
+Pass2: 1 errors

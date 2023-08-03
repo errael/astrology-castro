@@ -373,7 +373,7 @@ Constants are case insensitive.<br>
 
 Identifiers that start with `M_`, `O_`, `A_`, `H_`, `S_`, `K_`, `W_`, `Z_`
 are AstrologConstants.<br>
-See [Astrolog Constants](docs/AstrologConstants.md) for tables of constants.
+See [Astrolog Constants](https://github.com/errael/astrology-castro/wiki/astrolog-constants) for the constants in tabular form.
 
 The entire constant name is not needed,
 only 3 characters are required after the prefix;
@@ -421,4 +421,4 @@ switch cpr {
 
 ### castro help output
 
-See [output of `castro -h`](docs/CastroCommandHelp.md)
+See [output of `castro -h`](https://github.com/errael/astrology-castro/wiki/castro-help)

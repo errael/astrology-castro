@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.Token;
 
@@ -95,7 +96,7 @@ private StringBuilder sb = new StringBuilder();
 private EnumSet<ConstantFlag> tmpConstantFlagSet = EnumSet.noneOf(ConstantFlag.class);
 
 private Constants() {
-    //displayConstants(); System.exit(0);
+    if(Boolean.FALSE) { displayConstants(); System.exit(0); }
     initExactConstants();
     setupAstrologImport();
 }
@@ -147,35 +148,22 @@ private Info findName(Token token)
         else
             return null;
     }
-    Info match = null;
-    Info match_low_pri = null;
-    List<String> ambig = new ArrayList<>();
-    List<String> ambig_low_pri = new ArrayList<>();
+
+    List<Info> matches = new ArrayList<>();
+    List<Info> matches_low_pri = new ArrayList<>();
     for(Entry<String, Info> entry : tail.entrySet()) {
         String key = entry.getKey();
         Info info = entry.getValue();
         if(!key.startsWith(id))
             break;
-        // When there's more than one match, take the first match.
-        // So if there's foo and foo1, then foo wins because it sorts first.
-        if(!info.flags.contains(LOW_PRI)) {
-            if(match == null)
-                match = info;
-            ambig.add(info.id);
-        } else {
-            if(match_low_pri == null)
-                match_low_pri = info;
-            ambig_low_pri.add(info.id);
-        }
+        (info.flags.contains(LOW_PRI) ? matches_low_pri : matches).add(info);
     }
-    if(match != null) {
-        repErr(token, ambig);
-        return match;
-    }
-    if(match_low_pri == null)
+    List<Info> winner = !matches.isEmpty() ? matches : matches_low_pri;
+    if(winner.isEmpty())
         repErr(token);
-    repErr(token, ambig_low_pri);
-    return match_low_pri;
+    repErr(token, winner);
+    // When there's more than one match, take the first match.
+    return winner.isEmpty() ? null : winner.get(0);
 }
 
 private void repErr(Token token)
@@ -187,14 +175,15 @@ private void repErr(Token token)
 
 }
 
-private void repErr(Token token, List<String> ambig)
+private void repErr(Token token, List<Info> matches)
 {
-    if(ambig.size() <= 1)
+    if(matches.size() <= 1)
         return;
     if(didReport.get(token) != null)
         return;
     reportError(CONST_AMBIG, token, "constant '%s' is ambiguous: %s",
-                                        token.getText(), ambig);
+                token.getText(),
+                matches.stream().map((m) -> m.id).collect(Collectors.toList()));
     didReport.put(token, Boolean.TRUE);
 
 }

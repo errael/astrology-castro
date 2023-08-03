@@ -12,6 +12,7 @@ play
 test.d/*.as
 test.d/*.def
 test.d/*.map
+test.d/*.stderr
 astrotest.d/*.as
 astrotest.d/*.def
 astrotest.d/*.map

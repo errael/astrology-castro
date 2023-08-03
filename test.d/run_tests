@@ -5,7 +5,7 @@ DIR=${0%/*}
 
 . $DIR/TEST_COMMON
 
-set -e
+#set -e
 
 TESTS="
     assignments.castro
@@ -18,6 +18,8 @@ TESTS="
     special-func.castro
     switch.castro
     unary-ops.castro
+    warnings.castro
+    errors.castro
 "
 
 usage() {
@@ -68,9 +70,10 @@ then
 fi
 nFiles=${#files[@]}
 
+declare -a files_stderr=($TESTS_STDERR)
+
 # Running the tests from their directory, gives nice short names.
 cd $DIR
-
 
 Main() {
     run_all
@@ -79,9 +82,13 @@ Main() {
 typeset -A error_tests
 typeset -A error_files
 
+#
+# current_test global
+#
 run_all() {
     for t in ${files[@]}
     do
+        current_test=${t%.castro}
         run_test $t
     done
 
@@ -92,38 +99,71 @@ run_all() {
     fi
 }
 
-#
-# cur_test used by callees
-#
 run_test() {
-    local cur_test=${1%.castro}
     if ((cleanflag))
     then
-        rm -f $cur_test.as $cur_test.def $cur_test.map $cur_test.test
+        rm -f $current_test.as $current_test.def $current_test.map \
+            $current_test.stderr $current_test.test
         return
     fi
 
     echo === running $t
-    tcastro --anon $cur_test.castro
-    check_result $cur_test
+    tcastro  $current_test.castro 2> $current_test.stderr
+    check_result
 }
 
 check_result() {
     check_one as
     check_one def
     check_one map
+    check_one stderr
 }
 
 check_one() {
     local ext=$1
 
-    if ! diff gold/$cur_test.$ext-gold $cur_test.$ext
+    #echo "CHECKING: $1"
+    if ! diff gold/$current_test.$ext-gold $current_test.$ext
     then
         #echo "FAIL DIFF '$cur_test.$ext'"
         #echo "adding to error '$cur_test'"
-        error_tests+=($cur_test)
-        error_files+=($cur_test.$ext)
+        error_tests+=($current_test)
+        error_files+=($current_test.$ext)
     fi
 }
 
-Main
+# return true if $1 array contains $2
+# NOTE: $1 is a reference to the array.
+contains() {
+    local -n array=$1
+    local val=$2
+    local i
+    local found=1 # which means not found
+    for i in ${array[@]}
+    do
+        if [[ $i == $val ]]
+        then
+            found=0
+            break;
+        fi
+    done
+    return $found
+}
+
+#echo "check foo"
+#if contains files foo
+#then
+#    echo "    found"
+#else
+#    echo "    notfound"
+#fi
+#
+#echo "check warnings"
+#if contains files warnings
+#then
+#    echo "    found"
+#else
+#    echo "    notfound"
+#fi
+
+Main "$@"

@@ -1,9 +1,23 @@
 #!/bin/bash
 
-CASTRO_JAR=$DIR/../codegen/castro/build/libs/castro-0.6.0.jar
+VER=$(castro-latest)
+
+CASTRO_JAR=$DIR/../codegen/castro/build/libs/castro-$VER.jar
+
+# Can specify extra args per test, note test_name is WITHOUT the ".castro"
+#       like: extra_args=(blocks "-EWarn=-no-func-unk") # initializes entire array
+#       or: extra_args[test_name]+=" args"   # appends to extra_args for test_name
+#       or: extra_args[test_name]="args"     # wipes out current extra_args for test_name
+#       or: extra_args+=([test_name]="args") # wipes out current extra_args for test_name
+
+declare -A extra_args=()
+typeset current_test=
 
 tcastro() {
-    java -jar $CASTRO_JAR --form=nl,indent,run_nl,run_indent "$@"
+
+    java -jar $CASTRO_JAR --form=nl,indent,run_nl,run_indent \
+    --anon --Ewarn=all ${extra_args[$current_test]} \
+        "$@"
 }
 
 castro() {

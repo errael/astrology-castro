@@ -100,7 +100,7 @@ switch smaller    @3  { ~1 { if (d > 1) d -= 1; Switch(new_maze); } }
 switch larger     @4  { ~1 { if (d < 25) d += 1; Switch(new_maze); } }
 switch restart    @5  { -n ~1 { a = 1; b = 0; k = 0; } }
 
-// The nav keys are mapped to F6-F9
+// The nav keys locations are automatically allocated
 switch left  { ~1 { a -= 1; if (Macro(z_is_wall)) a += 1; } }
 switch right { ~1 { a += 1; if (Macro(z_is_wall)) a -= 1; } }
 switch up    { ~1 { b -= 1; if (Macro(z_is_wall)) b += 1; } }

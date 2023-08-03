@@ -1,0 +1,67 @@
+/*
+ * Check out some warnings.
+ */
+
+layout memory { reserve 30:40; }
+
+// Golden files the way to go?
+
+macro func_unk {
+    foo();
+    bar(a, b);
+    foo(a);
+}
+
+macro func_narg {
+    Lat(a);
+    Int();
+    Tween(a,b);
+    dbox(a,b,c);
+}
+
+macro func_castro {
+    a = Add(a+b,c+d);
+    b = Mod(c,d);
+}
+
+var rr @35;
+macro var_rsv {
+    rr = a * b;
+}
+
+var pp[4];
+var qq;
+macro array_oob {
+    a = pp[4];
+    a = qq[0];
+    a = qq[1];
+}
+
+macro octal_const {
+    a = 0123;
+}
+
+switch inner_quote {
+    -YYT "one'two"
+}
+
+macro constant_ambig {
+    a = a_quatro;
+    b = a_quatron;
+    c = a_quatrou;
+
+    d = o_titan;
+
+    e = o_rahu;
+    f = o_m_c;
+
+    // unkown var
+    // a = o_ne;
+    // a = o_pl;
+
+    // ambig
+    g = o_nep;
+    h = o_plu;
+    i = h_equ;
+    j = o_nod;
+}

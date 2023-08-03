@@ -13,27 +13,28 @@ Main() {
     run_all "$@"
 }
 
+#
+# current_test global
+#
 run_all() {
     for t in "$@"
     do
+        current_test=${t%.castro}
+        echo "current_test: $current_test"
         gen $t
     done
 }
 
-#
-# cur_file used by callees
-#
 gen() {
-    local cur_file=${1%.castro}
-    echo "generating gold for '$cur_file'"
-    tcastro --anon $cur_file.castro
+    tcastro $current_test.castro 2> $current_test.stderr
     make_gold
 }
 
 make_gold() {
-    mv $cur_file.as gold/$cur_file.as-gold
-    mv $cur_file.def gold/$cur_file.def-gold
-    mv $cur_file.map gold/$cur_file.map-gold
+    mv $current_test.as gold/$current_test.as-gold
+    mv $current_test.def gold/$current_test.def-gold
+    mv $current_test.map gold/$current_test.map-gold
+    mv $current_test.stderr gold/$current_test.stderr-gold
 }
 
 Main "$@"

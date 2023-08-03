@@ -87,6 +87,9 @@ private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 
 private static int optVerbose;
 
+private static EnumSet<Error> defaultWarn
+        = EnumSet.of(FUNC_CASTRO, VAR_RSV, INNER_QUOTE, CONST_AMBIG);
+
 public static String getVersionString()
 {
     String version;
@@ -139,6 +142,8 @@ static void usage(String note)
 {
     if(note != null)
         System.err.printf("%s: %s\n", cmdName, note);
+    String defaultW = defaultWarn.stream().map((e) -> e.toString())
+            .collect(Collectors.joining(" "));
     String usage = """
             Usage: {cmdName} [-h] [several-options] [-o outfile] infile+
                 infile may be '-' for stdin.
@@ -147,9 +152,13 @@ static void usage(String note)
                 --mapname=mapname     Map file name is <mapname>.map.
                                         Default is derived from first infile.
                 --Ewarn=ename   Make the specified error a warning.
-                                Default: warn for func-castro and var-rsv.
+                                Multiple uses is additive.
                                 Can do no-ename to turn warning to error.
+                                Use --Ewarn=all for all errors as warnings.
+                                Use --Ewarn=none for no errors as warnings.
+                                Order is important when using all/none.
                                 Use --Ewarn=junk for a list.
+                                Default: {defaultWarn}.
                 --formatoutput=opt1,... # comma separated list of:
                         min             - no extra/blank lines
                         qflip           - quote flip default inner/outer
@@ -173,7 +182,7 @@ static void usage(String note)
                 --console       show the AST in the console
                 --test  output prefix parse data
                 -v      output more info
-            """.replace("{cmdName}", cmdName);
+            """.replace("{cmdName}", cmdName).replace("{defaultWarn}", defaultW);
     System.err.println(usage);
     System.err.println(listEwarnOptions());
     usageExit();
@@ -212,7 +221,7 @@ public static void main(String[] args)
     
     EnumSet<OutputOptions> oset = EnumSet.noneOf(OutputOptions.class);
     // Default warnings
-    EnumSet<Error> warnset = EnumSet.of(FUNC_CASTRO, VAR_RSV, INNER_QUOTE, CONST_AMBIG);
+    EnumSet<Error> warnset = EnumSet.copyOf(defaultWarn);
     int c;
     while ((c = g.getopt()) != -1) {
         switch (c) {
@@ -230,7 +239,7 @@ public static void main(String[] args)
             for(String opt : opts) {
                 OutputOptions oo = OutputOptions.parse(opt);
                 if(oo == null)
-                    usage("Unknown output option '"+opt+"'");
+                    usage("Unknown output option '" + opt + "'");
                 oset.add(oo);
             }
         }
@@ -238,6 +247,15 @@ public static void main(String[] args)
         case 5 -> mapName = g.getOptarg();
         case 6 -> {
             // Option is to make Error a warning.
+            if(g.getOptarg().equals("all")) {
+                warnset.addAll(EnumSet.allOf(Error.class));
+                break;
+            }
+            if(g.getOptarg().equals("none")) {
+                warnset.clear();
+                break;
+            }
+
             EParse e = Error.parseErrorName(g.getOptarg());
             if(e == null) {
                 System.err.printf("'%s' unknown error name\n%s",
