@@ -3,6 +3,7 @@
 CMD=${0##*/}
 DIR=${0%/*}
 
+# NOTE: with the following commented out, the public castro is used.
 #. $DIR/../test.d/TEST_COMMON
 
 set -e

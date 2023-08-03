@@ -15,6 +15,9 @@ section. If there is not a default match, then a low priority match
 is used. For example, `H_Whole_EP` is the primary, and `H_W_EP` is the
 low priority.
 
+These tables are programatically assembled;
+they are extracted from the `Astrolog` source, massaged, and output.
+
 ### Signs - prefix S_
 |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- |

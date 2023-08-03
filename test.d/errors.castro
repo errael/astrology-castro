@@ -1,0 +1,11 @@
+/*
+ * Check out some errors.
+ */
+
+macro constant_errors {
+    // unkown var
+    // a = o_ne;
+    // b = o_pl;
+
+    c = o_xxxx;
+}

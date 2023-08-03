@@ -1,0 +1,19 @@
+Warn: warnings.castro:10:4 unknown function 'foo'
+Warn: warnings.castro:11:4 unknown function 'bar'
+Warn: warnings.castro:16:4 function 'Lat' argument count, expect 0 not 1
+Warn: warnings.castro:17:4 function 'Int' argument count, expect 1 not 0
+Warn: warnings.castro:18:4 function 'Tween' argument count, expect 3 not 2
+Warn: warnings.castro:19:4 function 'dbox' argument count, expect 4 not 3
+Warn: warnings.castro:27:4 'var rr @35;' 'rr' assigned to reserve area
+Warn: warnings.castro:35:8 '    a = pp[4];' 'pp[4]' array index out of bounds
+Warn: warnings.castro:37:8 '    a = qq[1];' 'qq[1]' array index out of bounds
+Warn: warnings.castro:49:8 '    a = a_quatro;' constant 'a_quatro' is ambiguous: [A_QuatroNovile, A_QuatroUndecile]
+Warn: warnings.castro:53:8 '    d = o_titan;' constant 'o_titan' is ambiguous: [O_Titan, O_Titania]
+Warn: warnings.castro:63:8 '    g = o_nep;' constant 'o_nep' is ambiguous: [O_NepCOB, O_Neptune]
+Warn: warnings.castro:64:8 '    h = o_plu;' constant 'o_plu' is ambiguous: [O_PluCOB, O_Pluto]
+Warn: warnings.castro:65:8 '    i = h_equ;' constant 'h_equ' is ambiguous: [H_Equal, H_Equal_Balanced, H_Equal_EP, H_Equal_MC, H_Equal_Vertex]
+Warn: warnings.castro:66:8 '    j = o_nod;' constant 'o_nod' is ambiguous: [O_Nod_, O_Node]
+Warn: warnings.castro:23:8 '    a = Add(a+b,c+d);' using castro operator 'Add' as a function
+Warn: warnings.castro:24:8 '    b = Mod(c,d);' using castro operator 'Mod' as a function
+Warn: warnings.castro:41:8 '    a = 0123;' '0123' Octal constant
+Warn: warnings.castro:45:9 '    -YYT "one'two"' '"one'two"' string has inner quotes, stripping
