@@ -142,7 +142,7 @@ void declareVar(ParserRuleContext _ctx)
         return;
     Token id = idNode.getSymbol();
     if( isConstantName(id)) {
-        reportError(_ctx, "'%s is a constant name, can not declare as a variable", constantName(id));
+        reportError(_ctx, "'%s' is a constant, can not declare '%s' as a variable", constantName(id), id.getText());
         return;
     }
     int addr = addrNode == null ? -1 : parseInt(addrNode.i);

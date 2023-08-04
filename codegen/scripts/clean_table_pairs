@@ -25,6 +25,8 @@ package com.raelity.astrolog.castro.tables;
 
 public class AstrologConstants
 {
+private AstrologConstants() { }
+
 
 CODE
 

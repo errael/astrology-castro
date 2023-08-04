@@ -1,9 +1,10 @@
 
 run {
     ~1 {
+        Switch(test_case_insensitive);
+        Switch(test_astrolog_constants);
         Switch(test_expressions);
         Switch(test_flow_control);
         Switch(test_functions);
-        Switch(test_astrolog_constants);
     }
 }
