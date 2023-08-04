@@ -1,15 +1,24 @@
-# astrology-castro - v1 beta.1
-`castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression` (and WYSIWYG). `castro` is a standalone tool; its output is a `.as` file that can be used with `Astrolog`'s command switch `-i <filename>`. `castro` easily interoperates with existing `Astrolog` command switch files.
+# astrology-castro - v1 beta.2
+`castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression` (and WYSIWYG). `castro` is a standalone tool. It outputs a `.as` file that can be used with `Astrolog`'s command switch `-i <name>.as`. `castro` easily interoperates with existing `Astrolog` command switch files.
 
 Some motivating factors for `castro`
 - familiar expression syntax (avoid writing and maintaining the prefix notation expressions),
 - referring to things by name rather than address.
 - automatic memory allocation
 
-#####    There's a cheat sheet
+**There's a cheat sheet**<br>
 For those who like to play around before reading the docs: [cheat sheet](#cheat-sheet).
 
-Here's a simple example. Note that the switch, macro and variable definitions could be in 3 different files. As in `Astrolog`, function names are case insensitive. _Switch and macro names are case sensitive_.
+**Building castro**<br>
+See [codegen](codegen).
+<!--
+See `grammar`/[README](grammar/README.md)
+and `codegen`/[README](codegen/README.md).
+-->
+
+Here's a simple example. Note that the switch, macro and variable definitions could be in 3
+different files. As in `Astrolog`, function names are case insensitive;
+following that convention _Switch and macro names are case insensitive_.
 ```
 var yearA;
 var yearB;
@@ -68,6 +77,7 @@ macro b_macro @55 { ... }       // from another file: '~1 "Macro 55"'
 
 ####    variable differences
 
+- Variable names are case insensitive.
 - Single char variable names 'a' to 'z' are pre-declared.
   AstroExpression hooks use as much as %u ... %z.
   [castro printf](#castro-printf) uses as much as %a ... %j but there is a
@@ -332,6 +342,8 @@ switch switchName { -Ao {~ aspect; } {~ orb; }
 ### variables & layout
 [Declare/initialize numeric/string variables](#variables)
 
+Varible names are case insensitive.
+
 ```
 layout memory { base 101; limit 111; reserve 104, 106:108; }
 ```
@@ -341,7 +353,7 @@ Also can specify `layout` for `switch`/`macro`. `limit` is exclusive, all else i
 ```
 var a {123};    // init builtin variable a to 123
 var var1 @30;   // declare variable var1 assigned to specific location
-var var2 {567}; // declare/init var2 to 567
+var var2[3] {456, 789}; // declare var2 with 3 elements, init first two.
 ```
 
 ### castro functions

@@ -344,7 +344,7 @@ public static void checkReport(Var var, Object... msg)
         }
         optMsg = sb.toString();
     }
-    reportError(var.getId(), "%s %s %s", var.getName(), var.getState(), optMsg);
+    reportError(var.getId(), "'%s' %s %s", var.getName(), var.getState(), optMsg);
 }
 
 public static <T> T lookup(Class<T> clazz)

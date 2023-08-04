@@ -1,3 +1,8 @@
+Identifiers that start with `M_`, `O_`, `A_`, `H_`, `S_`, `K_`, `W_`, `Z_`
+are AstrologConstants. `castro` checks most of them for validity.
+The constants prefixed by `K_` and `Z_` are not checked;
+they are passed through verbatim.
+
 Almost all of the names are the same as the Astrolog names.
 Some of the names in these tables are derived. In particular,<br>
 `'-'`, `'.'`, `':'`, `' '` are replaced with `'_'`;<br>
@@ -18,24 +23,24 @@ low priority.
 These tables are programatically assembled;
 they are extracted from the `Astrolog` source, massaged, and output.
 
-### Signs - prefix S_
+### Signs - prefix: `S_`
 |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- |
 | Aries | Taurus | Gemini | Cancer | Leo | Virgo |
 | Libra | Scorpio | Sagittarius | Capricorn | Aquarius | Pisces |
 
-### Months - prefix M_
+### Months - prefix: `M_`
 |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- |
 | January | February | March | April | May | June |
 | July | August | September | October | November | December |
 
-### Days - prefix W_
+### Days - prefix: `W_`
 |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- |
 | Sunday | Monday | Tuesday | Wednesday | Thursday | Friday |
 | Saturday 
-### Aspects - prefix A_
+### Aspects - prefix: `A_`
 |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- |
 | Con | Opp | Squ | Tri | Sex | Inc |
@@ -51,7 +56,7 @@ they are extracted from the `Astrolog` source, massaged, and output.
 | Septile | Novile | BiNovile | BiSeptile | TriSeptile | QuatroNovile |
 | TreDecile | Undecile | BiUndecile | TriUndecile | QuatroUndecile | QuintUndecile |
 | Parallel | ContraParallel | Quincunx | Octile 
-### Houses - prefix H_
+### Houses - prefix: `H_`
 |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- |
 | Placidus | Koch | Equal | Campanus | Meridian | Regiomontanus |
@@ -69,7 +74,7 @@ they are extracted from the `Astrolog` source, massaged, and output.
 | W_MC | V_MC | E_Bal | W_Bal | V_Bal | E_EP |
 | W_EP | V_EP | E_Ver | W_Ver | V_Ver | P_EP |
 | P_Ver | SR_EP | SR_Ver | SD_EP | SD_Ver 
-### Objects - prefix O_
+### Objects - prefix: `O_`
 #### Planets
 |     |     |     |     |     |     |
 | --- | --- | --- | --- | --- | --- |

@@ -1,0 +1,101 @@
+/*
+ * Verify case insensitivity
+ */
+
+layout memory { base 150; limit 200; }
+layout macro { base 150; limit 200; }
+layout switch { base 150; limit 200; }
+
+switch test_case_insensitive {
+    ~1 {
+        switch(test_var_case);
+        switch(test_macro_case);
+        switch(test_switch_case);
+    }
+}
+
+var Foo {123};
+
+switch test_var_case {
+    SetString test_name[0] "test_var_case"
+
+    SetString test_name[1] ": Foo"
+    ~1 { result = Foo; expect = 123; macro(check); }
+
+    SetString test_name[1] ": FOO"
+    ~1 { result = FOO; expect = 123; macro(check); }
+
+    SetString test_name[1] ": foO"
+    ~1 { result = FoO; expect = 123; macro(check); }
+}
+
+var macro_switch_var;
+macro lc_macro {
+    macro_switch_var += 1;
+}
+
+macro UC_MACRO {
+    macro_switch_var += 2;
+}
+
+switch test_macro_case {
+    SetString test_name[0] "test_macro_case"
+
+    SetString test_name[1] ": lc_macro"
+    ~1 { macro_switch_var = 356; }
+    ~1 { result = macro(lc_macro); expect = 357; macro(check); }
+
+    SetString test_name[1] ": LC_macro"
+    ~1 { result = macro(LC_macro); expect = 358; macro(check); }
+
+    SetString test_name[1] ": lc_MACRO"
+    ~1 { result = macro(lc_MACRO); expect = 359; macro(check); }
+
+    SetString test_name[1] ": UC_MACRO"
+    ~1 { macro_switch_var = 367; }
+    ~1 { result = macro(UC_MACRO); expect = 369; macro(check); }
+
+    SetString test_name[1] ": UC_macro"
+    ~1 { result = macro(UC_macro); expect = 371; macro(check); }
+
+    SetString test_name[1] ": uc_MACRO"
+    ~1 { result = macro(uc_MACRO); expect = 373; macro(check); }
+}
+
+switch lc_SWITCH {
+    ~1 { macro_switch_var +=3; }
+}
+
+switch UC_switch {
+    ~1 { macro_switch_var +=5; }
+}
+
+switch test_switch_case {
+    SetString test_name[0] "test_switch_case"
+
+    ~1 { macro_switch_var = 400; }
+    SetString test_name[1] ": lc_switch"
+    ~1 { switch(lc_switch); }
+    ~1 { result = macro_switch_var; expect = 403; macro(check); }
+
+    SetString test_name[1] ": LC_SWITCH"
+    ~1 { switch(LC_SWITCH); }
+    ~1 { result = macro_switch_var; expect = 406; macro(check); }
+
+    SetString test_name[1] ": lC_SwItCh"
+    ~1 { switch(lC_SwItCh); }
+    ~1 { result = macro_switch_var; expect = 409; macro(check); }
+
+    ~1 { macro_switch_var = 450; }
+    SetString test_name[1] ": uc_switch"
+    ~1 { switch(uc_switch); }
+    ~1 { result = macro_switch_var; expect = 455; macro(check); }
+
+    SetString test_name[1] ": UC_SWITCH"
+    ~1 { switch(UC_SWITCH); }
+    ~1 { result = macro_switch_var; expect = 460; macro(check); }
+
+    SetString test_name[1] ": uC_sWiTcH"
+    ~1 { switch(uC_sWiTcH); }
+    ~1 { result = macro_switch_var; expect = 465; macro(check); }
+}

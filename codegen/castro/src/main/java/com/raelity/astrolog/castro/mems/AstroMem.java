@@ -10,6 +10,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -85,6 +86,7 @@ import static com.raelity.lib.collect.Util.intersects;
  */
 public abstract class AstroMem implements Iterable<Var>
 {
+public static final boolean ignore_case = true;
 private AstroMem defined;
 private AstroMem alloc;
 private MemAccum accum;
@@ -99,7 +101,7 @@ boolean isTest;
 // May not *need* the RangeMap, but it can provide details messages
 // about conflicting allocations.
 private final RangeMap<Integer, Var> layout = TreeRangeMap.create();
-private final ValueMap<String, Var> vars = new ValueHashMap<>((var) -> var.getName());
+private final ValueMap<String, Var> vars = new ValueHashMap<>((var) -> var.getLC());
 private final List<Var> varsError = new ArrayList<>();
 int nLimit; // use to label limit ranges (may be disjoint)
 // probably don't need/want this. Maybe some kind of allocation lock?
@@ -220,7 +222,7 @@ public Map<Range<Integer>, Var> getAllocationMap()
 public Var getVar(String name)
 {
     Objects.nonNull(name);
-    return vars.get(name);
+    return vars.get(lcase(name));
 }
 
 /** Number of variables, not including externally specified/builtin.
@@ -281,15 +283,15 @@ public void allocate()
         // add stuff defined in pass1 after this compilation unit's pass1.
         for(Var var : defined) {
             if(!var.getState().contains(BUILTIN)
-                    && !vars.containsKey(var.getName()))
-                declare(var.getName(), var.getSize(), var.getAddr(), DEFINED);
+                    && !vars.containsKey(var.getLC()))
+                declare(var.getLC(), var.getSize(), var.getAddr(), DEFINED); //XXX
         }
     }
     if(alloc != null) {
         // copy in any vars allocated by previous compilation units
         for(Var var : alloc) {
             if(!var.getState().contains(BUILTIN))
-                declare(var.getName(), var.getSize(), var.getAddr(), DEFINED);
+                declare(var.getLC(), var.getSize(), var.getAddr(), DEFINED); //XXX
         }
     }
 
@@ -397,6 +399,11 @@ final Var declare(String name, int size)
     return declare(name, size, -1);
 }
 
+private String lcase(String name)
+{
+    return ignore_case ? name.toLowerCase(Locale.ROOT) : name;
+}
+
 /** Allocate the variable at the specified address.
  * @return Var, may have error state.
  */
@@ -415,11 +422,11 @@ final Var declare(String name, int size, int addr, VarState... a_state)
     setup_var: {
         if(size < 1)
             var.addState(SIZE_ERR);
-        addedToVars = !vars.containsKey(var.getName());
+        addedToVars = !vars.containsKey(var.getLC());
         if(addedToVars)
             vars.put(var);
         else
-            var.addState(DUP_NAME_ERR, vars.get(var.getName()));
+            var.addState(DUP_NAME_ERR, vars.get(var.getLC()));
         // Can still check range unless size issue
         if(var.hasState(SIZE_ERR) || !var.isAllocated())
             break setup_var;
@@ -429,7 +436,7 @@ final Var declare(String name, int size, int addr, VarState... a_state)
     }
     // Some variables shouldn't be in the list of variables.
     if(var.hasState(LIMIT) || var.hasState(INTERNAL))
-        vars.remove(var.getName());
+        vars.remove(var.getLC());
 
     // either add var to allocation map or add it to layout
     if(!var.hasError()) {
@@ -441,7 +448,7 @@ final Var declare(String name, int size, int addr, VarState... a_state)
     } else {
         varsError.add(var);
         if(addedToVars)
-            vars.remove(var.getName());
+            vars.remove(var.getLC());
     }
     return var;
 }
@@ -597,29 +604,29 @@ public void dumpLayout(PrintWriter out)
      */
     public class VarKey implements Comparable<VarKey>
     {
-    private final String name;
+    private final String lcname;
     
     public VarKey(String name)
     {
-        this.name = name;
+        this.lcname = name;
     }
     
-    public String getName()
+    public String getLC()
     {
-        return name;
+        return lcname;
     }
 
     @Override
     public int compareTo(VarKey o)
     {
-        return name.compareTo(o.name);
+        return lcname.compareTo(o.lcname);
     }
     
     @Override
     public int hashCode()
     {
         int hash = 7;
-        hash = 53 * hash + Objects.hashCode(this.name);
+        hash = 53 * hash + Objects.hashCode(this.lcname);
         return hash;
     }
     
@@ -633,7 +640,7 @@ public void dumpLayout(PrintWriter out)
         if(getClass() != obj.getClass())
             return false;
         final VarKey other = (Var)obj;
-        return Objects.equals(this.name, other.name);
+        return Objects.equals(this.lcname, other.lcname);
     }
     }
 
@@ -645,6 +652,7 @@ public void dumpLayout(PrintWriter out)
      */
     public class Var extends VarKey
     {
+    private  final String name;
     private final int size;
     private int addr; // -1 means not allocated
     private final EnumSet<VarState> state;
@@ -655,7 +663,8 @@ public void dumpLayout(PrintWriter out)
     
     private Var(String name, int size, int addr, VarState... a_state)
     {
-        super(name);
+        super(lcase(name));
+        this.name = name;
         this.size = size;
         this.addr = addr;
         if(a_state.length > 0) {
@@ -698,6 +707,12 @@ public void dumpLayout(PrintWriter out)
     /** Var not specified in the compilation unit. */
     private static final EnumSet<VarState>
             externalSpecify = EnumSet.of(BUILTIN, DEFINED, EXTERN);
+
+    /** The declared name */
+    public String getName()
+    {
+        return name;
+    }
 
     private void addState(VarState s)
     {
@@ -770,7 +785,7 @@ public void dumpLayout(PrintWriter out)
     private void setAddr(int addr)
     {
         if(lockMemory)
-            throw new IllegalStateException(getName());
+            throw new IllegalStateException(getLC()); // XXX
         this.addr = addr;
     }
 
@@ -782,10 +797,10 @@ public void dumpLayout(PrintWriter out)
     public void setId(Token id)
     {
         if(lockMemory && !getState().contains(DUMMY))
-            throw new IllegalStateException(getName());
+            throw new IllegalStateException(getLC()); // XXX
         if(this.id != null)
             throw new IllegalStateException(String.format(
-                    "var '%s' already has id; new %s", getName(), id.getText()));
+                    "var '%s' already has id; new %s", getLC(), id.getText())); // XXX
         this.id = id;
     }
 

@@ -379,7 +379,7 @@ private void displayConstants()
 private void displayConstantGroup(String prefix, String tag, List<String>group,
                                   List<SubGroup> subgroups)
 {
-    System.err.printf("### %s - prefix %s\n", tag, prefix);
+    System.err.printf("### %s - prefix: `%s`\n", tag, prefix);
     if(subgroups == null)
         displayConstantSubGroup(null, group);
     else {
