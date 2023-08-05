@@ -42,7 +42,12 @@ which generates
 
 This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpression` basics. See [discussions](https://github.com/errael/astrology-castro/discussions) for musings on possible extensions.
 
-For more examples, there is [mazegame ported to castro](examples.d/mazegame.castro). All of the examples from `Astrolog` website under [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express) are shown as `castro` code in [AstroExpressionDocsCommandSwitches.castro](examples.d/AstroExpressionDocsCommandSwitches.castro) There's [examples.d](examples.d); [astrotest.d](astrotest.d) executes on astrolog and has a simple expect/result infrastructure; [test.d](test.d) checks lowlevel functionality and has gold files.
+For more examples, there is 
+- [mazegame ported to castro](examples.d/mazegame.castro)
+- [astroExpressionDocsCommandSwitches.castro](examples.d/astroExpressionDocsCommandSwitches.castro) has the examples from `Astrolog` website under [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express) ported to castro.
+- [astrotest.d](astrotest.d) executes on astrolog and has a simple expect/result infrastructure
+- [test.d](test.d) checks lowlevel functionality and has gold files.
+- there's [examples.d](examples.d)
 
 ###     Interoperability
 
@@ -94,7 +99,10 @@ Requires jre-11 or later. The released jar is executable, use a script named cas
 CASTRO_JAR=/lib/castro-0.1.0.jar
 java -jar $CASTRO_JAR "$@"
 ```
-Do `castro -h` to see help/usage.
+Do `castro -h` to see [help/usage](https://github.com/errael/astrology-castro/wiki/castro-help).
+
+Running castro like `castro file_name -o -` is convenient to see the compiler output on
+the console. The `--fo=min` option might be handy.
 
 Running `castro`  on a file produces 3 output files. For example, if there's `foo.castro` then executing `castro foo.castro` creates
 - `foo.as` can be executed by `Astrolog` with `-i foo.as`
@@ -373,7 +381,7 @@ Astrolog associates switch commands at adresses 1 - 48 with function keys
 ```
 // 'a' keypress is mapped to execute func_key_demo
 switch func_key_demo { ... }
-run { ~XQ { if (z == KeyC("a") z = Sw2KC(func_key_demo); } }
+run { ~XQ { if (z == KeyC("a")) z = Sw2KC(func_key_demo); } }
 ```
 
 ### constants
@@ -410,7 +418,7 @@ For function keys, only `FK_F0` is a defined constant. The following is for refe
 ```
 switch func_key @3 { ... }    // This switch invoked by pressing F3
 // hook so when 'a' key (ascii 97) is pressed, map it to `func_key` which is F3
-run { ~XQ { if (z == KeyC("a") z = FK_F0 + SAddr(func_key); } }
+run { ~XQ { if (z == KeyC("a")) z = FK_F0 + SAddr(func_key); } }
 ```
 <!--
 // hook so when 'a' key (ascii 97) is pressed, map it to `switch func_key`
