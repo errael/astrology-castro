@@ -8,6 +8,7 @@ codegen/castro/build
 grammar/Astro
 grammar/grout
 play
+notes
 
 test.d/*.as
 test.d/*.def
