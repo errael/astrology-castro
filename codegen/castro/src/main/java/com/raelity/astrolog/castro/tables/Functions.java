@@ -31,9 +31,9 @@ public static final String FUNC_ID_SWITCH = "switch";
 public static final String FUNC_ID_MACRO = "macro";
 
     /**
-     * In addition to astrolog functions, there can be magic castro functions;
-     * this represents a specific function, including it's name,
-     * and how to generate code for it.
+     * The base class for any function; codegen and checking.
+     * Could be regular Astrolog function, special func like switch/macro,
+     * castro function.
      */
     abstract public static class Function
     {
@@ -118,7 +118,7 @@ public static final String FUNC_ID_MACRO = "macro";
         return Objects.equals(this.funcName, other.funcName);
     }
 
-    }
+    } /////////// class Function
 
     abstract public static class StringArgsFunction extends Function
     {
@@ -140,7 +140,7 @@ public static final String FUNC_ID_MACRO = "macro";
         return true;
     }
 
-    }
+    } /////////// class StringArgsFunction
 
 public static void addFunction(Function f, String... aliases)
 {
@@ -264,7 +264,7 @@ void add(String funcName, int narg, String types)
                                      List<String> args)
         { sb.append("#DummyFunctionCall#");  return sb;}
     @Override public boolean isInvalid() { return true; }
-    }
+    } /////////// DummyFunction
 
     /** Handles almost all Astrolog builtin functions */
     static class AstrologFunction extends Function
@@ -296,7 +296,7 @@ void add(String funcName, int narg, String types)
         }
         return sb;
     }
-    }
+    } /////////// AstrologFunction
 
     /* ************************************************************* */
     private static class SwitchFunction extends SwitchMacroFunction
@@ -304,14 +304,14 @@ void add(String funcName, int narg, String types)
     public SwitchFunction() { super("Switch"); }
 
     @Override public AstroMem targetMemSpace() { return lookup(Switches.class); }
-    }
+    } /////////// SwitchFunction
 
     private static class MacroFunction extends SwitchMacroFunction
     {
     public MacroFunction() { super("Macro"); }
 
     @Override public AstroMem targetMemSpace() { return lookup(Macros.class); }
-    }
+    } /////////// MacroFunction
 
     /* ************************************************************* */
     private static abstract class SwitchMacroFunction extends Function
@@ -339,6 +339,6 @@ void add(String funcName, int narg, String types)
         return sb;
     }
 
-    } // SwitchMacroFunction
+    } /////////// SwitchMacroFunction
 
 }

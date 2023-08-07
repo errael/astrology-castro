@@ -1,0 +1,1 @@
+Error: errors-oom.castro:8:4 'var v2[3];' 'v2' OutOfMemory size 3, free [[33..35)]

@@ -1,0 +1,8 @@
+Error: errors-2.castro:14:16 '    e = KeyCode("");' empty string
+Error: errors-2.castro:15:16 '    e = KeyCode("aa");' 'aa' only a single character allowed
+Error: errors-2.castro:16:8 '    e = KeyCode("λ");' 'λ' not in range ' ' to '~'
+Error: errors-2.castro:17:10 '    sw2kc(sw1);' Switch 'sw1' @50 is not a function key address
+Error: errors-2.castro:21:14 '    SetString arr[*p] "foo"' 'arr[*p]' must be a fixed location
+Error: errors-2.castro:22:14 '    SetString arr[pp] "foo"' 'arr[pp]' must be a fixed location
+Error: errors-2.castro:26:4 '    o_sun += 3;' 'o_sun' is a constant name, can't write
+Code generation: 7 errors

@@ -6,23 +6,23 @@
 // Space: Macros. Layout: null
 // Space: Switches. Layout: null
 
-// Space: Registers errors.castro
+// Space: Registers errors-2.castro
 // used [(-∞..33), [2147483647..+∞)]
 // free [[33..2147483647)]
-// errors: 1
-var arr[3] @27;    // [ALLOC] 
-var arr2 @30;    // [ALLOC] 
-var arr3[2] @31;    // [ALLOC] 
+// errors: 0
+var arr[5] @27;    // [ALLOC] 
+var pp @32;    // [ALLOC] 
 
-// Space: Macros errors.castro
+// Space: Macros errors-2.castro
 // used [(-∞..3), [2147483647..+∞)]
 // free [[3..2147483647)]
 // errors: 0
 macro constant_errors @1;    // [ALLOC] 
-macro constant_errors_2 @2;    // [ALLOC] 
+macro ma1 @2;    // [ALLOC] 
 
-// Space: Switches errors.castro
-// used [(-∞..1), [2147483647..+∞)]
-// free [[1..2147483647)]
+// Space: Switches errors-2.castro
+// used [(-∞..1), [50..51), [2147483647..+∞)]
+// free [[1..50), [51..2147483647)]
 // errors: 0
+switch sw1 @50;    // [ASSIGN] 
 

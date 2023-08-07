@@ -30,7 +30,7 @@
 
 ; MACRO array_oob
 ~M 1 ' 
-    =a @44  
+    =a @49  
     =a @27  
     =a @28  
 '
@@ -59,3 +59,6 @@
     =i H_Equal  
     =j O_Nod:  
 '
+
+; RUN  
+    ~20 43 ";foo;bar;baz" 

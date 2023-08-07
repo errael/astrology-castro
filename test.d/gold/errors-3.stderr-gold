@@ -1,0 +1,10 @@
+Error: errors-3.castro:7:6 'run { cprintf }' cprintf must be followed by a format string
+Error: errors-3.castro:9:6 'run { cprintf -xxx -yyy }' cprintf must be followed by a format string
+Error: errors-3.castro:11:14 'run { cprintf "foo %d" }' cprintf format string, '"foo %d"', needs arguments in '{~ }'
+Error: errors-3.castro:13:14 'run { cprintf "foo %d" -xxx -yyy }' cprintf format string, '"foo %d"', needs arguments in '{~ }'
+Error: errors-3.castro:15:14 'run { cprintf "foo %d %d" {~ a; } }' cprintf arg count mismatch: fmt 2, expr 1
+Error: errors-3.castro:17:14 'run { cprintf "foo %d %d" {~ a; b; c; } }' cprintf arg count mismatch: fmt 2, expr 3
+Error: errors-3.castro:19:14 'run { cprintf "foo %a" {~ a; } }' '%a' invalid format string
+Error: errors-3.castro:21:14 'run { cprintf "foo %d %d %d %d %d %d %d %d %d %d %d" {~ a; } }' '11' too many cprintf arguments, limit 10
+Error: errors-3.castro:23:6 'run { cprintf "foo %d %d %d %d %d %d" {~ l; m; n; o; p; q; } }' too many cprintf args '6' for cprintf_save_area
+Pass output: 9 errors

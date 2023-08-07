@@ -1,19 +1,22 @@
 /*
- * WORK IN PROGRESS: A few of the examples aren't quite right.
- *
  * Compile this file and, in almost all cases, 
  * note that the AstroExpression examples on the
- *  Website have the same code as castro generates the.
- * Some of the examples here have multiple implementations.
+ * Website have the same code as castro generates.
+ * Some of the examples here show multiple implementations.
  *
  * Compile:
- *      castro astroExpressionDocsCommandSwitches.castro
+ *      castro --Ewarn=array-oob astroExpressionDocsCommandSwitches.castro
  * or for output with minimal number of lines
- *      castro --fo=min astroExpressionDocsCommandSwitches.castro
+ *      castro --Ewarn=array-oob --fo=min astroExpressionDocsCommandSwitches.castro
  * and compare astroExpressionDocsCommandSwitches.as to the website examples.
+ * The --Ewarn=array-oob is necessary because
+ *      SetString d "Apple" "Banana" "Carrot"
+ * produces an error/warning because the variable d is only one element,
+ * and it is being treated like a multi-element array.
  *
- * For best understanding, this file, and it's output, should be examined side
- * by side with the AstroExpression website docs from which it is derived.
+ * This file, and it's output, should be examined side by side with the
+ * AstroExpression website docs from which it is derived to understand
+ * the associated "hook".
  *
  * Each example in the file is like
  *
@@ -91,8 +94,6 @@ run { ~j0 { if((y % 4) == 1) z += 200.0; } }
 // of the count of each possible personality Ray in custom variables
 // @a through @g with:
 //      ~7 " =u %y = Var @u Inc Var Var @u"
-// var zero[27] @0; // hack
-// run { ~7 { u = &y; zero[*u] += 1; } } // The zero hack doesn't work, bug
 //run { ~7 { a[y] += 1; } }     // off by one, use a[y - 1]
 run { ~7 { *y += 1; } }                     // ~7 "= @y Inc Var @y" 
 var rays[8];
@@ -161,10 +162,10 @@ run { ~t { a = DayWeek(Mon(), Day(), Yea()); a == 0 | a == 6; } }
 // ~O <string>: Adjust object position.
 // For example, to invert all zodiac positions 180 degrees for charts in the
 // southern hemisphere located south of the equator, do:
-//     ~O "=w Add @w 180.0 Lt Lat 0.0"
-run { ~O { w = w + 180.0; Lat() < 0.0; } } // BUG?
-run { ~O { if(Lat() < 0.0) w = w + 180.0; } } // BUG?
-run { ~O { if(Lat() < 0.0) w = (w + 180.0) % 360.0; } } // Need the Mod???
+//     ~O "=w Add @w 180.0 Lt Lat 0.0"  // BUG?
+run { ~O { w = w + 180.0; Lat() < 0.0; } } // probably wrong
+run { ~O { if(Lat() < 0.0) w += 180.0; } }   // is an adjustment needed?
+run { ~O { w += if(Lat() < 0.0) 180.0; } }      // interesting alternative
 
 ///////////////////////////////////////////////////////////////////////////////
 // ~C <string>: Adjust house cusp position.
@@ -349,7 +350,7 @@ run {
 // to “Carrot”, do:
 //     ~20 4 ";Apple;Banana;Carrot"
 run {
-    SetString d "Apple" "Banana" "Carrot" // castro BUG %d
+    SetString d "Apple" "Banana" "Carrot"
 }
 
 ///////////////////////////////////////////////////////////////////////////////

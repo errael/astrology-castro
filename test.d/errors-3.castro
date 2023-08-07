@@ -1,0 +1,23 @@
+/*
+ * during output, mostly switch/run
+ */
+
+var cprintf_save_area[5];
+
+run { cprintf }
+
+run { cprintf -xxx -yyy }
+
+run { cprintf "foo %d" }
+
+run { cprintf "foo %d" -xxx -yyy }
+
+run { cprintf "foo %d %d" {~ a; } }
+
+run { cprintf "foo %d %d" {~ a; b; c; } }
+
+run { cprintf "foo %a" {~ a; } }
+
+run { cprintf "foo %d %d %d %d %d %d %d %d %d %d %d" {~ a; } }
+
+run { cprintf "foo %d %d %d %d %d %d" {~ l; m; n; o; p; q; } }

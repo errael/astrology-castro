@@ -113,7 +113,7 @@ public void exitLvalArray(LvalArrayContext ctx)
     if(var == null && !apr.hasError()) {
         reportError(ctx, "internal error: exitLvalArray: no error, expecting one");
     }
-    if(constVal != null && var != null) {
+    if(constVal != null && var != null && !var.getState().contains(DUMMY)) {
         if(constVal >= var.getSize())
             reportError(Error.ARRAY_OOB, ctx, "'%s' array index out of bounds", ctx.getText());
     }
@@ -175,14 +175,8 @@ private TreeProps<Boolean> macroSwitch_func_callChecked = new TreeProps<>();
  */
 private boolean isDoneReportSpecialFuncArgs(Func_callContext ctx)
 {
-    Boolean  checkComplete = macroSwitch_func_callChecked.get(ctx);
-    if(checkComplete != null)
-        return checkComplete;
-
     Function f = Functions.get(ctx.id.getText());
-    checkComplete = f.isDoneReportSpecialFuncArgs(ctx);
-    macroSwitch_func_callChecked.put(ctx, checkComplete);
-    return checkComplete;
+    return f.isDoneReportSpecialFuncArgs(ctx);
 }
 
 @Override
@@ -210,7 +204,6 @@ public void exitSw_name(Sw_nameContext ctx)
     if(ctx.tilde != null && ctx.id != null
                 && ctx.tilde.getStopIndex() + 1 != ctx.id.getStartIndex()) {
         hasWS = true;
-
     }
     if(hasWS)
         reportError(ctx, "'%s' whitespace in switch command name",

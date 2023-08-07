@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,6 +22,7 @@ import org.antlr.v4.runtime.tree.xpath.XPath;
 
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroWarningOptions;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.IntegerContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
@@ -49,6 +51,30 @@ public class Util
 {
 private Util() { }
 
+private static final TreeProps<Boolean> didTreeError = new TreeProps<>();
+private static final IdentityHashMap<Token,Boolean> didTokenError = new IdentityHashMap<>();
+
+public static boolean didError(ParseTree node)
+{
+    return didTreeError.get(node) != null;
+}
+
+private static void setError(ParseTree node)
+{
+    didTreeError.put(node, Boolean.TRUE);
+}
+
+public static boolean didError(Token token)
+{
+    return didTokenError.get(token) != null;
+}
+
+private static void setError(Token token)
+{
+    didTokenError.put(token, Boolean.TRUE);
+}
+
+
 // Not a convenient way...
 // public static LineMap buildLineMap(String fName)
 // {
@@ -59,7 +85,6 @@ private Util() { }
 // 
 //     return null;
 // }
-
 
 /**
  * Strip leading/trailing quote and remove Embedded quotes.
@@ -172,7 +197,8 @@ public static boolean isMacroSwitchFuncArgLval(Func_callContext ctx,
         return true;
     }
     // TODO: shouldn't hardcode user visible sting
-    reportError(ctx, "'%s' is not a defined %s", ctx.args.get(0).getText(),
+    ExprContext ex = ctx.args.get(0);
+    reportError(ex, "'%s' is not a defined %s", ex.getText(),
                 memSpace.memSpaceName.equals(MEM_SWITCHES) ? "switch"
                 : memSpace.memSpaceName.equals(MEM_MACROS) ? "macro"
                   : memSpace.memSpaceName.equals(MEM_REGISTERS) ? "var"
@@ -197,7 +223,8 @@ public static boolean macroSwitchFuncArgs(Func_callContext ctx, AstroMem memSpac
             && !l.isEmpty()
             && l.get(0) instanceof LvalMemContext
             && memSpace.getVar(ctx.args.get(0).getText()) == null) {
-        reportError(ctx, "'%s' is not a defined %s", ctx.args.get(0).getText(),
+        ExprContext ex = ctx.args.get(0);
+        reportError(ex, "'%s' is not a defined %s", ex.getText(),
                     memSpace.memSpaceName.equals(MEM_SWITCHES) ? "switch" : "macro");
         return false;
     }
@@ -239,6 +266,11 @@ public static PrintWriter getErr()
     return lookup(CastroErr.class).pw();
 }
 
+//
+// The use of ctx/token is distinct for keeping track of
+// what has had an error reported.
+//
+
 public static void reportError(ParserRuleContext ctx, Object... msg)
 {
     reportError(null, ctx, msg);
@@ -246,7 +278,10 @@ public static void reportError(ParserRuleContext ctx, Object... msg)
 
 public static void reportError(Error err, ParserRuleContext ctx, Object... msg)
 {
-    reportError(err, ctx.start, msg);
+    if(didError(ctx))
+        return;
+    report(err, ctx.start, msg);
+    setError(ctx);
 }
 
 public static void reportError(Token token, Object... msg)
@@ -256,10 +291,13 @@ public static void reportError(Token token, Object... msg)
 
 public static void reportError(Error err, Token token, Object... msg)
 {
+    if(didError(token))
+        return;
     report(err, token, msg);
+    setError(token);
 }
 
-public static void report(Error err, Token token, Object... msg)
+private static void report(Error err, Token token, Object... msg)
 {
     boolean fError = err == null ? true
                      : !lookup(CastroWarningOptions.class).warn().contains(err);

@@ -1,0 +1,15 @@
+/*
+ * layout
+ */
+
+layout memory { base 400; reserve 440:420; }
+layout switch { base 400; }
+layout macro { base 400; }
+
+layout foo { base 400; }
+
+var arr[3];
+
+layout memory { base 350; base 350; limit 400; limit 400; }
+layout switch { base 350; base 350; limit 400; limit 400; }
+layout macro { base 350; base 350; limit 400; limit 400; }

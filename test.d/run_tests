@@ -8,18 +8,22 @@ DIR=${0%/*}
 #set -e
 
 TESTS="
-    assignments.castro
-    blocks.castro
-    check-allowed-switch-expression.castro
-    expr.castro
-    inc-dec.castro
-    initialization.castro
-    run.castro
-    special-func.castro
-    switch.castro
-    unary-ops.castro
-    warnings.castro
-    errors.castro
+    assignments
+    blocks
+    check-allowed-switch-expression
+    expr
+    inc-dec
+    initialization
+    run
+    special-func
+    switch
+    unary-ops
+    warnings
+    errors
+    errors-2
+    errors-3
+    errors-4
+    errors-oom
 "
 
 usage() {
@@ -76,6 +80,7 @@ declare -a files_stderr=($TESTS_STDERR)
 cd $DIR
 
 Main() {
+    tcastro --version
     run_all
 }
 
@@ -89,7 +94,7 @@ run_all() {
     for t in ${files[@]}
     do
         current_test=${t%.castro}
-        run_test $t
+        run_test
     done
 
     if ((${#error_tests[@]} != 0))
@@ -115,7 +120,12 @@ run_test() {
 check_result() {
     check_one as
     check_one def
-    check_one map
+    # out of memory test does not produce a map file.
+    # Only check map if there's a map somewhere for this test
+    if [[ -e $current_test.map || -e gold/$current_test.map-gold ]]
+    then
+        check_one map
+    fi
     check_one stderr
 }
 
@@ -125,8 +135,7 @@ check_one() {
     #echo "CHECKING: $1"
     if ! diff gold/$current_test.$ext-gold $current_test.$ext
     then
-        #echo "FAIL DIFF '$cur_test.$ext'"
-        #echo "adding to error '$cur_test'"
+        echo "FAIL: diff gold/$current_test.$ext-gold $current_test.$ext"
         error_tests+=($current_test)
         error_files+=($current_test.$ext)
     fi

@@ -132,7 +132,7 @@ String genSw_cmdStringAssign(Switch_cmdContext sc_ctx, String name)
     // the sc_ctx lval into the index and plug it back into apr.prefixExpr.
 
     sb.setLength(0);
-    lvalVarAddr(sb, sc_ctx.l);
+    lvalVarIntAddr(sb, sc_ctx.l);
     apr.prefixExpr.put(sc_ctx.l, sb.toString());
 
     return "#AssignString#";
@@ -284,18 +284,18 @@ String genBinOp(ExprBinOpContext ctx, Token opToken, String lhs, String rhs)
 }
 
 
-/** lval must be a fixed location, no expr involved. */
-private StringBuilder lvalVarAddr(StringBuilder lsb, LvalContext lval_ctx)
+/**
+ * lval must be a fixed location, no expr involved or indirection;
+ * stuff the address, as an integer (not %a style), in the string builder.
+ */
+private StringBuilder lvalVarIntAddr(StringBuilder lsb, LvalContext lval_ctx)
 {
     boolean resolved = false;
     String lvalName = lval_ctx.id.getText();
     switch(lval_ctx) {
     case LvalMemContext ctx -> {
         if(Boolean.FALSE) Objects.nonNull(ctx);
-        if(isBuiltinVar(lvalName))
-            lsb.append('%').append(lvalName).append(' ');
-        else
-            lsb.append(registers.getVar(lvalName).getAddr()).append(' ');
+        lsb.append(registers.getVar(lvalName).getAddr()).append(' ');
         resolved = true;
     }
     case LvalIndirectContext ctx -> { if(Boolean.FALSE) Objects.nonNull(ctx); }

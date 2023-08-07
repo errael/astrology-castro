@@ -65,3 +65,7 @@ macro constant_ambig {
     i = h_equ;
     j = o_nod;
 }
+
+var arr[5];
+
+run { SetString arr[3] "foo" "bar" "baz" }

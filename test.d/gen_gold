@@ -33,7 +33,12 @@ gen() {
 make_gold() {
     mv $current_test.as gold/$current_test.as-gold
     mv $current_test.def gold/$current_test.def-gold
-    mv $current_test.map gold/$current_test.map-gold
+    if [[ -e $current_test.map ]]
+    then
+        mv $current_test.map gold/$current_test.map-gold
+    else
+        echo "    NOTE: no $current_test.map file"
+    fi
     mv $current_test.stderr gold/$current_test.stderr-gold
 }
 

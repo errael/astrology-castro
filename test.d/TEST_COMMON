@@ -11,7 +11,7 @@ CASTRO_JAR=$DIR/../codegen/castro/build/libs/castro-$VER.jar
 #       or: extra_args+=([test_name]="args") # wipes out current extra_args for test_name
 
 declare -A extra_args=()
-typeset current_test=
+typeset current_test="this_is_not_empty"
 
 tcastro() {
 

@@ -343,7 +343,7 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
 {
     if(lsc.size() < 2    // must be room for "formatstr, exprs are optional
             || lsc.get(1).string == null) {
-        reportError(lsc.get(0), "cprintf \"%%s %%d %%f\" {~ arg1; ... }");
+        reportError(lsc.get(0), "cprintf must be followed by a format string");
         return;
     }
     // The expr_arg is optional, since "printf 'foo'" should work.
@@ -377,7 +377,7 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
             case 's' -> fmtSpec = (char)('a' + fmtArgs);
             case 'd','i','f','g' -> fmtSpec = (char)('A' + fmtArgs);
             default ->
-                reportError(lsc.get(1), "'%%%c' invalid format specifier", c);
+                reportError(lsc.get(1), "'%%%c' invalid format string", c);
             }
             if(fmtSpec != 0) {
                 fmtArgs++;
@@ -387,13 +387,19 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
         }
         }
         if(fmtArgs > 10) {
-            reportError(lsc.get(1), "'%d' too many printf arguments, limit 10",
+            reportError(lsc.get(1), "'%d' too many cprintf arguments, limit 10",
                                     fmtArgs);
             return;
         }
     }
+    if(fmtArgs  > 0 && eArgs.isEmpty()) {
+        reportError(lsc.get(1),
+                    "cprintf format string, '%s', needs arguments in '{~ }'", fmt);
+        return;
+    }
+
     if(fmtArgs != eArgs.size()) {
-        reportError(lsc.get(1), "printf arg count: fmt %d, expr %d",
+        reportError(lsc.get(1), "cprintf arg count mismatch: fmt %d, expr %d",
                                 fmtArgs, eArgs.size());
         return;
     }
@@ -491,7 +497,7 @@ private void createStringAssignmenCommand(StringBuilder lsb,
         }
     }
     if(strings.size() > room)
-        reportError(ARRAY_OOB, sc_ctx,
+        reportError(ARRAY_OOB, sc_ctx.l,
                     "'%s' array index out of bounds", sc_ctx.l.getText());
 
     if(strings.size() == 1)

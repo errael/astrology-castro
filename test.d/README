@@ -2,3 +2,9 @@ These tests generate files that are not expected to run in Astrolog.
 They are intended to detect changes in grammar and code generation.
 The output format facilitates seeing any changes.
 They do not execute at least because of line breaks.
+
+To run all the tests do
+    ./run_tests
+To run individual tests,
+for example expr.castro and inc-dec.castro, do something like
+    ./run_tests expr inc-dec
