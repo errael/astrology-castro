@@ -2,6 +2,7 @@
 run {
     ~1 {
         Switch(test_case_insensitive);
+        Switch(test_castro_constants);
         Switch(test_astrolog_constants);
         Switch(test_expressions);
         Switch(test_flow_control);

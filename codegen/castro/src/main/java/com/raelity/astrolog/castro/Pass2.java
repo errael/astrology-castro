@@ -68,7 +68,8 @@ private Pass2()
  */
 private void checkReportUnknownVar(LvalContext ctx, Token token)
 {
-    Var var = registers.getVar(token.getText());
+    String id = token.getText();
+    Var var = registers.getVar(id);
     if(var != null)
         return;
     Func_callContext fc_ctx = lvalArg2Func(ctx);
@@ -79,9 +80,14 @@ private void checkReportUnknownVar(LvalContext ctx, Token token)
         if(constant != null && !(ctx instanceof LvalMemContext))
             reportError(token, "constant name '%s' used as a variable", constant);
         return;
-    } else
-        reportError(token, "unknown variable '%s' (first occurance)",
-                    token.getText());
+    } else {
+        String hint = "";
+        Function f = Functions.get(id);
+        if(!f.isInvalid())
+            hint = "; function '%s()'?";
+        reportError(token, "unknown variable '%s' (first occurance)" + hint,
+                    id, f.name());
+    }
     registers.declare(token, 1, -1, DUMMY);
 }
 
@@ -165,9 +171,6 @@ private Matcher enaDisMatcher(String input)
     }
     return matcher;
 }
-
-// cache the result to avoid giving the same error twice.
-private TreeProps<Boolean> macroSwitch_func_callChecked = new TreeProps<>();
 
 /** Check special func args (like for Macro()/Switch()).
  * The return does not indicate if an error occurred.

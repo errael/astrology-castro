@@ -18,6 +18,7 @@ INFRA_MAP=infra_testing
 INFRA_OUTPUT=infra_results
 INFRA_FILES="
     ignore_case
+    castro_constants
     astrolog_constants
     expressions
     flow_control

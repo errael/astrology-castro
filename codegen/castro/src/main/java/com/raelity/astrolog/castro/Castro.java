@@ -130,7 +130,8 @@ static String listEwarnOptions()
     StringBuilder sb = new StringBuilder(500);
     sb.append("Errors that can be made warnings\n");
     for(Error e : Error.values())
-        sb.append(String.format("    %-12s %s\n", e.toString(), e.help()));
+        if(!e.help().isEmpty())
+            sb.append(String.format("    %-12s %s\n", e.toString(), e.help()));
 
     return sb.toString();
 }

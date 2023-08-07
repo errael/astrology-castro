@@ -1,0 +1,46 @@
+/*
+ * Check out constants defined by castro
+ */
+
+layout memory { base 401; limit 450; }
+layout macro { base 401; limit 450; }
+layout switch { base 401; limit 450; }
+
+switch test_castro_constants {
+    ~1 {
+        switch(test_castro_constants_fk__kc);
+        switch(test_castro_constants_fk);
+    }
+}
+
+switch test_castro_constants_fk__kc {
+    SetString test_name[0] "test_castro_constants_fk__kc"
+
+    SetString test_name[1] ": FK_F0_KC"
+    ~1 { result = FK_F0_KC; expect = 200; macro(check); }
+    SetString test_name[1] ": S_FK_F0_KC"
+    ~1 { result = S_FK_F0_KC; expect = 200 + 12; macro(check); }
+    SetString test_name[1] ": C_FK_F0_KC"
+    ~1 { result = C_FK_F0_KC; expect = 200 + 24; macro(check); }
+    SetString test_name[1] ": A_FK_F0_KC"
+    ~1 { result = A_FK_F0_KC; expect = 200 + 36; macro(check); }
+
+    SetString test_name[1] ": A_Fk_f0_Kc"
+    ~1 { result = A_Fk_f0_Kc; expect = 200 + 36; macro(check); }
+}
+
+switch test_castro_constants_fk {
+    SetString test_name[0] "test_castro_constants_fk"
+
+    SetString test_name[1] ": FK_F0"
+    ~1 { result = FK_F0; expect = 0; macro(check); }
+    SetString test_name[1] ": S_FK_F0"
+    ~1 { result = S_FK_F0; expect = 0 + 12; macro(check); }
+    SetString test_name[1] ": C_FK_F0"
+    ~1 { result = C_FK_F0; expect = 0 + 24; macro(check); }
+    SetString test_name[1] ": A_FK_F0"
+    ~1 { result = A_FK_F0; expect = 0 + 36; macro(check); }
+
+    SetString test_name[1] ": A_Fk_f0"
+    ~1 { result = A_Fk_f0; expect = 0 + 36; macro(check); }
+}
