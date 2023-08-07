@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
@@ -88,7 +87,6 @@ private static String astrologPassthruPrefix = "kz";
 
 private final NavigableMap<String, Info> constants = new TreeMap<>();
 private final Set<String> exactConstants = new HashSet<>();
-private final IdentityHashMap<Token,Boolean> didReport = new IdentityHashMap<>();
 
 /** Available for short term use. */
 private StringBuilder sb = new StringBuilder();
@@ -134,7 +132,7 @@ private Info findName(Token token)
             return null;
         }
         if(astrologPassthruPrefix.indexOf(id.charAt(0)) >= 0)
-            return new Info(id, EnumSet.of(NONE, QUOTE_IT));
+            return new Info(token.getText(), EnumSet.of(NONE, QUOTE_IT));
         needsExact = false;
     } else if(!exactConstants.contains(id)) {
         repErr(token);
@@ -168,10 +166,7 @@ private Info findName(Token token)
 
 private void repErr(Token token)
 {
-    if(didReport.get(token) != null)
-        return;
     reportError(token, "constant '%s' not found", token.getText());
-    didReport.put(token, Boolean.TRUE);
 
 }
 
@@ -179,12 +174,9 @@ private void repErr(Token token, List<Info> matches)
 {
     if(matches.size() <= 1)
         return;
-    if(didReport.get(token) != null)
-        return;
     reportError(CONST_AMBIG, token, "constant '%s' is ambiguous: %s",
                 token.getText(),
                 matches.stream().map((m) -> m.id).collect(Collectors.toList()));
-    didReport.put(token, Boolean.TRUE);
 
 }
 

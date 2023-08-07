@@ -465,7 +465,7 @@ private static void addCastroFunctions()
         else {
             char charCode = charCodeString.charAt(1);
             if(charCode < ' ' || charCode > '~')
-                reportError(ctx.fc, "'%c' must be in range ' ' to '~'", charCode);
+                reportError(ctx.fc, "'%c' not in range ' ' to '~'", charCode);
             else {
                 sb.append((int)charCode).append(' ');
                 isError = false;

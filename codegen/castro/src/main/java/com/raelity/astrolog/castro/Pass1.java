@@ -295,25 +295,7 @@ public void exitExprFunc(ExprFuncContext ctx)
 @Override
 public void exitEveryRule(ParserRuleContext ctx)
 {
-    // TODO: Would be nice to define the Interval for a line
-    //       at enter every rule. Would have to spin
-    //       through the line (assuming that works).
-    //       Maybe better, build the entire map all at once
-    //       before starting to parse.
-    //CharStream cs = ctx.start.getInputStream();
-    //String t = cs.toString();
-
-    if(ctx.start == null || ctx.stop == null)
-        return;
-    int startIndex = ctx.start.getStartIndex();
-    if(startIndex < 0) {
-        return;
-    }
-    int line = ctx.start.getLine();
-    startIndex -= ctx.start.getCharPositionInLine();
-    wLineMap.includeLineStart(line, startIndex);
-    int stopIndex = ctx.stop.getStopIndex();
-    wLineMap.includeLineStop(line, stopIndex);
+    wLineMap.extendLine(ctx.start, ctx.stop);
 }
     
 }

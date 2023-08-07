@@ -399,11 +399,6 @@ final Var declare(String name, int size)
     return declare(name, size, -1);
 }
 
-private String lcase(String name)
-{
-    return ignore_case ? name.toLowerCase(Locale.ROOT) : name;
-}
-
 /** Allocate the variable at the specified address.
  * @return Var, may have error state.
  */
@@ -573,6 +568,11 @@ abstract void dumpVar(PrintWriter out, Var var, boolean includeFileName);
 public void dumpLayout(PrintWriter out)
 {
     out.printf("// Space: %s. Layout: %s\n", memSpaceName, layoutRestrictions);
+}
+
+private String lcase(String name)
+{
+    return ignore_case ? name.toLowerCase(Locale.ROOT) : name;
 }
 
     private class VarIter implements Iterator<Var>
@@ -764,7 +764,7 @@ public void dumpLayout(PrintWriter out)
 
     boolean isAllocated()
     {
-        return addr > 0;
+        return addr >= 0;
     }
 
     public EnumSet<VarState> getState()

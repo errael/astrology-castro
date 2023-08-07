@@ -89,6 +89,7 @@ typeset -A error_tests
 typeset -A error_files
 
 run_all() {
+    castro --ver
     run_infra_tests
     run_printf_tests
 }

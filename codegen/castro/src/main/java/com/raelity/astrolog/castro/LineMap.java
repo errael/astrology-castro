@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
 
 import com.raelity.astrolog.castro.Castro.CastroLineMaps;
@@ -77,15 +78,42 @@ public String getFileName()
             interval = lineList.get(line);
         return interval;
     }
+
+    // TODO: Would be nice to define the Interval for a line
+    //       at enter every rule. Would have to spin
+    //       through the line (assuming that works).
+    //       Maybe better, build the entire map all at once
+    //       before starting to parse.
+    //CharStream cs = ctx.start.getInputStream();
+    //String t = cs.toString();
+
+    public void extendLine(Token start, Token stop)
+    {
+        if(start == null || stop == null)
+            return;
+        if(start.getLine() != stop.getLine())
+            return; // Added this in late beta; was processing program context.
+        //System.err.println("Spanning lines");
+
+        int startIndex = start.getStartIndex();
+        if(startIndex < 0) {
+            return;
+        }
+        int line = start.getLine();
+        startIndex -= start.getCharPositionInLine();
+        includeLineStart(line, startIndex);
+        int stopIndex = stop.getStopIndex();
+        includeLineStop(line, stopIndex);
+    }
     
-    Interval insureLine(int line)
+    private Interval insureLine(int line)
     {
         while(lineList.size() < line + 1)
             lineList.add(null);
         return lineList.get(line);
     }
 
-    public void includeLineStart(int line, int index)
+    private void includeLineStart(int line, int index)
     {
         Interval interval = insureLine(line);
         // If interval is not null, the beginning of line is already set
@@ -94,13 +122,13 @@ public String getFileName()
         
     }
 
-    public void includeLineStop(int line, int index)
+    private void includeLineStop(int line, int index)
     {
         Interval interval = insureLine(line);
         if(index > interval.b)
             lineList.set(line, new Interval(interval.a, index));
         
     }
-    }
+    } // class WriteableLineMap
 
 }

@@ -1,0 +1,8 @@
+/*
+ * OutOfMemory
+ */
+
+layout memory { base 30; limit 35; }
+
+var v1[3];
+var v2[3];

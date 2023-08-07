@@ -1,2 +1,48 @@
-Error: errors.castro:10:8 '    c = o_xxxx;' constant 'o_xxxx' not found
-Pass2: 1 errors
+Error: errors.castro:5:4 'zero' [OVERLAP_ERR]  conflicts with  '#created_min'  'a'  'b'
+Error: errors.castro:7:0 'c' builtin variable declaration requires initializer
+Error: errors.castro:8:0 'd' Can not specify address of builtin variable
+Error: errors.castro:10:0 must specify array size if no initializers
+Error: errors.castro:11:0 too many initializers
+Error: errors.castro:12:4 constant 'o_xx' not found
+Error: errors.castro:12:0 'o_xx' is a constant, can not declare 'o_xx' as a variable
+Pass1: 0 syntax errors
+Pass1: 7 other errors
+Error: errors.castro:16:8 '    a = o_ne;' constant 'o_ne' not found
+Error: errors.castro:17:8 '    b = o_xxxx;' constant 'o_xxxx' not found
+Error: errors.castro:19:11 '    switch(arr);' 'arr' is not a defined switch
+Error: errors.castro:20:10 '    macro(arr);' 'arr' is not a defined macro
+Error: errors.castro:25:4 '    ~0 {a;}' '~0' enable/disable AstroExpression does not take an expression
+Error: errors.castro:26:4 '    -~0 {a;}' '-~0' enable/disable AstroExpression does not take an expression
+Error: errors.castro:27:4 '    =~0 {a;}' '=~0' enable/disable AstroExpression does not take an expression
+Error: errors.castro:28:4 '    _~0 {a;}' '_~0' enable/disable AstroExpression does not take an expression
+Error: errors.castro:31:4 '    ~cmd' '~cmd' AstroExpression command without an expression
+Error: errors.castro:32:4 '    -~cmd' '-~cmd' AstroExpression command without an expression
+Error: errors.castro:33:4 '    =~cmd' '=~cmd' AstroExpression command without an expression
+Error: errors.castro:34:4 '    _~cmd' '_~cmd' AstroExpression command without an expression
+Error: errors.castro:37:4 '    cmd {a;}' 'cmd' switch command does not take an expression
+Error: errors.castro:38:4 '    -cmd {a;}' '-cmd' switch command does not take an expression
+Error: errors.castro:39:4 '    =cmd {a;}' '=cmd' switch command does not take an expression
+Error: errors.castro:40:4 '    _cmd {a;}' '_cmd' switch command does not take an expression
+Error: errors.castro:45:4 '    ~ 0' '~ 0' whitespace in switch command name
+Error: errors.castro:47:4 '    - ~0' '- ~0' whitespace in switch command name
+Error: errors.castro:48:4 '    = ~0' '= ~0' whitespace in switch command name
+Error: errors.castro:49:4 '    _ ~0' '_ ~0' whitespace in switch command name
+Error: errors.castro:51:4 '    -~ 0' '-~ 0' whitespace in switch command name
+Error: errors.castro:52:4 '    =~ 0' '=~ 0' whitespace in switch command name
+Error: errors.castro:53:4 '    _~ 0' '_~ 0' whitespace in switch command name
+Error: errors.castro:55:4 '    - ~cmd {a;}' '- ~cmd' whitespace in switch command name
+Error: errors.castro:56:4 '    = ~cmd {a;}' '= ~cmd' whitespace in switch command name
+Error: errors.castro:57:4 '    _ ~cmd {a;}' '_ ~cmd' whitespace in switch command name
+Error: errors.castro:59:4 '    -~ cmd {a;}' '-~ cmd' whitespace in switch command name
+Error: errors.castro:60:4 '    =~ cmd {a;}' '=~ cmd' whitespace in switch command name
+Error: errors.castro:61:4 '    _~ cmd {a;}' '_~ cmd' whitespace in switch command name
+Error: errors.castro:64:4 '    - cmd' '- cmd' whitespace in switch command name
+Error: errors.castro:65:4 '    = cmd' '= cmd' whitespace in switch command name
+Error: errors.castro:66:4 '    _ cmd' '_ cmd' whitespace in switch command name
+Error: errors.castro:70:4 '    cmd  { ~ a; }' 'cmd' switch command does not take an expression; '{~' instead of'{ ~'?
+Error: errors.castro:71:4 '    -cmd { ~ a; }' '-cmd' switch command does not take an expression; '{~' instead of'{ ~'?
+Error: errors.castro:72:4 '    =cmd { ~ a; }' '=cmd' switch command does not take an expression; '{~' instead of'{ ~'?
+Error: errors.castro:73:4 '    _cmd { ~ a; }' '_cmd' switch command does not take an expression; '{~' instead of'{ ~'?
+Error: errors.castro:77:5 '    *o_sun;' constant name 'O_Sun' used as a variable
+Error: errors.castro:78:8 '    a = foobar;' unknown variable 'foobar' (first occurance)
+Pass2: 38 errors

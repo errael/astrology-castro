@@ -1,0 +1,16 @@
+Error: errors-4.castro:5:34 '440:420' 440 is greater than 420
+line 9:7 mismatched input 'foo' expecting {'memory', 'switch', 'macro'}
+Error: errors-4.castro:13:0 layout must be first, before 'var' or 'macro' or 'switch'
+Error: errors-4.castro:13:7 'memory' layout already specified
+Error: errors-4.castro:13:26 'base' already set
+Error: errors-4.castro:13:47 'limit' already set
+Error: errors-4.castro:14:0 layout must be first, before 'var' or 'macro' or 'switch'
+Error: errors-4.castro:14:7 'switch' layout already specified
+Error: errors-4.castro:14:26 'base' already set
+Error: errors-4.castro:14:47 'limit' already set
+Error: errors-4.castro:15:0 layout must be first, before 'var' or 'macro' or 'switch'
+Error: errors-4.castro:15:7 'macro' layout already specified
+Error: errors-4.castro:15:25 'base' already set
+Error: errors-4.castro:15:46 'limit' already set
+Pass1: 1 syntax errors
+Pass1: 13 other errors

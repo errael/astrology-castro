@@ -1,11 +1,81 @@
 /*
- * Check out some errors.
+ * Check out some errors: pass1, pass2.
  */
+
+var zero[3] @0;
+var arr[3];
+var c;
+var d @40;
+var e[] {1, 2};
+var arr2[];
+var arr3[2] {1, 2, 3};
+var o_xx;
 
 macro constant_errors {
     // unkown var
-    // a = o_ne;
-    // b = o_pl;
-
-    c = o_xxxx;
+    a = o_ne;
+    b = o_xxxx;
+    c = arr[2];
+    switch(arr);
+    macro(arr);
 }
+
+run {
+    // error: does not take expression
+    ~0 {a;}
+    -~0 {a;}
+    =~0 {a;}
+    _~0 {a;}
+
+    // error: missing expression
+    ~cmd
+    -~cmd
+    =~cmd
+    _~cmd
+
+    // error: regualr command does not take an expression
+    cmd {a;}
+    -cmd {a;}
+    =cmd {a;}
+    _cmd {a;}
+}
+
+// can't have spaces in "-~cmd"
+run {
+    ~ 0
+
+    - ~0
+    = ~0
+    _ ~0
+
+    -~ 0
+    =~ 0
+    _~ 0
+
+    - ~cmd {a;}
+    = ~cmd {a;}
+    _ ~cmd {a;}
+
+    -~ cmd {a;}
+    =~ cmd {a;}
+    _~ cmd {a;}
+
+
+    - cmd
+    = cmd
+    _ cmd
+}
+
+run {
+    cmd  { ~ a; }
+    -cmd { ~ a; }
+    =cmd { ~ a; }
+    _cmd { ~ a; }
+}
+
+macro constant_errors_2 {
+    *o_sun;
+    a = foobar;
+}
+
+//run { SetString arr[3] "foo" "bar" }

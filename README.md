@@ -195,8 +195,8 @@ macro m1 {
 }
 ```
 
-#####   ? :
-In `castro`, `e1 ? e2 : e3` follows the same semantics as `if(e1) e2 else e3` (and `"C"`) and only evaluates one of `e2` or `e3`. This is different from `Astrolog`'s `? :` operator which evaluates both `e2` and `e3`. `castro` provides a pseudo function `QuestColon(e1, e2, e3)` which has the `Astrolog` semantics.
+#####   ? : - QuestColon
+In `castro`, `e1 ? e2 : e3` has the same semantics as `if(e1) e2 else e3` (and `"C"`) and only evaluates one of `e2` or `e3`. This is different from `Astrolog`'s `? :` operator which evaluates both `e2` and `e3`. `castro` provides a function `QuestColon(e1, e2, e3)` which has the `Astrolog` semantics.
 
 ###     switch
 The `switch` statement generates a `command switch macro` using `-M0`; it contains `Astrolog command switch`es and their arguments.
