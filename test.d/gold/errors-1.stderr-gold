@@ -1,0 +1,49 @@
+Error: errors-1.castro:5:4 'zero' [OVERLAP_ERR]  conflicts with  '#created_min'  'a'  'b'
+Error: errors-1.castro:7:0 'c' builtin variable declaration requires initializer
+Error: errors-1.castro:8:0 'd' Can not specify address of builtin variable
+Error: errors-1.castro:10:0 must specify array size if no initializers
+Error: errors-1.castro:11:0 too many initializers
+Error: errors-1.castro:12:4 constant 'o_xx' not found
+Error: errors-1.castro:12:0 'o_xx' is a constant, can not declare 'o_xx' as a variable
+Pass1: 0 syntax errors
+Pass1: 7 other errors
+Error: errors-1.castro:16:8 '    a = o_ne;' constant 'o_ne' not found
+Error: errors-1.castro:17:8 '    b = o_xxxx;' constant 'o_xxxx' not found
+Error: errors-1.castro:19:11 '    switch(arr);' 'arr' is not a defined switch
+Error: errors-1.castro:20:10 '    macro(arr);' 'arr' is not a defined macro
+Error: errors-1.castro:25:4 '    ~0 {a;}' '~0' enable/disable AstroExpression does not take an expression
+Error: errors-1.castro:26:4 '    -~0 {a;}' '-~0' enable/disable AstroExpression does not take an expression
+Error: errors-1.castro:27:4 '    =~0 {a;}' '=~0' enable/disable AstroExpression does not take an expression
+Error: errors-1.castro:28:4 '    _~0 {a;}' '_~0' enable/disable AstroExpression does not take an expression
+Error: errors-1.castro:31:4 '    ~cmd' '~cmd' AstroExpression command without an expression
+Error: errors-1.castro:32:4 '    -~cmd' '-~cmd' AstroExpression command without an expression
+Error: errors-1.castro:33:4 '    =~cmd' '=~cmd' AstroExpression command without an expression
+Error: errors-1.castro:34:4 '    _~cmd' '_~cmd' AstroExpression command without an expression
+Error: errors-1.castro:37:4 '    cmd {a;}' 'cmd' switch command does not take an expression
+Error: errors-1.castro:38:4 '    -cmd {a;}' '-cmd' switch command does not take an expression
+Error: errors-1.castro:39:4 '    =cmd {a;}' '=cmd' switch command does not take an expression
+Error: errors-1.castro:40:4 '    _cmd {a;}' '_cmd' switch command does not take an expression
+Error: errors-1.castro:45:4 '    ~ 0' '~ 0' whitespace in switch command name
+Error: errors-1.castro:47:4 '    - ~0' '- ~0' whitespace in switch command name
+Error: errors-1.castro:48:4 '    = ~0' '= ~0' whitespace in switch command name
+Error: errors-1.castro:49:4 '    _ ~0' '_ ~0' whitespace in switch command name
+Error: errors-1.castro:51:4 '    -~ 0' '-~ 0' whitespace in switch command name
+Error: errors-1.castro:52:4 '    =~ 0' '=~ 0' whitespace in switch command name
+Error: errors-1.castro:53:4 '    _~ 0' '_~ 0' whitespace in switch command name
+Error: errors-1.castro:55:4 '    - ~cmd {a;}' '- ~cmd' whitespace in switch command name
+Error: errors-1.castro:56:4 '    = ~cmd {a;}' '= ~cmd' whitespace in switch command name
+Error: errors-1.castro:57:4 '    _ ~cmd {a;}' '_ ~cmd' whitespace in switch command name
+Error: errors-1.castro:59:4 '    -~ cmd {a;}' '-~ cmd' whitespace in switch command name
+Error: errors-1.castro:60:4 '    =~ cmd {a;}' '=~ cmd' whitespace in switch command name
+Error: errors-1.castro:61:4 '    _~ cmd {a;}' '_~ cmd' whitespace in switch command name
+Error: errors-1.castro:64:4 '    - cmd' '- cmd' whitespace in switch command name
+Error: errors-1.castro:65:4 '    = cmd' '= cmd' whitespace in switch command name
+Error: errors-1.castro:66:4 '    _ cmd' '_ cmd' whitespace in switch command name
+Error: errors-1.castro:70:4 '    cmd  { ~ a; }' 'cmd' switch command does not take an expression; '{~' instead of'{ ~'?
+Error: errors-1.castro:71:4 '    -cmd { ~ a; }' '-cmd' switch command does not take an expression; '{~' instead of'{ ~'?
+Error: errors-1.castro:72:4 '    =cmd { ~ a; }' '=cmd' switch command does not take an expression; '{~' instead of'{ ~'?
+Error: errors-1.castro:73:4 '    _cmd { ~ a; }' '_cmd' switch command does not take an expression; '{~' instead of'{ ~'?
+Error: errors-1.castro:77:5 '    *o_sun;' constant name 'O_Sun' used as a variable
+Error: errors-1.castro:78:8 '    a = foobar;' unknown variable 'foobar' (first occurance)
+Error: errors-1.castro:79:8 '    a = lat;' unknown variable 'lat' (first occurance); function 'Lat()'?
+Pass2: 39 errors

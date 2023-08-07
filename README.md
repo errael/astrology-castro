@@ -1,4 +1,4 @@
-# astrology-castro - v1 beta.2
+# castro - v1 beta.4
 `castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression` (and WYSIWYG). `castro` is a standalone tool. It outputs a `.as` file that can be used with `Astrolog`'s command switch `-i <name>.as`. `castro` easily interoperates with existing `Astrolog` command switch files.
 
 Some motivating factors for `castro`
@@ -287,6 +287,7 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
     run { ~1 { switch(some_switch); }
     switch some_switch { -YYT "Boo\n" }
 ```
+- Generate a `.xref` output file which lists vars with where they are used.
 
 
 ##     Warnings/Oddities:
@@ -403,13 +404,13 @@ Except for `K_` and `Z_`, `castro` checks for valid constants;
 
 #### castro constants
 
-`FK_F0` - the base for the X11 function key codes,
+`FK_F0_KC` - the base for the X11 function key codes,
 see ~XQ at [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express).
 
-For function keys, only `FK_F0` is a defined constant. The following is for reference.
+For function keys, only `FK_F0_KC` is a defined constant. The following is for reference.
 | key | switch slot | fkey number | note |
 | --- | ----------- | ----------- | ---- |
-|FK_F0      | ----- | 200  | not a function key, but works well with math
+|FK_F0_KC   | ----- | 200  | not a function key, but works well with math
 |F1         | 1     | 201  |
 |Shift-F1   | 13    | 213  |
 |Control-F1 | 25    | 225  |
@@ -418,7 +419,7 @@ For function keys, only `FK_F0` is a defined constant. The following is for refe
 ```
 switch func_key @3 { ... }    // This switch invoked by pressing F3
 // hook so when 'a' key (ascii 97) is pressed, map it to `func_key` which is F3
-run { ~XQ { if (z == KeyC("a")) z = FK_F0 + SAddr(func_key); } }
+run { ~XQ { if (z == KeyC("a")) z = FK_F0_KC + SAddr(func_key); } }
 ```
 <!--
 // hook so when 'a' key (ascii 97) is pressed, map it to `switch func_key`

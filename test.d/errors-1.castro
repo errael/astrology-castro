@@ -76,6 +76,7 @@ run {
 macro constant_errors_2 {
     *o_sun;
     a = foobar;
+    a = lat;
 }
 
 //run { SetString arr[3] "foo" "bar" }

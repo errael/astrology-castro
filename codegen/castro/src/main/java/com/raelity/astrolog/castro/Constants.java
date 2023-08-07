@@ -33,9 +33,24 @@ import static com.raelity.astrolog.castro.tables.AstrologConstants.*;
 public class Constants
 {
 
+private static final int NFK = 12;
 public static final int FK_F0_KEY_CODE = 200; 
-public static final int FK_FIRST = 1; 
-public static final int FK_LAST = 48; 
+public static final int FK_F0_SLOT = 0;
+public static final int FK_FIRST = FK_F0_SLOT + 1; 
+public static final int FK_LAST = FK_F0_SLOT + 4 * NFK; 
+
+record NameVal(String n, int v){};
+private static final NameVal[] castroConsts = new NameVal[] {
+    new NameVal(  "FK_F0", FK_F0_SLOT + 0 * NFK),
+    new NameVal("S_FK_F0", FK_F0_SLOT + 1 * NFK),
+    new NameVal("C_FK_F0", FK_F0_SLOT + 2 * NFK),
+    new NameVal("A_FK_F0", FK_F0_SLOT + 3 * NFK),
+
+    new NameVal(  "FK_F0_KC", FK_F0_KEY_CODE + 0 * NFK),
+    new NameVal("S_FK_F0_KC", FK_F0_KEY_CODE + 1 * NFK),
+    new NameVal("C_FK_F0_KC", FK_F0_KEY_CODE + 2 * NFK),
+    new NameVal("A_FK_F0_KC", FK_F0_KEY_CODE + 3 * NFK),
+};
 
 private static Constants INSTANCE;
 private static Constants get()
@@ -82,14 +97,14 @@ public static String constant(Token token)
            //: match.flags.contains(QUOTE_IT) ? "\"" + match.val + "\"" : match.val;
 }
 
-private static String astrologPrefix = "moahskwz";
-private static String astrologPassthruPrefix = "kz";
+private static final String astrologPrefix = "moahskwz";
+private static final String astrologPassthruPrefix = "kz";
 
 private final NavigableMap<String, Info> constants = new TreeMap<>();
 private final Set<String> exactConstants = new HashSet<>();
 
 /** Available for short term use. */
-private StringBuilder sb = new StringBuilder();
+private final StringBuilder sb = new StringBuilder();
 /** Available for short term use. */
 private EnumSet<ConstantFlag> tmpConstantFlagSet = EnumSet.noneOf(ConstantFlag.class);
 
@@ -106,8 +121,12 @@ private void initExactConstants()
     addConstant("signs", new Info("Signs", EnumSet.of(SRC_ASTROLOG, EXACT)));
 
     /** the "base" for X function keys. Add 1 for F1, ... */
-    addConstant("fk_f0", new Info("FK_F0", String.valueOf(FK_F0_KEY_CODE),
-                                  EnumSet.of(SRC_CASTRO, EXACT)));
+    for(NameVal cc : castroConsts) {
+        addConstant(cc.n.toLowerCase(Locale.ROOT),
+                    new Info(cc.n, String.valueOf(cc.v),
+                             EnumSet.of(SRC_CASTRO, EXACT)));
+    }
+    // castroConsts = null; not that much mem
 }
 
 private void addConstant(String name, Info info)
@@ -123,9 +142,11 @@ private void addConstant(String name, Info info)
 private Info findName(Token token)
 {
     String id = token.getText().toLowerCase(Locale.ROOT);
-    boolean needsExact = true;
-    // Short circuit if can't be a variable
-    if(hasAstrologPrefix(id)) {
+    boolean needsExact;
+    // Short circuit if can't be a constant
+    if(exactConstants.contains(id))
+        needsExact = true;
+    else if(hasAstrologPrefix(id)) {
         // An astrolog constant must have at leat 5 chars: 2(prefix) + 3(name)
         if(id.length() < 5) {
             repErr(token);
@@ -134,7 +155,7 @@ private Info findName(Token token)
         if(astrologPassthruPrefix.indexOf(id.charAt(0)) >= 0)
             return new Info(token.getText(), EnumSet.of(NONE, QUOTE_IT));
         needsExact = false;
-    } else if(!exactConstants.contains(id)) {
+    } else {
         repErr(token);
         return null;
     }
@@ -157,11 +178,18 @@ private Info findName(Token token)
         (info.flags.contains(LOW_PRI) ? matches_low_pri : matches).add(info);
     }
     List<Info> winner = !matches.isEmpty() ? matches : matches_low_pri;
-    if(winner.isEmpty())
+    if(winner.isEmpty()) {
         repErr(token);
-    repErr(token, winner);
+        return null;
+    }
     // When there's more than one match, take the first match.
-    return winner.isEmpty() ? null : winner.get(0);
+    Info winfo = winner.get(0);
+    if(winfo.flags.contains(EXACT) && !winfo.id.equalsIgnoreCase(id)) {
+        repErr(token);
+        return null;
+    }
+    repErr(token, winner); // only does something if more than one match
+    return winfo;
 }
 
 private void repErr(Token token)
