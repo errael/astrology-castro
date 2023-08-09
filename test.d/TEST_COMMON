@@ -2,6 +2,10 @@
 
 VER=$(castro-latest)
 
+# TODO:
+# $ ls ../codegen/castro/build/libs/castro-?.?.?.jar | tail -1
+# ../codegen/castro/build/libs/castro-0.8.2.jar
+
 CASTRO_JAR=$DIR/../codegen/castro/build/libs/castro-$VER.jar
 
 # Can specify extra args per test, note test_name is WITHOUT the ".castro"

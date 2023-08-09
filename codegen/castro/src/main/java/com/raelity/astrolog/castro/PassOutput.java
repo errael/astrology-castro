@@ -20,8 +20,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.RunContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Var1Context;
-import com.raelity.astrolog.castro.antlr.AstroParser.VarArrayContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.VarDefContext;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
@@ -304,7 +303,25 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
                 removeTrailingBlanks(lsb).append(quote);
             } else if(sc_ctx.assign != null) {
                 // ~2 or ~20 AstroExpr hooks
-                createStringAssignmenCommand(lsb, sc_ctx, quote);
+                List<String> strings = collectAssignStrings(sc_ctx);
+                Var var = registers.getVar(sc_ctx.l.id.getText());
+                // check if strings fit in allocated space.
+                int room = 1;   // assume there's room for one string
+                int offset = 0;
+                if(sc_ctx.l instanceof LvalArrayContext arr_ctx) {
+                    // can only check if there's a constant index
+                    Integer constVal = expr2constInt(arr_ctx.idx);
+                    if(constVal != null) {
+                        offset = constVal;
+                        int size = var.getSize();
+                        room = size - offset;
+                    }
+                }
+                if(strings.size() > room)
+                    reportError(ARRAY_OOB, sc_ctx.l,
+                                "'%s' array index out of bounds", sc_ctx.l.getText());
+                createStringAssignmenCommand(lsb, var.getAddr() + offset,
+                                             strings, quote);
             } else
                 throw new IllegalArgumentException(sc_ctx.getText());
         }
@@ -466,13 +483,11 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
         cmdPart.set(2, sb_tmp.toString());
 }
 
-private void createStringAssignmenCommand(StringBuilder lsb,
-                                          Switch_cmdContext sc_ctx, char quote)
+private void createStringAssignmenCommand(StringBuilder lsb, int addr,
+                                          List<String> strings, char quote)
 {
-    List<String> strings= collectAssignStrings(sc_ctx);
     // Find the character to use for AstroExpr string separator.
     // Glom together all the strings, for easier search.
-    //char separator = (char)-1;
     char separator = (char)-1;
     if(strings.size() != 1) {
         String tString = String.join("", strings);
@@ -486,25 +501,11 @@ private void createStringAssignmenCommand(StringBuilder lsb,
             throw new IllegalArgumentException("Can't find a separator to use");
         }
     }
-    // check if strings fit in allocated space.
-    int room = 1;   // assume there's room for one string
-    if(sc_ctx.l instanceof LvalArrayContext arr_ctx) {
-        // can only check if there's a constant index
-        Integer constVal = expr2constInt(arr_ctx.idx);
-        if(constVal != null) {
-            int size = registers.getVar(arr_ctx.id.getText()).getSize();
-            room = size - constVal;
-        }
-    }
-    if(strings.size() > room)
-        reportError(ARRAY_OOB, sc_ctx.l,
-                    "'%s' array index out of bounds", sc_ctx.l.getText());
-
     if(strings.size() == 1)
         lsb.append("~2 ");
     else
         lsb.append("~20 ");
-    lsb.append(apr.prefixExpr.removeFrom(sc_ctx.l)).append(quote);
+    lsb.append(addr).append(' ').append(quote);
     // found a char not in string, use it as the separator
     if(strings.size() == 1)
         lsb.append(strings.get(0));
@@ -515,37 +516,33 @@ private void createStringAssignmenCommand(StringBuilder lsb,
 }
 
 @Override
-public void exitVarArray(VarArrayContext ctx)
+public void exitVarDef(VarDefContext ctx)
 {
     if(ctx.init.isEmpty())
         return;
     sb.setLength(0);
     int addr = registers.getVar(ctx.id.getText()).getAddr();
-    ArrayList<String> strings = ctx.init.stream()
-            .map((e) -> apr.prefixExpr.removeFrom(e))
-            .collect(Collectors.toCollection(ArrayList::new));
-    for(String str : strings) {
-        sb.append("~1 '");
-        writeRegister(sb, addr).append(' ').append(str);
-        removeTrailingBlanks(sb).append("'\n");
-        addr++;
+
+    char quote = '\'';
+    if(ctx.init.get(0).s != null) {
+        ctx.init.get(0);
+        List<String> strings = ctx.init.stream()
+                .map((e) -> cleanString(e.s))
+                .collect(Collectors.toList());
+        createStringAssignmenCommand(sb, addr, strings, quote);
+        removeTrailingBlanks(sb).append("\n");
+    } else {
+        List<String> strings = ctx.init.stream()
+                .map((e) -> apr.prefixExpr.removeFrom(e))
+                .collect(Collectors.toList());
+        for(String str : strings) {
+            sb.append("~1 '");
+            writeRegister(sb, addr).append(' ').append(str);
+            removeTrailingBlanks(sb).append("'\n");
+            addr++;
+        }
     }
     out.printf(sb.toString());
-}
-
-@Override
-public void exitVar1(Var1Context ctx)
-{
-    if(ctx.init == null)
-        return;
-    sb.setLength(0);
-    int addr = registers.getVar(ctx.id.getText()).getAddr();
-    String str = apr.prefixExpr.removeFrom(ctx.init);
-    sb.append("~1 '");
-    writeRegister(sb, addr).append(' ').append(str);
-    removeTrailingBlanks(sb).append("'\n");
-    out.printf(sb.toString());
-    super.exitVar1(ctx);
 }
 
 }

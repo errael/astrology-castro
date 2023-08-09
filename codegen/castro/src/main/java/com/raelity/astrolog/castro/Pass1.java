@@ -18,7 +18,6 @@ import com.raelity.astrolog.castro.antlr.AstroParser.Assign_macro_addrContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Assign_switch_addrContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.BaseContstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ConstraintContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.IntegerContext;
@@ -28,9 +27,9 @@ import com.raelity.astrolog.castro.antlr.AstroParser.LimitContstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Rsv_locContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Str_exprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Var1Context;
-import com.raelity.astrolog.castro.antlr.AstroParser.VarArrayContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.VarDefContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.VarContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
@@ -89,7 +88,7 @@ public Pass1()
  * @return true if token is builtin, otherwise false
  */
 private boolean checkBuiltin(ParserRuleContext ctx, Token id,
-                             IntegerContext addr, ExprContext init)
+                             IntegerContext addr, Str_exprContext init)
 {
         if(isBuiltinVar(id)) {
             if(addr != null)
@@ -104,50 +103,55 @@ private boolean checkBuiltin(ParserRuleContext ctx, Token id,
 /** Add a variable to the symbol table.
  * Allow builtin declarations that initialize: "var p {expr}", "var p[] {e1,e2}"
  */
-void declareVar(ParserRuleContext _ctx)
+void declareVar(VarDefContext ctx)
 {
     TerminalNode idNode;
     IntegerContext addrNode;
     int size;
-    switch(_ctx) {
-    case Var1Context ctx -> {
-        if(checkBuiltin(ctx, ctx.id, ctx.addr, ctx.init))
-            return;
+    if(checkBuiltin(ctx, ctx.id, ctx.addr, ctx.init.isEmpty() ? null : ctx.init.get(0)))
+        return;
 
-        idNode = ctx.Identifier();
-        addrNode = ctx.addr;
+    idNode = ctx.Identifier();
+    addrNode = ctx.addr;
+    if(ctx.arr == null)
         size = 1;
-    }
-    case VarArrayContext ctx -> {
-        if(checkBuiltin(ctx, ctx.id, ctx.addr, ctx.init.isEmpty() ? null : ctx.init.get(0)))
-            return;
-
-        idNode = ctx.Identifier();
-        addrNode = ctx.addr;
+    else {
         if(ctx.size == null && ctx.init.isEmpty()) {
-                reportError(ctx, "must specify array size if no initializers");
-                size = 1; // avoid another error
+            reportError(ctx, "must specify array size if no initializers");
+            size = 1; // avoid another error
         } else {
-            if(ctx.size != null) {
+            if(ctx.size != null)
                 size = parseInt(ctx.size.i);
-                if(ctx.init.size() > size)
-                    reportError(ctx, "too many initializers");
-            } else
+            else
                 size = ctx.init.size();
         }
     }
-    case null, default -> throw new IllegalArgumentException(_ctx.getText());
-    }
+    if(ctx.init.size() > size)
+        reportError(ctx, "too many initializers");
     if(hasErrorNode(idNode) || hasErrorNode(addrNode))
         return;
     Token id = idNode.getSymbol();
     if( isConstantName(id)) {
-        reportError(_ctx, "'%s' is a constant, can not declare '%s' as a variable", constantName(id), id.getText());
+        reportError(ctx, "'%s' is a constant, can not declare '%s' as a variable", constantName(id), id.getText());
         return;
     }
     int addr = addrNode == null ? -1 : parseInt(addrNode.i);
     Var var = registers.declare(id, size, addr);
     checkReport(var);
+
+    // if any, check the initializer list.
+    // TODO: put this into Util?
+    int nStr = 0;
+    int nExpr = 0;
+    for(Str_exprContext se_ctx : ctx.init) {
+        if(se_ctx.s != null)
+            nStr++;
+        if(se_ctx.e != null)
+            nExpr++;
+    }
+    if(nStr > 0 && nExpr > 0)
+        reportError(ctx.init.get(0),
+                    "'%s' mixed numeric and string initialization", id.getText());
 }
 
 @Override
@@ -155,7 +159,7 @@ public void exitVar(VarContext ctx)
 {
     ParseTree child = ctx.getChild(0);
     if(child != null && !(child instanceof ErrorNode))
-        declareVar((ParserRuleContext)child);
+        declareVar(ctx.v);
 }
 
 private void declareSwithOrMacro(AstroMem mem, IntegerContext i_ctx, Token id)
