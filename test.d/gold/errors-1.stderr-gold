@@ -5,8 +5,9 @@ Error: errors-1.castro:10:0 must specify array size if no initializers
 Error: errors-1.castro:11:0 too many initializers
 Error: errors-1.castro:12:4 constant 'o_xx' not found
 Error: errors-1.castro:12:0 'o_xx' is a constant, can not declare 'o_xx' as a variable
+Error: errors-1.castro:83:0 too many initializers
 Pass1: 0 syntax errors
-Pass1: 7 other errors
+Pass1: 8 other errors
 Error: errors-1.castro:16:8 '    a = o_ne;' constant 'o_ne' not found
 Error: errors-1.castro:17:8 '    b = o_xxxx;' constant 'o_xxxx' not found
 Error: errors-1.castro:19:11 '    switch(arr);' 'arr' is not a defined switch
@@ -46,4 +47,5 @@ Error: errors-1.castro:73:4 '    _cmd { ~ a; }' '_cmd' switch command does not t
 Error: errors-1.castro:77:5 '    *o_sun;' constant name 'O_Sun' used as a variable
 Error: errors-1.castro:78:8 '    a = foobar;' unknown variable 'foobar' (first occurance)
 Error: errors-1.castro:79:8 '    a = lat;' unknown variable 'lat' (first occurance); function 'Lat()'?
-Pass2: 39 errors
+Error: errors-1.castro:80:9 '    a = &never_seen_123;' unknown variable 'never_seen_123' (first occurance)
+Pass2: 40 errors

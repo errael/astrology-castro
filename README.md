@@ -146,6 +146,10 @@ Some errors that `castro` reports, may in fact not be errors depending on the ta
 
 ##      Castro Language
 
+Probably the trickiest thing when writing castro programs is dealing with `switch` versus `macro`; it's like having two languages. The `switch` format is the familiar `Astrolog command switch file. `switch` and `run` is almost free form input, very little checking, and delcarative; and `macro` is strictly parsed and procedural. `switch` has two mechanisms that embed `macro` like procedures
+- `AstroExpression` command switch hooks: `~cmd { ... }`
+- `AstroExpression` as a command switch argument `-Xxx {~ ... }`
+
 ###     Statement summary
 These are the top level statements
 - `layout` directives constrain automatic allocation. The three regions are memory/macro/switch. `layout` is optional and, if present, must be before anything else.
@@ -288,11 +292,13 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
     switch some_switch { -YYT "Boo\n" }
 ```
 - Generate a `.xref` output file which lists vars with where they are used.
+- Handle parsing inside a `switch`/`run` better so fewer words require quoting.
 
 
 ##     Warnings/Oddities:
 - `castro` checks for valid `AstroExpression` function names. There is no such check for valid switch commands; if that information becomes available, `castro` will use it.
 - Too long switch or macro don't fit in `Astrolog`'s parser; there is no "too large" error. There is often an apparently unrelated error message. Splitting it into two...
+- cprintf only works in a `switch`/`run`.
 - Some cases where blanks are significant
     - The functions `=Obj` and `=Hou` can cause problems, for example<br>
       `a==Obj(...)` is parsed as `a == Obj(...)`, write `a= =Obj(...)` for assignment.
@@ -350,6 +356,8 @@ switch switchName { -Ao {~ aspect; } {~ orb; }
 
 ### variables & layout
 [Declare/initialize numeric/string variables](#variables)
+
+`AstroExpression` hook processings can use up to 6 variables: u, v, ..., z.
 
 Varible names are case insensitive.
 

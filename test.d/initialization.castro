@@ -29,3 +29,8 @@ switch foo @100 {
     //ERR// SetString yy "one" "two"
     //ERR// SetString yy[3] "one" // "two"
 }
+
+var zc1 { "one" };
+var zc2[] { "a", "b", "c" };
+var zc3[5] { "d", "e", "f" };
+var zc4[3] { "g", "h", "i" };

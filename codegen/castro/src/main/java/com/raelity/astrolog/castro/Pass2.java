@@ -6,6 +6,7 @@ package com.raelity.astrolog.castro;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
@@ -18,6 +19,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Sw_nameContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.TermAddressOfContext;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.tables.Functions;
@@ -66,8 +68,12 @@ private Pass2()
  * if not then report an error and give it a dummy declaration
  * to avoid further errors on the name.
  */
-private void checkReportUnknownVar(LvalContext ctx, Token token)
+private void checkReportUnknownVar(ParserRuleContext ctx, Token token)
 {
+    // last minute change to handle both lval and termAddr,
+    // don't let anything else get by ...
+    if(!(ctx instanceof LvalContext || ctx instanceof TermAddressOfContext ))
+        throw new IllegalArgumentException();
     String id = token.getText();
     Var var = registers.getVar(id);
     if(var != null)
@@ -100,19 +106,19 @@ void useListener()
 @Override
 public void exitLvalMem(LvalMemContext ctx)
 {
-    checkReportUnknownVar(ctx, ctx.Identifier().getSymbol());
+    checkReportUnknownVar(ctx, ctx.id);
 }
 
 @Override
 public void exitLvalIndirect(LvalIndirectContext ctx)
 {
-    checkReportUnknownVar(ctx, ctx.Identifier().getSymbol());
+    checkReportUnknownVar(ctx, ctx.id);
 }
 
 @Override
 public void exitLvalArray(LvalArrayContext ctx)
 {
-    checkReportUnknownVar(ctx, ctx.Identifier().getSymbol());
+    checkReportUnknownVar(ctx, ctx.id);
     Integer constVal = Util.expr2constInt(ctx.idx);
     // If var's null, should have already been an error
     Var var = registers.getVar(ctx.id.getText());
@@ -124,6 +130,15 @@ public void exitLvalArray(LvalArrayContext ctx)
             reportError(Error.ARRAY_OOB, ctx, "'%s' array index out of bounds", ctx.getText());
     }
 }
+
+// This is a way for an lval to sneak in.
+@Override
+public void exitTermAddressOf(TermAddressOfContext ctx)
+{
+    checkReportUnknownVar(ctx, ctx.id);
+}
+
+
 
 /** Check that only switch commands for astro expression hooks
  * have expressions. Note, this is different from {@literal {~ ... }}.

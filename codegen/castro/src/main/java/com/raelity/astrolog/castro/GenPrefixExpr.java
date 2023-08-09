@@ -294,6 +294,28 @@ protected String genSw_cmdString(Switch_cmdContext ctx)
     return ctx.getText();
 }
 
+protected String genString(Token token)
+{
+    return token.getText();
+}
+
+/**
+ * Might be a string or an expr; bring up and expr, build a string.
+ */
+@Override
+public void exitStr_expr(Str_exprContext ctx)
+{
+    if(ctx.s != null) {
+        String s = genString(ctx.s);
+        apr.prefixExpr.put(ctx, s);
+        return;
+    }
+
+    // bring up the expr
+    String s = apr.prefixExpr.removeFrom(ctx.e);
+    apr.prefixExpr.put(ctx, s);
+}
+
 // The following simply pull up strings, no transformation through gen*().
 
 @Override

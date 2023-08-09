@@ -37,25 +37,32 @@ rsv_loc
 // TODO: also string array initialization
 
 var
-    : var1 | varArray 
-    ;
-
-/* var pp;
- * var pp @101;
- * var pp { 4 };
- */
-var1
-    : 'var' id=Identifier ('@' addr=integer)? ('{' init=expr '}')? ';'
+    : v=varDef
     ;
 
 /*
+ * Handle var definition
+ *      optionally array, optionally assign address,
+ *      optionally initialize, optionally strings.
+ *
+ * var pp;
+ * var pp @101;
+ * var pp { 4 };
+ *
  * var pp[3];
  * var pp[3] @100 { 4, 3 }    // pp is size 3, starts at 100, pp[2] is not init.
  * var pp[] { 4, 3 }          // pp is size 2
+ *
+ * Allow trailing comma on initializer list
  */
-varArray
-    : 'var' id=Identifier '[' (size=integer)? ']' ('@' addr=integer)?
-                                ('{' init+=expr (',' init+=expr)* '}')? ';'
+varDef
+    : 'var' id=Identifier (arr='[' (size=integer)? ']')? ('@' addr=integer)?
+                    ( '{' init+=str_expr (',' init+=str_expr)* ','? '}' )? ';'
+    ;
+
+str_expr
+    : e=expr
+    | s=String
     ;
 
 /** copy stuff verbatim to output */
@@ -101,11 +108,13 @@ sw_name
     : pre=('-' | '=' | '_' )?
             ( id=IdentifierDigitNondigit |  id=Identifier
                 | id=IntegerConstant | id=BinaryConstant
-                | id=HexadecimalConstant | id=OctalConstant)
+                | id=HexadecimalConstant | id=OctalConstant
+                | id=DecimalFloatingConstant )
     | pre=('-' | '=' | '_' )? tilde='~'
             (id=IdentifierDigitNondigit |  id=Identifier | id=IntegerConstant
                 | id=IntegerConstant | id=BinaryConstant
-                | id=HexadecimalConstant | id=OctalConstant)
+                | id=HexadecimalConstant | id=OctalConstant
+                | id=DecimalFloatingConstant )
     | tilde='~'
     ;
 
@@ -160,6 +169,10 @@ func_call
 
 // TODO: make '*' indirection in expr
 
+// NOTE: it doesn't look the <assoc=right> for assOp does anything
+//       might be because of the way the rule is written;
+//       the rule is "lval assOp expr".
+
 expr returns [int fBlock = 0]
 //@after {
 //    $fBlock = $stop.getType() == RightBrace ? 1 : 0;
@@ -175,8 +188,10 @@ expr returns [int fBlock = 0]
     | l=expr ('^') r=expr                       #exprBinOp
     | l=expr ('|') r=expr                       #exprBinOp
     | <assoc=right> expr '?' expr ':' expr      #exprQuestOp
-    | l=lval ao=('='|'+='|'-='|'*='|'/='|'%='|'<<='|'>>='|'&='|'^='|'|=')
-                                                        e=expr #exprAssOp
+    | <assoc=right>
+        l=lval ao=( '=' | '+=' | '-=' | '*=' | '/=' | '%='
+                            | '<<=' | '>>=' | '&=' | '^=' | '|=' )
+                    e=expr                  #exprAssOp
     | term                                  #exprTermOp
 
     | brace_block                           #exprBraceBlockOp
