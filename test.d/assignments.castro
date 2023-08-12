@@ -93,3 +93,11 @@ macro t4 {
     *pp += 3;
     pp[7] += 3;
 }
+
+macro t5 {
+    // optim to avoid using Neg
+    a = - 7;
+    a = b + - 11;
+    a = b + - 7 + c;
+    a = -3 -4;
+}

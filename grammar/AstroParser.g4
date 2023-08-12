@@ -147,7 +147,7 @@ brace_block
     ;
 
 paren_expr
-   : '(' expr ')'
+   : '(' e=expr ')'
    ;
 
 // TODO: NOTE: default all string or all expr.
@@ -178,21 +178,21 @@ expr returns [int fBlock = 0]
 //    $fBlock = $stop.getType() == RightBrace ? 1 : 0;
 //}
     : fc=func_call                      #exprFunc
-    | ('+'|'-'|'!'|'~') expr            #exprUnOp
-    | l=expr ('*'|'/'|'%') r=expr               #exprBinOp
-    | l=expr ('+'|'-') r=expr                   #exprBinOp
-    | l=expr ('<<'|'>>') r=expr                 #exprBinOp
-    | l=expr ('<'|'<='|'>'|'>=') r=expr         #exprBinOp
-    | l=expr ('=='|'!=') r=expr                 #exprBinOp
-    | l=expr ('&') r=expr                       #exprBinOp
-    | l=expr ('^') r=expr                       #exprBinOp
-    | l=expr ('|') r=expr                       #exprBinOp
+    | o=('+'|'-'|'!'|'~') e=expr          #exprUnOp
+    | l=expr o=('*'|'/'|'%') r=expr               #exprBinOp
+    | l=expr o=('+'|'-') r=expr                   #exprBinOp
+    | l=expr o=('<<'|'>>') r=expr                 #exprBinOp
+    | l=expr o=('<'|'<='|'>'|'>=') r=expr         #exprBinOp
+    | l=expr o=('=='|'!=') r=expr                 #exprBinOp
+    | l=expr o='&' r=expr                         #exprBinOp
+    | l=expr o='^' r=expr                         #exprBinOp
+    | l=expr o='|' r=expr                         #exprBinOp
     | <assoc=right> expr '?' expr ':' expr      #exprQuestOp
     | <assoc=right>
         l=lval ao=( '=' | '+=' | '-=' | '*=' | '/=' | '%='
                             | '<<=' | '>>=' | '&=' | '^=' | '|=' )
                     e=expr                  #exprAssOp
-    | term                                  #exprTermOp
+    | t=term                                  #exprTermOp
 
     | brace_block                           #exprBraceBlockOp
 
@@ -205,17 +205,18 @@ expr returns [int fBlock = 0]
     ;
 
 term
-   : integer            #termSingle
-   | float              #termSingle
-   | paren_expr         #termParen
-   | lval               #termSingle
+   : i=integer            #termSingle
+   | f=float              #termSingle
+   | p=paren_expr         #termParen
+   | l=lval               #termSingle
    | '&' id=Identifier  #termAddressOf
+   //| '&' lv=lval      #termAddressOf
    ;
 
 lval locals[Token id]
-    : altid=Identifier '[' idx=expr ']'   {$id = $altid;} #lvalArray
-    | '*' altid=Identifier            {$id = $altid;} #lvalIndirect
-    | altid=Identifier                {$id = $altid;} #lvalMem
+    : lvid=Identifier '[' idx=expr ']'     {$id = $lvid;} #lvalArray
+    | '*' lvid=Identifier                  {$id = $lvid;} #lvalIndirect
+    | lvid=Identifier                      {$id = $lvid;} #lvalMem
     ;
 
 integer : i=IntegerConstant | i=BinaryConstant | i=HexadecimalConstant | i=OctalConstant ;

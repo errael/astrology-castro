@@ -40,11 +40,11 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 import static com.raelity.astrolog.castro.Castro.MAP_EXT;
 import static com.raelity.astrolog.castro.Constants.FK_F0_KEY_CODE;
-import static com.raelity.astrolog.castro.Constants.FK_FIRST;
-import static com.raelity.astrolog.castro.Constants.FK_LAST;
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.*;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
+import static com.raelity.astrolog.castro.Constants.FK_FIRST_SLOT;
+import static com.raelity.astrolog.castro.Constants.FK_LAST_SLOT;
 
 /**
  * Run the passes. <br>
@@ -70,6 +70,12 @@ private record FileData(CastroIO castroIO,
 private static List<FileData> workingFileData = new ArrayList<>();
 private static boolean memoryLocked;
 private static boolean parsePass;
+private static boolean allocFrozen;
+
+public static boolean isAllocFrozen()
+{
+    return allocFrozen;
+}
 
 /** @return false if there is an error */
 static boolean compile(List<String> inputFiles, String outName)
@@ -219,6 +225,8 @@ static boolean compile(List<String> inputFiles, String outName)
     //
     // Now that the variables are allocated, proceed with compilation
     //
+
+    allocFrozen = true;
 
     for(FileData data : workingFileData) {
         AstroParseResult apr = initLookup(data);
@@ -507,7 +515,7 @@ private static void addCastroFunctions()
     {
         ExprContext sw = ctx.fc.args.get(0);
         int addr = targetMemSpace().getVar(sw.getText()).getAddr();
-        if(addr < FK_FIRST || addr > FK_LAST)
+        if(addr < FK_FIRST_SLOT || addr > FK_LAST_SLOT)
             reportError(sw, "Switch '%s' @%d is not a function key address",
                         sw.getText(), addr);
 

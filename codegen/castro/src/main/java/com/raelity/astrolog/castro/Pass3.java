@@ -244,14 +244,25 @@ String genUnOp(ExprUnOpContext ctx, Token opToken, String expr)
 {
     // TODO: optim: if "- const", generate "-const"
     sb.setLength(0);
+    boolean fAppExpr = true;
     int opType = opToken.getType();
     switch(opType) {
-    case Minus -> sb.append("Neg ");
+    case Minus -> {
+        Integer constExpr = expr2constInt(ctx.e);
+        if(constExpr == null)
+            sb.append("Neg ");
+        else {
+            // use a negative constant, not "Neg"
+            fAppExpr = false;
+            sb.append(- constExpr).append(' ');
+        }
+    }
     case Tilde, Not -> sb.append(astroCode(opType)).append(' ');
     case Plus -> { break; }
     default -> sb.append("#getUnOp_InternalError");
     }
-    sb.append(expr);
+    if(fAppExpr)
+        sb.append(expr);
     return sb.toString();
 }
 

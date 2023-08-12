@@ -21,6 +21,9 @@ import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
 import org.antlr.v4.gui.TreeViewer;
+import org.antlr.v4.runtime.CommonToken;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Token;
 
 import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
@@ -180,7 +183,7 @@ static void usage(String note)
                 and may provide insight. It shows how the program is parsed. Only uses
                 the first file and does not generate any compilation output files.
                 --gui           show AST in GUI
-                --console       show the AST in the console
+                --console       show the tokens and AST in the console
                 --test  output prefix parse data
                 -v      output more info
             """.replace("{cmdName}", cmdName).replace("{defaultWarn}", defaultW);
@@ -423,8 +426,22 @@ static void show(String inputFile, boolean gui, boolean console) {
     AstroParser parser = apr.getParser();
     ProgramContext program = apr.getParser().program();
 
-    if(console)     //show AST in console
-        castroIO.pw().println(program.toStringTree(parser));
+    if(console) {   //show tokens and AST in console
+        PrintWriter pw = castroIO.pw();
+        CommonTokenStream tokens = (CommonTokenStream)parser.getTokenStream();
+        tokens.fill();
+
+        for (Token tok : tokens.getTokens()) {
+            assert tok != null;
+            if ( tok instanceof CommonToken commonToken ) {
+                pw.println(commonToken.toString(apr.getLexer()));
+            }
+            else {
+                pw.println(tok.toString());
+            }
+        }
+        pw.println(program.toStringTree(parser));
+    }
 
     if(gui) {
         TreeViewer viewer = new TreeViewer(Arrays.asList(
