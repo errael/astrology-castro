@@ -134,7 +134,7 @@ Identifier
 // see IntegerConstant below
 IntegerConstant
     //:   DecimalConstant
-    :   NonzeroDigit Digit*
+    :   Digit+
     //| '0'+      // need this so DigitSequence doesn't fire
     //|   Digit+
     ;
@@ -190,7 +190,7 @@ BinaryConstant
 
 //fragment
 OctalConstant
-    :   '0' OctalDigit*
+    :   '0' [oO] OctalDigit+
     ;
 
 //fragment

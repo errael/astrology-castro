@@ -77,7 +77,7 @@ macro b_macro @55 { ... }       // from another file: '~1 "Macro 55"'
 - No user defined functions, only builtin functions.
 - Address of and indirect, `&var_name` and `*var_name` supported;
   `&` and `*` are only used with an identifier, nothing more complex.
-- Integer constants are decimal, hex (0x), binary(0b). Octal is not supported.
+- Integer constants are decimal, hex (0x), binary(0b), octal(0o).
 - Floating constants are decimal ###.###, exponents not supported.
 
 ####    variable differences
@@ -382,9 +382,8 @@ See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
 | SwitchAdress  | SAddr | SAddr(switchName) | The address of a switch |
 | MacroAdress   | MAddr | MAddr(macroName) | The address of a macro |
 | KeyCode       | KeyC | KeyC("a") | "a" is ascii val 97, takes range ' ' - '~' |
-| Switch2KeyCode | Sw2KC | Sw2KC(switchName) | see ~XQ hook. switch address range 1 - 48 |
+| Switch2KeyCode | Sw2KC | Sw2KC(switchName) | see ~XQ hook. arg range 1 - 48 |
 | SizeOf       | ----- | SizeOf(varname) | the number of locations used by the variable |
-
 
 Astrolog associates switch commands at adresses 1 - 48 with function keys
 ```
@@ -393,10 +392,16 @@ switch func_key_demo { ... }
 run { ~XQ { if (z == KeyC("a")) z = Sw2KC(func_key_demo); } }
 ```
 
+Alternatively
+
+```
+run { ~XQ { if (z == KeyC("a")) { Switch(func_key_demo); z = -1; } } }
+```
+
 ### constants
 
-Integer constants: `201`, `0xc9`, `0b11001001`.<br>
-Constants are case insensitive.<br>
+Integer constants: `201`, `0xc9`, `0b11001001` `0o311`.<br>
+Symbolic constants are case insensitive.<br>
 
 #### astrolog constants
 
@@ -412,28 +417,10 @@ Except for `K_` and `Z_`, `castro` checks for valid constants;
 
 #### castro constants
 
-`FK_F0_KC` - the base for the X11 function key codes,
-see ~XQ at [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express).
+There are constants for dealing with keyboard input.
 
-For function keys, only `FK_F0_KC` is a defined constant. The following is for reference.
-| key | switch slot | fkey number | note |
-| --- | ----------- | ----------- | ---- |
-|FK_F0_KC   | ----- | 200  | not a function key, but works well with math
-|F1         | 1     | 201  |
-|Shift-F1   | 13    | 213  |
-|Control-F1 | 25    | 225  |
-|Alt-F1     | 37    | 237  | Shift-Control on some systems
+See [castro Constants](https://github.com/errael/astrology-castro/wiki/castro-constants) for the constants in tabular form and some examples.
 
-```
-switch func_key @3 { ... }    // This switch invoked by pressing F3
-// hook so when 'a' key (ascii 97) is pressed, map it to `func_key` which is F3
-run { ~XQ { if (z == KeyC("a")) z = FK_F0_KC + SAddr(func_key); } }
-```
-<!--
-// hook so when 'a' key (ascii 97) is pressed, map it to `switch func_key`
-run { ~XQ { if (z == KeyC("a") z = Sw2KC(SAddr(func_key)); } }
-run { ~XQ { if (z == KeyC("a") z = Sw2KC(func_key); } }
--->
 
 ### cprintf
 See [cprintf](astrotest.d/cprintf.castro) for example usage.

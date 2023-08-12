@@ -34,7 +34,6 @@ import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
 
 import static com.raelity.antlr.ParseTreeUtil.getNthParent;
-import static com.raelity.astrolog.castro.Error.OCTAL_CONST;
 import static com.raelity.astrolog.castro.antlr.AstroParser.BinaryConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.HexadecimalConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
@@ -126,7 +125,7 @@ private static RS radixString(Token token)
     case IntegerConstant -> new RS(10, s);
     case BinaryConstant -> new RS(2, s.substring(2));
     case HexadecimalConstant -> new RS(16, s.substring(2));
-    case OctalConstant -> new RS(8, s);
+    case OctalConstant -> new RS(8, s.substring(2));
     default -> throw new IllegalArgumentException();
     };
 }
@@ -135,8 +134,6 @@ public static int parseInt(Token token)
 {
     RS rs = radixString(token);
     int i = Integer.parseInt(rs.s, rs.radix);
-    if(rs.radix == 8 && i != 0)
-        reportError(OCTAL_CONST, token, "'%s' Octal constant", token.getText());
     return i;
 }
 

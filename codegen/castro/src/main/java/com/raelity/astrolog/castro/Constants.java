@@ -36,8 +36,8 @@ public class Constants
 private static final int NFK = 12;
 public static final int FK_F0_KEY_CODE = 200; 
 public static final int FK_F0_SLOT = 0;
-public static final int FK_FIRST = FK_F0_SLOT + 1; 
-public static final int FK_LAST = FK_F0_SLOT + 4 * NFK; 
+public static final int FK_FIRST_SLOT = FK_F0_SLOT + 1; 
+public static final int FK_LAST_SLOT = FK_F0_SLOT + 4 * NFK; 
 
 record NameVal(String n, int v){};
 private static final NameVal[] castroConsts = new NameVal[] {

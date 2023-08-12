@@ -12,6 +12,7 @@ switch test_expressions {
         Switch(test_constant);
         Switch(test_operators_1);
         Switch(test_operators_2);
+        Switch(test_operators_3);
         Switch(test_quest_colon);
         Switch(test_quest_colon_3);
     }
@@ -126,6 +127,27 @@ switch test_operators_2 {
 
     SetString test_name[1] ": 5 != 6"
     ~1 { result = 5 != 6; expect = 1; macro(check); }
+}
+
+// Negative constants optimized
+switch test_operators_3 {
+    SetString test_name[0] "test_operators_3"
+
+    ~1 { a = - 7; }
+    SetString test_name[1] ": a = - 7"
+    ~1 { result = a; expect = -7; macro(check); }
+
+    ~1 { b = 11; a = - b; }
+    SetString test_name[1] ": a = - b"
+    ~1 { result = a; expect = -11; macro(check); }
+
+    ~1 {a = 13;  b = 7 ; }
+    SetString test_name[1] ": a = - b"
+    ~1 { result = a + b - 1; expect = 19; macro(check); }
+
+    ~1 {a = 13;  b = 7 ; }
+    SetString test_name[1] ": a = - b"
+    ~1 { result = a + - 3 + b ; expect = 17; macro(check); }
 }
 
 switch test_quest_colon {
