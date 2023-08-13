@@ -211,6 +211,7 @@ public void exitExprBinOp(ExprBinOpContext ctx)
 @Override
 public void exitExprAssOp(ExprAssOpContext ctx)
 {
+    // TODO: check the expr is constant
     String s = genAssOp(ctx,
                         ((TerminalNode)ctx.getChild(1)).getSymbol(),
                         apr.prefixExpr.removeFrom(ctx.getChild(0)),
@@ -237,6 +238,7 @@ public void exitLvalArray(LvalArrayContext ctx)
 {
     // array index expr is needed more than once
     // in the case where it is used as the target of an assignment
+    // or if the address &arr[expr] is taken.
     String expr = apr.prefixExpr.removeFrom(ctx.idx);
     lvalArrayIndex.put(ctx, expr);
     String s = genLval(ctx, expr);
@@ -328,7 +330,7 @@ public void exitSw_name(Sw_nameContext ctx)
 @Override
 public void exitExprTermOp(ExprTermOpContext ctx)
 {
-    apr.prefixExpr.put(ctx, apr.prefixExpr.removeFrom(ctx.term()));
+    apr.prefixExpr.put(ctx, apr.prefixExpr.removeFrom(ctx.t));
 }
 
 @Override
@@ -340,7 +342,7 @@ public void exitTermSingle(TermSingleContext ctx)
 @Override
 public void exitTermParen(TermParenContext ctx)
 {
-    apr.prefixExpr.put(ctx, apr.prefixExpr.removeFrom(ctx.paren_expr().expr()));
+    apr.prefixExpr.put(ctx, apr.prefixExpr.removeFrom(ctx.p.e));
 }
 }
     

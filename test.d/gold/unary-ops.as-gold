@@ -10,5 +10,5 @@
     =a Not @z  
     =a And @b Inv @c  
     =a And @a Inv @c  
-    =a And @a Inv 9  
+    =a And @a -10  
 '

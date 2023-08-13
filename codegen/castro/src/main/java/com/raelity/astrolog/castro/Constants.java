@@ -93,8 +93,16 @@ public static String constant(Token token)
     
     // TODO: deal with QUOTE_IT when there's a blank in the name
     return match == null ? null
-           : match.val;
+           : match.sval;
            //: match.flags.contains(QUOTE_IT) ? "\"" + match.val + "\"" : match.val;
+}
+
+/** @return true if exact name match and value is known. */
+public static Integer numericConstant(Token token)
+{
+    Info match = get().findName(token);
+    return match == null ? null
+           : match.flags.contains(NUMERIC) ? match.ival : null;
 }
 
 private static final String astrologPrefix = "moahskwz";
@@ -123,8 +131,7 @@ private void initExactConstants()
     /** the "base" for X function keys. Add 1 for F1, ... */
     for(NameVal cc : castroConsts) {
         addConstant(cc.n.toLowerCase(Locale.ROOT),
-                    new Info(cc.n, String.valueOf(cc.v),
-                             EnumSet.of(SRC_CASTRO, EXACT)));
+                    new Info(cc.n, cc.v, EnumSet.of(SRC_CASTRO, EXACT, NUMERIC)));
     }
     // castroConsts = null; not that much mem
 }
@@ -240,38 +247,50 @@ static enum ConstantFlag {
     QUOTE_IT,  // requires quote on output
     LOW_PRI, // Use this if no other match
     EXACT, // must be an exact match
+    NUMERIC, // integer value available
     NONE,
     }
 
     private static class Info
     {
     private final String id;
-    private final String val;
+    private final String sval;
+    private final int ival;
     private final EnumSet<ConstantFlag> flags;
 
     /** For ASTROLOG, String val gets passed through. */
-    public Info(String val, EnumSet<ConstantFlag> flags)
+    private Info(String val, EnumSet<ConstantFlag> flags)
     {
         this.id = val;
-        this.val = val;
+        this.sval = val;
         this.flags = flags;
+        this.ival = Integer.MIN_VALUE;
     }
-    /** For CASTRO/USER, id is generated as val. */
-    public Info(String id, String val, EnumSet<ConstantFlag> type)
+    // Something with a numeric value
+    private Info(String id, int ival, EnumSet<ConstantFlag> type)
     {
         this.id = id;
-        this.val = val;
+        this.ival = ival;
+        this.sval = String.valueOf(ival);
         this.flags = type;
     }
-
-        @Override
-        public String toString()
-        {
-            return "Info{" + "id=" + id + ", val=" + val + ", flags=" + flags +
-                    '}';
-        }
-
+    /** For CASTRO/USER, id is generated as val. */
+    private Info(String id, String val, EnumSet<ConstantFlag> type)
+    {
+        this.id = id;
+        this.sval = val;
+        this.flags = type;
+        this.ival = Integer.MIN_VALUE;
     }
+
+    @Override
+    public String toString()
+    {
+        return "Info{" + "id=" + id + ", val=" + sval + ", flags=" + flags +
+                '}';
+    }
+
+    } /////// class Info
 
 //
 // Integrate the extracted constants from AstrologConstants

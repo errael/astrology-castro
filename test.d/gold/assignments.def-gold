@@ -13,8 +13,8 @@
 var pp[20] @100;    // [ASSIGN] 
 
 // Space: Macros assignments.castro
-// used [(-∞..13), [2147483647..+∞)]
-// free [[13..2147483647)]
+// used [(-∞..14), [2147483647..+∞)]
+// free [[14..2147483647)]
 // errors: 0
 macro assign_array @1;    // [ALLOC] 
 macro assign_op @2;    // [ALLOC] 
@@ -28,6 +28,7 @@ macro t1 @9;    // [ALLOC]
 macro t2 @10;    // [ALLOC] 
 macro t3 @11;    // [ALLOC] 
 macro t4 @12;    // [ALLOC] 
+macro t5 @13;    // [ALLOC] 
 
 // Space: Switches assignments.castro
 // used [(-∞..1), [2147483647..+∞)]

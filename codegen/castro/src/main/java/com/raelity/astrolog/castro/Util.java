@@ -193,7 +193,7 @@ public static boolean isMacroSwitchFuncArgLval(Func_callContext ctx,
             && memSpace.getVar(ctx.args.get(0).getText()) != null) {
         return true;
     }
-    // TODO: shouldn't hardcode user visible sting
+    // TODO: shouldn't hardcode user visible string
     ExprContext ex = ctx.args.get(0);
     reportError(ex, "'%s' is not a defined %s", ex.getText(),
                 memSpace.memSpaceName.equals(MEM_SWITCHES) ? "switch"
@@ -241,6 +241,17 @@ public static Integer expr2constInt(ParseTree pt)
         return null;
     IntegerContext i_ctx = (IntegerContext)constVal.iterator().next();
     return parseInt(i_ctx.i);
+}
+
+/**
+ * Check if the expr is a single lvalMem.
+ * @return lvalMem or null
+ */
+// TODO: Too many of these lval/expr things, clean it up.
+public static LvalMemContext expr2LvalMem(ExprContext ctx)
+{
+    List<ParseTree> l = List.copyOf(expr2Lvals(ctx));
+    return !l.isEmpty() && l.get(0) instanceof LvalMemContext lvm ? lvm : null;
 }
 
 private static XPath xpathFuncArgLval;

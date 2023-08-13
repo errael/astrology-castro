@@ -16,3 +16,13 @@
     Switch @27  
     Macro 3  
 '
+
+; MACRO ma2
+~M 2 ' 
+    =a 230  
+'
+
+; SWITCH sw_sw2kc @30 
+-M0 30 ' 
+    -XXX   
+'

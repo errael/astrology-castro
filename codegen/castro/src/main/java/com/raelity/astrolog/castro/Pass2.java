@@ -135,7 +135,7 @@ public void exitLvalArray(LvalArrayContext ctx)
 @Override
 public void exitTermAddressOf(TermAddressOfContext ctx)
 {
-    checkReportUnknownVar(ctx, ctx.id);
+    checkReportUnknownVar(ctx, ctx.lv.id);
 }
 
 

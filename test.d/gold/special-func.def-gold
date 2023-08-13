@@ -14,14 +14,16 @@ var foo1 @27;    // [ALLOC]
 var foo2 @28;    // [ALLOC] 
 
 // Space: Macros special-func.castro
-// used [(-∞..2), [2147483647..+∞)]
-// free [[2..2147483647)]
+// used [(-∞..3), [2147483647..+∞)]
+// free [[3..2147483647)]
 // errors: 0
 macro ma1 @1;    // [ALLOC] 
+macro ma2 @2;    // [ALLOC] 
 
 // Space: Switches special-func.castro
-// used [(-∞..2), [2147483647..+∞)]
-// free [[2..2147483647)]
+// used [(-∞..2), [30..31), [2147483647..+∞)]
+// free [[2..30), [31..2147483647)]
 // errors: 0
 switch sw1 @1;    // [ALLOC] 
+switch sw_sw2kc @30;    // [ASSIGN] 
 

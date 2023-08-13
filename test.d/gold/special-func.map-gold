@@ -5,6 +5,8 @@ var foo1 @27;    // [ALLOC] special-func.castro
 var foo2 @28;    // [ALLOC] special-func.castro
 
 macro ma1 @1;    // [ALLOC] special-func.castro
+macro ma2 @2;    // [ALLOC] special-func.castro
 
 switch sw1 @1;    // [ALLOC] special-func.castro
+switch sw_sw2kc @30;    // [ASSIGN] special-func.castro
 

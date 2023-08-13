@@ -18,6 +18,7 @@ TESTS="
     special-func
     switch
     unary-ops
+    folding
     warnings
     errors-1
     errors-2

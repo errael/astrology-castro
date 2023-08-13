@@ -95,9 +95,12 @@ macro t4 {
 }
 
 macro t5 {
-    // optim to avoid using Neg
+    // optim to avoid using Neg instruction
     a = - 7;
     a = b + - 11;
     a = b + - 7 + c;
     a = -3 -4;
+    a = 4 + 3 + 4;
+    z  = &pp[10];
 }
+

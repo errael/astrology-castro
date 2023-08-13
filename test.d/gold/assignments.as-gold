@@ -93,3 +93,13 @@
     = @100 Add Var @100 3  
     = 107 Add @107 3  
 '
+
+; MACRO t5
+~M 13 ' 
+    =a -7  
+    =a Add @b -11  
+    =a Add Add @b -7 @c  
+    =a -7  
+    =a 11  
+    =z 110  
+'

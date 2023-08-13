@@ -36,8 +36,8 @@
     =q Var @p  
     = @r @q  
     =p 17  
-    =p Add 17 7  
-    = @p Add 17 7  
+    =p 24  
+    = @p 24  
     =p Add @a @b  
     = @p Add @c @d  
     =a Mul @b Neg @c  

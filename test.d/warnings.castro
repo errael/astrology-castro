@@ -38,7 +38,7 @@ macro array_oob {
 }
 
 macro octal_const {
-    a = 0123;
+    a = 0o123;
 }
 
 switch inner_quote {

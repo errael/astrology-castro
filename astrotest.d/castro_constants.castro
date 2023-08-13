@@ -1,5 +1,6 @@
 /*
- * Check out constants defined by castro
+ * Check out constants defined by castro.
+ * Some folding.
  */
 
 layout memory { base 401; limit 450; }
@@ -10,6 +11,7 @@ switch test_castro_constants {
     ~1 {
         switch(test_castro_constants_fk__kc);
         switch(test_castro_constants_fk);
+        switch(test_castro_folding);
     }
 }
 
@@ -43,4 +45,16 @@ switch test_castro_constants_fk {
 
     SetString test_name[1] ": A_Fk_f0"
     ~1 { result = A_Fk_f0; expect = 0 + 36; macro(check); }
+}
+
+switch test_castro_folding {
+    SetString test_name[0] "test_castro_folding"
+
+    SetString test_name[1] ": fold1"
+    ~1 {a = s_FK_f0 + s_FK_f0; }
+    ~1 { result = a; expect = 24; macro(check); }
+
+    SetString test_name[1] ": fold2"
+    ~1 {a  = s_FK_f0 + s_FK_f0 + s_FK_f0 + s_FK_f0 - 2 * (s_FK_f0 + s_FK_f0); }
+    ~1 { result = a; expect = 0; macro(check); }
 }

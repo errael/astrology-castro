@@ -15,5 +15,6 @@ macro t1 @9;    // [ALLOC] assignments.castro
 macro t2 @10;    // [ALLOC] assignments.castro
 macro t3 @11;    // [ALLOC] assignments.castro
 macro t4 @12;    // [ALLOC] assignments.castro
+macro t5 @13;    // [ALLOC] assignments.castro
 
 

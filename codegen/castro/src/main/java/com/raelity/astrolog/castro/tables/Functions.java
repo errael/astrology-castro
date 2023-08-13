@@ -30,6 +30,14 @@ public class Functions
 public static final String FUNC_ID_SWITCH = "switch";
 public static final String FUNC_ID_MACRO = "macro";
 
+/**
+ * isConst - False means this given call is not a constant, ignore all else.
+ * displayAddr - user defined address
+ * realAddr - 
+ */
+public static record FunctionConstValue(boolean isConst, int realAddr, int displayAddr){};
+public static FunctionConstValue NOT_CONST_VALUE = new FunctionConstValue(false, 0, 0);
+
     /**
      * The base class for any function; codegen and checking.
      * Could be regular Astrolog function, special func like switch/macro,
@@ -87,6 +95,19 @@ public static final String FUNC_ID_MACRO = "macro";
         return true;
     }
 
+    /**
+     * This returns a constant result of a given function invocation.
+     * The default is not constant, this may be overriden for functions
+     * that are constant given context.
+     * <p>
+     * NOTE that if being a constant is dependent on
+     * an allocated addresses, then this must return false before isAllocFrozen()
+     * is true.
+     */
+    public FunctionConstValue constValue(ExprFuncContext ctx) {
+        return NOT_CONST_VALUE;
+    }
+
     /** generate code for this function call */
     public abstract StringBuilder genFuncCall(
             StringBuilder sb, ExprFuncContext ctx, List<String> args);
@@ -119,6 +140,7 @@ public static final String FUNC_ID_MACRO = "macro";
     }
 
     } /////////// class Function
+
 
     abstract public static class StringArgsFunction extends Function
     {
