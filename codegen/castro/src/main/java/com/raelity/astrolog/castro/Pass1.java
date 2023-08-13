@@ -17,6 +17,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.Assign_macro_addrContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Assign_switch_addrContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.BaseContstraintContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.ConstContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ConstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
@@ -37,6 +38,7 @@ import com.raelity.astrolog.castro.mems.Layout;
 import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
+import com.raelity.astrolog.castro.optim.FoldConstants;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
 
@@ -50,10 +52,11 @@ import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.parseInt;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.Constants.isConstantName;
+import static com.raelity.astrolog.castro.optim.FoldConstants.reportFold2Int;
 
 
-/** During parse, handle variable declarations, layout, valid function name;
- * and build line index map to interval.
+/** During parse, handle constant definitions, variable declarations, layout,
+ * valid function name; and build line index map to interval.
  * Publish {@link AstroMem}s and {@link LineMap} to lookup.
  */
 class Pass1 extends AstroParserBaseListener
@@ -98,6 +101,21 @@ private boolean checkBuiltin(ParserRuleContext ctx, Token id,
             return true;
         }
         return false;
+}
+
+@Override
+public void exitConst(ConstContext ctx)
+{
+    if(isConstantName(ctx.id))
+        reportError(ctx.id, "constant '%s' already defined", ctx.id.getText());
+    else if(registers.getVar(ctx.id.getText()) != null)
+        reportError(ctx.id, "variable '%s' exists, can not create constant",
+                            ctx.id.getText());
+    else {
+        Integer val = reportFold2Int(ctx.e);
+        if(val != null)
+            Constants.declarConst(ctx.id.getText(), val);
+    }
 }
 
 /** Add a variable to the symbol table.

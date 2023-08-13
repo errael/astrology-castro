@@ -18,6 +18,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprStatementContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.BaseContstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Brace_blockContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.ConstContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.CopyContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprAssOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprBinOpContext;
@@ -71,6 +72,7 @@ import static com.raelity.astrolog.castro.Constants.isConstantName;
 import static com.raelity.astrolog.castro.Constants.numericConstant;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.parseInt;
+import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.antlr.AstroLexer.*;
 
 /**
@@ -106,20 +108,27 @@ private static Registers registers;
 private FoldConstants()
 {
     if(registers == null && isAllocFrozen()) {
-        //if(!isAllocFrozen())
-        //    throw new IllegalStateException();
         registers = lookup(Registers.class);
     }
 }
 
-public static Integer fold2int(ExprContext ctx)
+public static Integer reportFold2Int(ExprContext ctx)
+{
+    return fold2Int(ctx, true);
+}
+
+public static Integer fold2Int(ExprContext ctx)
+{
+    return fold2Int(ctx, false);
+}
+
+private static Integer fold2Int(ExprContext ctx, boolean report)
 {
     Folded f = folded.get(ctx);
     if(f != null)
         return f.val();
     FoldConstants fc = new FoldConstants();
-    f = fc._expr2constInt(ctx);
-    //Folded f = fc.visitExpr(ctx);
+    f = fc.expr2constInt(ctx, report);
     if(f != null) {
         folded.put(ctx, f);
         return f.val();
@@ -127,12 +136,18 @@ public static Integer fold2int(ExprContext ctx)
     return null;
 }
 
-private Folded _expr2constInt(ExprContext ctx)
+private Folded expr2constInt(ExprContext ctx, boolean report)
 {
     try {
         return visitExpr(ctx);
         // TODO catch overflow, report error, return null;
     } catch(CancelFolding ex) {
+        if(report) {
+            if(ex.ctx != null)
+                reportError(ex.ctx, "'%s' is not a constant", ex.ctx.getText());
+            else
+                reportError(ex.token, "'%s' is not a constant", ex.token.getText());
+        }
         return null;
     } catch(AbortFolding ex) {
         throw ex;
@@ -237,7 +252,6 @@ public Folded visitTermAddressOf(TermAddressOfContext ctx)
     if(!isAllocFrozen())
         throw new AbortFolding(ctx.lv.id.getText());
 
-    //return new Folded(registers.getVar(ctx.id.getText()).getAddr());
     if(isConstantName(ctx.lv.id))
         throw new AbortFolding(ctx.lv.id.getText());
     return switch(ctx.lv) {
@@ -524,6 +538,12 @@ public Folded visitTerminal(TerminalNode tn)
 
 @Override
 public Folded visitErrorNode(ErrorNode en)
+{
+    throw new AbortFolding("No trespassing.");
+}
+
+@Override
+public Folded visitConst(ConstContext ctx)
 {
     throw new AbortFolding("No trespassing.");
 }

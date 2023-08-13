@@ -243,11 +243,16 @@ public static Integer expr2constInt(ParseTree pt)
     return parseInt(i_ctx.i);
 }
 
+///////////////////////////////////////////////////////////////////
+//
+// TODO: Too many of these lval/expr things, clean it up.
+//
+///////////////////////////////////////////////////////////////////
+
 /**
  * Check if the expr is a single lvalMem.
  * @return lvalMem or null
  */
-// TODO: Too many of these lval/expr things, clean it up.
 public static LvalMemContext expr2LvalMem(ExprContext ctx)
 {
     List<ParseTree> l = List.copyOf(expr2Lvals(ctx));

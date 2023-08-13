@@ -109,7 +109,7 @@ private String astroAssignOp(int token)
 /** Try to fold expr, return default if not */
 private String tryFolding(ExprContext e, String dflt)
 {
-    Integer f = FoldConstants.fold2int(e);
+    Integer f = FoldConstants.fold2Int(e);
     return f != null ? f.toString() + ' ' : dflt;
 }
 

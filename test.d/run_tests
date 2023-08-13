@@ -9,6 +9,8 @@ DIR=${0%/*}
 
 TESTS="
     assignments
+    const
+    folding
     blocks
     check-allowed-switch-expression
     expr
@@ -18,12 +20,12 @@ TESTS="
     special-func
     switch
     unary-ops
-    folding
     warnings
     errors-1
     errors-2
     errors-3
     errors-4
+    errors-5
     errors-oom
 "
 
