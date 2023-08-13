@@ -34,6 +34,16 @@ macro ma1 {
 //    //macro(bar);
 //    //c;
 }
+
+macro ma2 {
+    a = Switch2KeyCode(sw_sw2kc);
+}
+
+switch sw_sw2kc @30 {
+    -XXX
+}
+
+
 //switch test {
 //    REPORT1
 //    -XXX {~ b; REPORT2 }

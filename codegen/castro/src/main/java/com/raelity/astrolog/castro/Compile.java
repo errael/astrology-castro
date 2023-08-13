@@ -13,6 +13,7 @@ import java.util.List;
 import com.google.common.collect.RangeSet;
 
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroLineMaps;
@@ -23,6 +24,7 @@ import com.raelity.astrolog.castro.Castro.SwitchesAccum;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.OutOfMemory;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
@@ -32,6 +34,7 @@ import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
+import com.raelity.astrolog.castro.tables.Functions.FunctionConstValue;
 import com.raelity.astrolog.castro.tables.Functions.StringArgsFunction;
 
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -45,6 +48,7 @@ import static com.raelity.astrolog.castro.Util.*;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 import static com.raelity.astrolog.castro.Constants.FK_FIRST_SLOT;
 import static com.raelity.astrolog.castro.Constants.FK_LAST_SLOT;
+import static com.raelity.astrolog.castro.tables.Functions.NOT_CONST_VALUE;
 
 /**
  * Run the passes. <br>
@@ -510,16 +514,30 @@ private static void addCastroFunctions()
     @Override public AstroMem targetMemSpace() { return lookup(Switches.class); }
 
     @Override
-    public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
-                                     List<String> args)
+    public FunctionConstValue constValue(ExprFuncContext ctx)
     {
+        if(!isAllocFrozen())
+            return NOT_CONST_VALUE;
+        boolean ok = true;
         ExprContext sw = ctx.fc.args.get(0);
         int addr = targetMemSpace().getVar(sw.getText()).getAddr();
         if(addr < FK_FIRST_SLOT || addr > FK_LAST_SLOT)
-            reportError(sw, "Switch '%s' @%d is not a function key address",
-                        sw.getText(), addr);
+            ok = false;
+        return new FunctionConstValue(ok, FK_F0_KEY_CODE + addr, addr);
+    }
 
-        sb.append(FK_F0_KEY_CODE + addr).append(' ');
+
+    @Override
+    public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
+                                     List<String> args)
+    {
+        FunctionConstValue constAddr = constValue(ctx);
+        if(!constAddr.isConst()) {
+            ExprContext sw = ctx.fc.args.get(0);
+            reportError(sw, "Switch '%s' @%d is not a function key address",
+                        sw.getText(), constAddr.displayAddr());
+        }
+        sb.append(constAddr.realAddr()).append(' ');
         return sb;
     }
 
@@ -555,6 +573,21 @@ private static void addCastroFunctions()
     {
         isMacroSwitchFuncArgLval(ctx, targetMemSpace());
         return true; // No further checking required
+    }
+
+    @Override
+    public FunctionConstValue constValue(ExprFuncContext ctx) {
+        List<ExprContext> args = ctx.fc.args;
+        // probably don't need size check by the time isAllocFrozen()
+        if(!isAllocFrozen() || args.size() != 1)
+            return NOT_CONST_VALUE;
+        AstroMem memSpace = targetMemSpace();
+        LvalMemContext lvalMem = expr2LvalMem(args.get(0));
+        if(lvalMem != null) {
+            int addr = memSpace.getVar(args.get(0).getText()).getAddr();
+            return new FunctionConstValue(true, addr, addr);
+        }
+        return NOT_CONST_VALUE;
     }
 
     @Override

@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprAssOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprBinOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprBraceBlockOpContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprDowhileOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprForOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
@@ -30,6 +31,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.TermAddressOfContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.Registers;
+import com.raelity.astrolog.castro.optim.FoldConstants;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
 import com.raelity.astrolog.castro.tables.Ops;
@@ -101,6 +103,14 @@ private String astroAssignOp(int token)
     // remove the trailing '='
     String assOp = Ops.astroCode(token);
     return assOp.substring(0, assOp.length() - 1);
+}
+
+
+/** Try to fold expr, return default if not */
+private String tryFolding(ExprContext e, String dflt)
+{
+    Integer f = FoldConstants.fold2int(e);
+    return f != null ? f.toString() + ' ' : dflt;
 }
 
 @Override
@@ -373,13 +383,14 @@ private StringBuilder lvalAssignment(StringBuilder lsb, LvalContext lval_ctx)
 }
 
 @Override
-String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String rhs)
+String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String _rhs)
 {
     sb.setLength(0);
     if( isConstantName(ctx.l.id)) {
         reportError(ctx, "'%s' is a constant name, can't write", ctx.l.id.getText());
         return ctx.l.id.getText();
     }
+    String rhs = tryFolding(ctx.e, _rhs);
     int opType = opToken.getType();
     if(opType == Assign) {
         // Just a simple assign
@@ -487,7 +498,21 @@ String genFloat(FloatContext ctx)
 String genAddr(TermAddressOfContext ctx)
 {
     sb.setLength(0);
-    sb.append(registers.getVar(ctx.id.getText()).getAddr()).append(' ');
+    switch(ctx.lv) {
+    case LvalMemContext ctx0 ->
+        sb.append(registers.getVar(ctx0.lvid.getText()).getAddr()).append(' ');
+    case LvalArrayContext ctx0 ->
+        sb.append("Add ")
+                .append(registers.getVar(ctx0.lvid.getText()).getAddr()).append(' ')
+                .append(lvalArrayIndex.get(ctx0));
+    // TODO: handle 
+    case LvalIndirectContext ctx0 -> {
+        reportError(ctx0, "'%s' &* not supported", ctx0.getText());
+        sb.append("&*");
+    }
+        
+    case null, default -> throw new IllegalArgumentException();
+    }
     return sb.toString();
 }
 

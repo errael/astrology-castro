@@ -15,6 +15,5 @@ Warn: warnings.castro:65:8 '    i = h_equ;' constant 'h_equ' is ambiguous: [H_Eq
 Warn: warnings.castro:66:8 '    j = o_nod;' constant 'o_nod' is ambiguous: [O_Nod_, O_Node]
 Warn: warnings.castro:23:8 '    a = Add(a+b,c+d);' using castro operator 'Add' as a function
 Warn: warnings.castro:24:8 '    b = Mod(c,d);' using castro operator 'Mod' as a function
-Warn: warnings.castro:41:8 '    a = 0123;' '0123' Octal constant
 Warn: warnings.castro:45:9 '    -YYT "one'two"' '"one'two"' string has inner quotes, stripping
 Warn: warnings.castro:71:16 'run { SetString arr[3] "foo" "bar" "baz" }' 'arr[3]' array index out of bounds

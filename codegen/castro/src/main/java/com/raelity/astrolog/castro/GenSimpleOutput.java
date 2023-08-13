@@ -348,7 +348,7 @@ void generateAndOutputExprs()
     String genAddr(TermAddressOfContext ctx)
     {
         sb.setLength(0);
-        sb.append("ADDR").append(' ').append(ctx.Identifier().getText());
+        sb.append("ADDR").append(' ').append(ctx.lv.id.getText());
         return sb.toString();
     }
                 

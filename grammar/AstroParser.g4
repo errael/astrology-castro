@@ -191,10 +191,10 @@ expr returns [int fBlock = 0]
     | <assoc=right>
         l=lval ao=( '=' | '+=' | '-=' | '*=' | '/=' | '%='
                             | '<<=' | '>>=' | '&=' | '^=' | '|=' )
-                    e=expr                  #exprAssOp
-    | t=term                                  #exprTermOp
+                    e=expr                          #exprAssOp
 
-    | brace_block                           #exprBraceBlockOp
+    | t=term                                        #exprTermOp
+    | brace_block                                   #exprBraceBlockOp
 
     | 'if' paren_expr expr                          #exprIfOp
     | 'if' paren_expr expr 'else' expr              #exprIfElseOp
@@ -205,12 +205,11 @@ expr returns [int fBlock = 0]
     ;
 
 term
-   : i=integer            #termSingle
-   | f=float              #termSingle
-   | p=paren_expr         #termParen
-   | l=lval               #termSingle
-   | '&' id=Identifier  #termAddressOf
-   //| '&' lv=lval      #termAddressOf
+   : i=integer              #termSingle
+   | f=float                #termSingle
+   | p=paren_expr       #termParen
+   | l=lval                 #termSingle
+   | '&' lv=lval        #termAddressOf
    ;
 
 lval locals[Token id]
