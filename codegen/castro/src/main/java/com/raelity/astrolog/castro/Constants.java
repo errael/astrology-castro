@@ -97,6 +97,11 @@ public static String constant(Token token)
            //: match.flags.contains(QUOTE_IT) ? "\"" + match.val + "\"" : match.val;
 }
 
+public static void declarConst(String id, int val)
+{
+    get().addConstant(id, val, SRC_USER, EXACT);
+}
+
 /** @return true if exact name match and value is known. */
 public static Integer numericConstant(Token token)
 {
@@ -124,23 +129,38 @@ private Constants() {
 
 private void initExactConstants()
 {
-    addConstant("true", new Info("True", EnumSet.of(SRC_ASTROLOG, EXACT)));
-    addConstant("false", new Info("False", EnumSet.of(SRC_ASTROLOG, EXACT)));
-    addConstant("signs", new Info("Signs", EnumSet.of(SRC_ASTROLOG, EXACT)));
+    addConstant("True",  SRC_ASTROLOG, EXACT);
+    addConstant("False", SRC_ASTROLOG, EXACT);
+    addConstant("Signs", SRC_ASTROLOG, EXACT);
 
     /** the "base" for X function keys. Add 1 for F1, ... */
     for(NameVal cc : castroConsts) {
-        addConstant(cc.n.toLowerCase(Locale.ROOT),
-                    new Info(cc.n, cc.v, EnumSet.of(SRC_CASTRO, EXACT, NUMERIC)));
+        addConstant(cc.n, cc.v, SRC_CASTRO, EXACT);
     }
     // castroConsts = null; not that much mem
 }
 
-private void addConstant(String name, Info info)
+private void addConstant(String id, int val, ConstantFlag... flags)
 {
-    constants.put(name, info);
+    EnumSet<ConstantFlag> f = EnumSet.noneOf(ConstantFlag.class);
+    f.addAll(Arrays.asList(flags));
+    f.add(NUMERIC);
+    addConstant(id, new Info(id, val, f));
+}
+
+private void addConstant(String id, ConstantFlag... flags)
+{
+    EnumSet<ConstantFlag> f = EnumSet.noneOf(ConstantFlag.class);
+    f.addAll(Arrays.asList(flags));
+    addConstant(id, new Info(id, f));
+}
+
+private void addConstant(String id, Info info)
+{
+    String lc = id.toLowerCase(Locale.ROOT);
+    constants.put(lc, info);
     if(info.flags.contains(EXACT)) {
-        if(!exactConstants.add(name)) {
+        if(!exactConstants.add(lc)) {
             throw new RuntimeException("constant already defined");
         }
     }

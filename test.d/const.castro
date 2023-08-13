@@ -1,0 +1,15 @@
+/*
+ * cons
+ */
+
+const foo {S_FK_F0 + 5};
+const bar {4 + 3 + 22};
+const baz {bar + 4};
+//const baz "foo bar";
+
+macro ma00 {
+    a = foo;
+    b = bar;
+    c = baz;
+    d = foo + bar + baz;
+}

@@ -13,7 +13,6 @@ import java.util.List;
 import com.google.common.collect.RangeSet;
 
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroLineMaps;

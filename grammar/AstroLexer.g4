@@ -41,6 +41,7 @@ Switch : 'switch' {if (braces != 0) setType(Identifier);} ;
 Macro : 'macro' {if (braces != 0) setType(Identifier);} ;
 Run : 'run' ;
 Var : 'var';
+Const : 'const';
 
 Do : 'do';
 Else : 'else';

@@ -7,7 +7,7 @@ options { tokenVocab=AstroLexer; }
 // The restriction of layout before anything else is
 // implemented in code.
 program
-    : (layout | var | copy | run
+    : (layout | const | var | copy | run
             | switch | macro | assign_switch_addr | assign_macro_addr)+
         EOF
     ;
@@ -34,7 +34,10 @@ rsv_loc
     | range+=integer ':' range+=integer
     ;
 
-// TODO: also string array initialization
+const
+    : 'const' id=Identifier '{' e=expr '}' ';'
+    //: 'const' id=Identifier (e=expr | s=String) ';'
+    ;
 
 var
     : v=varDef

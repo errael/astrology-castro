@@ -1,0 +1,5 @@
+Error: errors-5.castro:7:6 variable 'foo' exists, can not create constant
+Error: errors-5.castro:11:0 'bar' is a constant, can not declare 'bar' as a variable
+Error: errors-5.castro:15:18 'rr' is not a constant
+Pass1: 0 syntax errors
+Pass1: 3 other errors
