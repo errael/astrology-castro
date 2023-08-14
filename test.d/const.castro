@@ -7,9 +7,26 @@ const bar {4 + 3 + 22};
 const baz {bar + 4};
 //const baz "foo bar";
 
+
+const bbb {101};
+const swma {30};
+const arrsz {3};
+
+layout memory { base bbb; limit bbb + 100;
+    reserve bbb+23:bbb+37, bbb+11 : bbb + 13; }
+
 macro ma00 {
     a = foo;
     b = bar;
     c = baz;
     d = foo + bar + baz;
 }
+
+var v_foo[arrsz] @bbb + 1;
+var v_bar[] {120 + 3, 120 + a};
+run { ~1 { v_foo[0] = 777; } }
+run { ~1 { z = sizeof(v_foo); } }
+
+switch sw01 @swma { -XXX }
+macro ma01 @swma +12 { a; }
+

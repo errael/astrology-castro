@@ -64,6 +64,13 @@ To assign `switch`/`macro` in a `castro` file to a specific adress:
 switch b_switch @44 { ... }     // from another file: '-M 44' or '~1 "Switch 44"'
 macro b_macro @55 { ... }       // from another file: '~1 "Macro 55"'
 ```
+When the address is specified, it may be a constant expression
+```
+const some_const {33}
+switch b_switch @some_const { ... }
+macro b_macro @some_const + 7 { ... }
+```
+
 
 ###      Differences from "C"
 
@@ -75,8 +82,8 @@ macro b_macro @55 { ... }       // from another file: '~1 "Macro 55"'
 - No semi-colons before `else` or before while in `do while()`.
 - No `||` or `&&`, only `|`,`&`. Primary downside is no short circuit execution.
 - No user defined functions, only builtin functions.
-- Address of and indirect, `&var_name` and `*var_name` supported;
-  `&` and `*` are only used with an identifier, nothing more complex.
+- Address of and indirect, `&var_name`, `&arr_name[expr]` and `*var_name` supported;
+  nothing more complex.
 - Integer constants are decimal, hex (0x), binary(0b), octal(0o).
 - Floating constants are decimal ###.###, exponents not supported.
 
@@ -170,6 +177,8 @@ layout memory {
     reserve 104, 106:108;
 }
 ```
+The values in layout may be specified with constant expressions.
+
 This directive allows allocation of addresses between 101 inclusive and 111 exclusive; but not addresses 104, 106, 107, 108. If an _out of memory_ error occurs look at the `.def` output file for more information.
 
 ###     macro
@@ -247,6 +256,15 @@ The contents of a `run` statement are parsed identically to a `switch` statement
 ###     copy
 The `copy{LITERALLY_COPIED_TO_OUTPUT}` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround. All whitespace, including newlines, is copied as is. Use '\\}' to include a '}' in the output. It's unclear if this is needed, it does provide a way to redefine a macro/switch.
 
+###     Constants
+
+Constants are defined like `const <name> {<expr>};` where `<expr>` is an expression made up only of integer constants. Constants must be defined before they are used; system wide constants can be defined in a single file, and that file is the first in compilation order.
+
+```
+const const_name1 {10};
+const const_name2 {const_name1 + 23};
+```
+
 ###     Variables
 
 Variable declarations take on one of the following forms
@@ -255,6 +273,14 @@ var var_name1;            // automatically allocate
 var var_name2[4];         // automatically allocate
 var var_name3 @100;       // assign variable to address 100
 var var_name4[4] @101;    // assign array variable to addresses 101-104
+
+const some_size {5};
+const addr_base {110};
+var var_name5 @addr_base;
+var var_name6 @addr_base + 1;   // address can be a constant expression
+
+// both size and address can be a constant expression
+var var_name7[some_size+3] @addr_base + 1;
 ```
 
 #####   Initializing numeric variables
@@ -402,6 +428,10 @@ run { ~XQ { if (z == KeyC("a")) { Switch(func_key_demo); z = -1; } } }
 
 Integer constants: `201`, `0xc9`, `0b11001001` `0o311`.<br>
 Symbolic constants are case insensitive.<br>
+
+#### user constants
+
+User constants are define as `const const_name {~10 + 1};`.
 
 #### astrolog constants
 

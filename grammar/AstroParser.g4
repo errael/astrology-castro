@@ -23,15 +23,15 @@ layout_region
     ;
 
 constraint
-    : 'base' i=integer                      #baseContstraint
-    // | 'stack' i=integer                  #stackContstraint
-    | 'limit' i=integer                     #limitContstraint
+    : 'base' i=expr                      #baseContstraint
+    // | 'stack' i=expr                  #stackContstraint
+    | 'limit' i=expr                     #limitContstraint
     | 'reserve' rsv_loc (',' rsv_loc)*      #reserveContstraint
     ;
 
 rsv_loc
-    : range+=integer
-    | range+=integer ':' range+=integer
+    : range+=expr
+    | range+=expr ':' range+=expr
     ;
 
 const
@@ -59,7 +59,7 @@ var
  * Allow trailing comma on initializer list
  */
 varDef
-    : 'var' id=Identifier (arr='[' (size=integer)? ']')? ('@' addr=integer)?
+    : 'var' id=Identifier (arr='[' (size=expr)? ']')? ('@' addr=expr)?
                     ( '{' init+=str_expr (',' init+=str_expr)* ','? '}' )? ';'
     ;
 
@@ -72,11 +72,11 @@ str_expr
 copy : COPY_START COPY_STUFF COPY_STOP ;
 
 // following like "extern"
-assign_macro_addr : 'macro' id=Identifier '@' addr=integer ';' ;
-assign_switch_addr : 'switch' id=Identifier '@' addr=integer ';' ;
+assign_macro_addr : 'macro' id=Identifier '@' addr=expr ';' ;
+assign_switch_addr : 'switch' id=Identifier '@' addr=expr ';' ;
 
 macro
-    : 'macro' id=Identifier ('@' addr=integer)? '{' bs+=astroExprStatement + '}'
+    : 'macro' id=Identifier ('@' addr=expr)? '{' bs+=astroExprStatement + '}'
     ;
 
 /*
@@ -88,7 +88,7 @@ macro
  */
 
 switch
-    : 'switch' id=Identifier ('@' addr=integer)? '{' sc+=switch_cmd+ '}'
+    : 'switch' id=Identifier ('@' addr=expr)? '{' sc+=switch_cmd+ '}'
     ;
 
 /** top level switch commands (not part of switch/macro). */

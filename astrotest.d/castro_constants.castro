@@ -3,15 +3,19 @@
  * Some folding.
  */
 
-layout memory { base 401; limit 450; }
-layout macro { base 401; limit 450; }
-layout switch { base 401; limit 450; }
+const alloc_base {401};
+const space_size {50};
+
+layout memory { base alloc_base; limit alloc_base + space_size; }
+layout macro { base alloc_base; limit alloc_base + space_size; }
+layout switch { base alloc_base; limit alloc_base + space_size; }
 
 switch test_castro_constants {
     ~1 {
         switch(test_castro_constants_fk__kc);
         switch(test_castro_constants_fk);
         switch(test_castro_folding);
+        switch(test_castro_layout_bounds);
     }
 }
 
@@ -57,4 +61,60 @@ switch test_castro_folding {
     SetString test_name[1] ": fold2"
     ~1 {a  = s_FK_f0 + s_FK_f0 + s_FK_f0 + s_FK_f0 - 2 * (s_FK_f0 + s_FK_f0); }
     ~1 { result = a; expect = 0; macro(check); }
+}
+
+const cc_small_size {3};
+var v01;                    // @401
+var v02[cc_small_size];     // @402
+var v03;                    // @405
+var v04 @alloc_base +40;
+
+// input k
+macro cc_check_bounds {
+    alloc_base <= k & k < alloc_base + space_size;
+}
+
+switch test_castro_layout_bounds {
+    SetString test_name[0] "test_castro_layout_bounds"
+
+    SetString test_name[1] ": alloc_base"
+    ~1 { result = alloc_base; expect = 401; macro(check); }
+
+    SetString test_name[1] ": v01 addr"
+    ~1 { result = &v01; expect = 401; macro(check); }
+
+    SetString test_name[1] ": v02 addr"
+    ~1 { result = &v02; expect = 402; macro(check); }
+
+    SetString test_name[1] ": v03 addr"
+    ~1 { result = &v03; expect = 405; macro(check); }
+
+    SetString test_name[1] ": switch addr"
+    ~1 {
+        a = SAddr(test_castro_constants_fk__kc);
+        b = SAddr(test_castro_constants_fk);
+        c = SAddr(test_castro_folding);
+        d =   alloc_base <= a & a < alloc_base + space_size
+            & alloc_base <= b & b < alloc_base + space_size
+            & alloc_base <= c & c < alloc_base + space_size;
+    }
+    ~1 { result = d; expect = 1; macro(check); }
+
+    SetString test_name[1] ": switch addr tricky"
+    ~1 {
+        a = SAddr(test_castro_constants_fk__kc);
+        b = SAddr(test_castro_constants_fk);
+        c = SAddr(test_castro_folding);
+        d =   { k = SAddr(test_castro_constants_fk__kc); Macro(cc_check_bounds); }
+            & { k = SAddr(test_castro_constants_fk); Macro(cc_check_bounds); }
+            & { k = SAddr(test_castro_folding); Macro(cc_check_bounds); };
+    }
+    ~1 { result = d; expect = 1; macro(check); }
+
+    //cprintf "BOUNDS: %d %d %d\n" {~ 
+    //    SAddr(test_castro_constants_fk__kc);
+    //    SAddr(test_castro_constants_fk);
+    //    SAddr(test_castro_folding);
+    //}
+
 }

@@ -13,17 +13,19 @@ copy {
 ; https://github.com/CruiserOne/Astrolog/blob/master/mazegame.as
 }
 
+const MAZE_MEM {50};
+
 /*
- * Limit automatic variable allocation, unbounded maze starts at 40.
+ * Limit automatic variable allocation, unbounded maze starts at 50.
  * By setting this, there's an error if auto alloc runs out of space.
  */
-layout memory { limit 50; }
+layout memory { limit MAZE_MEM; }
 
 /*
  * Start switch allocation over the last chunk of function keys.
  * Start at Alt-F1.
  */
-layout switch { base 37; }
+layout switch { base A_FK_F0 + 1; }
 
 /** Start macro allocation somewhere random for no reason */
 layout macro { base 55; }
@@ -36,7 +38,7 @@ layout macro { base 55; }
  *      0 - a wall
  *      1 - a path
  */
-var maze[2] @50;
+var maze[2] @MAZE_MEM;
 
 /*
  * Builtin variable usage:
@@ -73,14 +75,11 @@ run {
 
 switch welcome @1 {
     // insure a valid cur_nav_idx, don't change if valid
-    ~1 {
-        if ((cur_nav_idx < 0) | (cur_nav_idx > 1))
-            cur_nav_idx = 0;
-    }
+    ~1 { cur_nav_idx %= sizeof(nav_info); }
 
     cprintf 'Welcome to Astrolog Mazes! (castro):)\n'
     cprintf 'Use %s keys to move the dot through the Maze to the finish.\n\n'
-            {~ &nav_info + cur_nav_idx; }
+            {~ &nav_info[cur_nav_idx]; }
     cprintf 'Press F1 to display this help text.\n'
     cprintf 'Press F2 to create new Maze.\n'
     cprintf 'Press F3 to create smaller Maze.\n'
@@ -92,7 +91,7 @@ switch welcome @1 {
 // UI function keys
 switch nav_keys @6 {
     ~1 { cur_nav_idx = (cur_nav_idx + 1) % sizeof(nav_info); }
-    cprintf 'Current keys %s.\n' {~ &nav_info + cur_nav_idx; }
+    cprintf 'Current keys %s.\n' {~ &nav_info[cur_nav_idx]; }
 }
 
 switch new_maze   @2  { -n ~1 { Macro(solid_maze); Macro(create_paths); } }
@@ -163,7 +162,7 @@ macro create_paths_A {
 }
 
 macro create_paths_B {
-    z = &maze + y * c + x;
+    z = &maze[y * c + x];
     if (!*z) { // a wall
         *z = 1; // clear the wall
         maze[((y + b) >> 1) * c + ((x + a) >> 1)] = 1;
@@ -181,7 +180,7 @@ macro create_paths_B {
 macro z_is_wall {
     if (b >= c)
         Switch(exit_move);
-    z = &maze + (b < 0 ? 0 : b * c + a);
+    z = &maze[b < 0 ? 0 : b * c + a];
     !*z;
 }
 

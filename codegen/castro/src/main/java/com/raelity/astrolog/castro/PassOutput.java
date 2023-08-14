@@ -15,6 +15,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import com.raelity.astrolog.castro.Castro.CastroOutputOptions;
 import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprStatementContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.CopyContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.RunContext;
@@ -38,6 +39,7 @@ import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.Util.writeRegister;
 import static com.raelity.astrolog.castro.mems.Registers.VAR_CPRINTF_SAVE;
+import static com.raelity.astrolog.castro.optim.FoldConstants.fold2int;
 
 /**
  * Generate and Output the Astrolog code, as a .as file,
@@ -523,6 +525,8 @@ public void exitVarDef(VarDefContext ctx)
     sb.setLength(0);
     int addr = registers.getVar(ctx.id.getText()).getAddr();
 
+    record ExprString(ExprContext e, String s){}
+
     char quote = '\'';
     if(ctx.init.get(0).s != null) {
         ctx.init.get(0);
@@ -532,12 +536,13 @@ public void exitVarDef(VarDefContext ctx)
         createStringAssignmenCommand(sb, addr, strings, quote);
         removeTrailingBlanks(sb).append("\n");
     } else {
-        List<String> strings = ctx.init.stream()
-                .map((e) -> apr.prefixExpr.removeFrom(e))
-                .collect(Collectors.toList());
-        for(String str : strings) {
+        List<ExprString> les
+                = ctx.init.stream()
+                        .map((e) -> new ExprString(e.e, apr.prefixExpr.removeFrom(e)))
+                        .collect(Collectors.toList());
+        for(ExprString es : les) {
             sb.append("~1 '");
-            writeRegister(sb, addr).append(' ').append(str);
+            writeRegister(sb, addr).append(' ').append(fold2int(es.e, es.s));
             removeTrailingBlanks(sb).append("'\n");
             addr++;
         }

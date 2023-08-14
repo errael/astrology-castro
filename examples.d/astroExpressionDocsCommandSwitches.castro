@@ -74,11 +74,10 @@ run { ~ma { (Abs(z) < 2.0) & (y <= O_Moo); } }
 ///////////////////////////////////////////////////////////////////////////////
 // ~j <string>: Adjust object influence powers.
 // For example, to give an extra 100 power to completely unaspected planets, do:
-//      ~j "=n 0 For %i 0 Objs If And Neq @i @x GridNam Min @i @x Max @i @x =n Inc @n If Lte @n 0 =z Add @z 100.0"
-// TODO: looks like should be: "&  GridNam(Min(i, x), Max(i, x)) != 0
+//      ~j "=n 0 For %i 0 Objs If And Neq @i @x Neq GridNam Min @i @x Max @i @x 0 =n Inc @n If Lte @n 0 =z Add @z 100.0"
 run { ~j {
     n = 0;
-    for(i = 0; Objs()) { if(i != x & GridNam(Min(i, x), Max(i, x))) n += 1; }
+    for(i = 0; Objs()) { if(i != x & GridNam(Min(i, x), Max(i, x)) != 0) n += 1; }
     if(n <= 0) z += 100;
 } }
 
@@ -94,11 +93,12 @@ run { ~j0 { if((y % 4) == 1) z += 200.0; } }
 // of the count of each possible personality Ray in custom variables
 // @a through @g with:
 //      ~7 " =u %y = Var @u Inc Var Var @u"
-//run { ~7 { a[y] += 1; } }     // off by one, use a[y - 1]
-run { ~7 { *y += 1; } }                     // ~7 "= @y Inc Var @y" 
+run { ~7 { *y += 1; } }             // ~7 "= @y Inc Var @y" 
+run { ~7 { u = y; *u += 1; } }      // ~7 "=u @y = @u Inc Var @u" 
+// The accumulated values can be kept in rays[1] through rays[7]
 var rays[8];
 run { ~7 { rays[y] += 1; } }           // ~7 "= Add 27 @y Inc Var Add 27 @y" 
-run { ~7 { p = &rays + y; *p += 1; } } // ~7 "=p Add 27 @y  = @p Inc Var @p" 
+run { ~7 { p = &rays[y]; *p += 1; } } // ~7 "=p Add 27 @y  = @p Inc Var @p" 
 
 ///////////////////////////////////////////////////////////////////////////////
 // ~L <string>: Filter latitude crossings.
@@ -162,10 +162,9 @@ run { ~t { a = DayWeek(Mon(), Day(), Yea()); a == 0 | a == 6; } }
 // ~O <string>: Adjust object position.
 // For example, to invert all zodiac positions 180 degrees for charts in the
 // southern hemisphere located south of the equator, do:
-//     ~O "=w Add @w 180.0 Lt Lat 0.0"  // BUG?
-run { ~O { w = w + 180.0; Lat() < 0.0; } } // probably wrong
-run { ~O { if(Lat() < 0.0) w += 180.0; } }   // is an adjustment needed?
-run { ~O { w += if(Lat() < 0.0) 180.0; } }      // interesting alternative
+// NOTE: the astrolog 7.60 example is incorrect (from 7.00)
+//     ~O "If Lt Lat 0.0 =w Add @w 180.0"  // corrected example
+run { ~O { if(Lat() < 0.0) w += 180.0; } }
 
 ///////////////////////////////////////////////////////////////////////////////
 // ~C <string>: Adjust house cusp position.

@@ -11,7 +11,6 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprAssOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprBinOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprBraceBlockOpContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprDowhileOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprForOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
@@ -31,7 +30,6 @@ import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.TermAddressOfContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.Registers;
-import com.raelity.astrolog.castro.optim.FoldConstants;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
 import com.raelity.astrolog.castro.tables.Ops;
@@ -54,6 +52,7 @@ import static com.raelity.astrolog.castro.Util.expr2constInt;
 import static com.raelity.astrolog.castro.Util.parseInt;
 import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
 import static com.raelity.astrolog.castro.Constants.isConstantName;
+import static com.raelity.astrolog.castro.optim.FoldConstants.fold2int;
 
 /**
  * Generate the AstroExpression code.
@@ -105,13 +104,6 @@ private String astroAssignOp(int token)
     return assOp.substring(0, assOp.length() - 1);
 }
 
-
-/** Try to fold expr, return default if not */
-private String tryFolding(ExprContext e, String dflt)
-{
-    Integer f = FoldConstants.fold2Int(e);
-    return f != null ? f.toString() + ' ' : dflt;
-}
 
 @Override
 String genSw_cmdExpr_arg(Switch_cmdContext ctx, List<String> bs)
@@ -390,7 +382,7 @@ String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String _rhs)
         reportError(ctx, "'%s' is a constant name, can't write", ctx.l.id.getText());
         return ctx.l.id.getText();
     }
-    String rhs = tryFolding(ctx.e, _rhs);
+    String rhs = fold2int(ctx.e, _rhs);
     int opType = opToken.getType();
     if(opType == Assign) {
         // Just a simple assign

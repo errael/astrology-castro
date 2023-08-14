@@ -112,14 +112,41 @@ private FoldConstants()
     }
 }
 
+/** 
+ * Convert the expression to a constant int.
+ * Only simply operators are handled.
+ * @return constant int value of expression, or null if not constant.
+ */
+public static Integer fold2Int(ExprContext ctx)
+{
+    return fold2Int(ctx, false);
+}
+
+// record ExprString(ExprContext e, String s){}
+/** Try to constant fold expr, return default if expr is not constant. */
+public static String fold2int(ExprContext e, String dflt)
+{
+    Integer f = fold2Int(e);
+    return f != null ? f.toString() + ' ' : dflt;
+}
+
+/**
+ * Convert the expression to a constant int; report error on token
+ * that is not an int.
+ */
 public static Integer reportFold2Int(ExprContext ctx)
 {
     return fold2Int(ctx, true);
 }
 
-public static Integer fold2Int(ExprContext ctx)
+/**
+ * Convert the expression to a constant int; report error on token
+ * that is not an int. Note: does not return an object.
+ */
+public static int reportFold2Int(ExprContext ctx, int dflt)
 {
-    return fold2Int(ctx, false);
+    Integer i = fold2Int(ctx, true);
+    return i == null ? dflt : i;
 }
 
 private static Integer fold2Int(ExprContext ctx, boolean report)
