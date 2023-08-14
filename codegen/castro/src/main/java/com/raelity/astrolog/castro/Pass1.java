@@ -19,9 +19,9 @@ import com.raelity.astrolog.castro.antlr.AstroParser.Assign_switch_addrContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.BaseContstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ConstContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ConstraintContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.IntegerContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LayoutContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Layout_regionContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LimitContstraintContext;
@@ -38,7 +38,6 @@ import com.raelity.astrolog.castro.mems.Layout;
 import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
-import com.raelity.astrolog.castro.optim.FoldConstants;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
 
@@ -49,7 +48,6 @@ import static com.raelity.astrolog.castro.LineMap.WriteableLineMap.createLineMap
 import static com.raelity.astrolog.castro.Util.checkReport;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
-import static com.raelity.astrolog.castro.Util.parseInt;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.Constants.isConstantName;
 import static com.raelity.astrolog.castro.optim.FoldConstants.reportFold2Int;
@@ -91,7 +89,7 @@ public Pass1()
  * @return true if token is builtin, otherwise false
  */
 private boolean checkBuiltin(ParserRuleContext ctx, Token id,
-                             IntegerContext addr, Str_exprContext init)
+                             ExprContext addr, Str_exprContext init)
 {
         if(isBuiltinVar(id)) {
             if(addr != null)
@@ -124,7 +122,7 @@ public void exitConst(ConstContext ctx)
 void declareVar(VarDefContext ctx)
 {
     TerminalNode idNode;
-    IntegerContext addrNode;
+    ExprContext addrNode;
     int size;
     if(checkBuiltin(ctx, ctx.id, ctx.addr, ctx.init.isEmpty() ? null : ctx.init.get(0)))
         return;
@@ -139,7 +137,7 @@ void declareVar(VarDefContext ctx)
             size = 1; // avoid another error
         } else {
             if(ctx.size != null)
-                size = parseInt(ctx.size.i);
+                size = reportFold2Int(ctx.size, -1);
             else
                 size = ctx.init.size();
         }
@@ -153,7 +151,7 @@ void declareVar(VarDefContext ctx)
         reportError(ctx, "'%s' is a constant, can not declare '%s' as a variable", constantName(id), id.getText());
         return;
     }
-    int addr = addrNode == null ? -1 : parseInt(addrNode.i);
+    int addr = addrNode == null ? -1 : reportFold2Int(addrNode, -1);
     Var var = registers.declare(id, size, addr);
     checkReport(var);
 
@@ -180,13 +178,13 @@ public void exitVar(VarContext ctx)
         declareVar(ctx.v);
 }
 
-private void declareSwithOrMacro(AstroMem mem, IntegerContext i_ctx, Token id)
+private void declareSwithOrMacro(AstroMem mem, ExprContext ctx, Token id)
 {
     int addr;
-    if(i_ctx == null || hasErrorNode(i_ctx))
+    if(ctx == null || hasErrorNode(ctx))
         addr = -1;
     else
-        addr = parseInt(i_ctx.i);
+        addr = reportFold2Int(ctx, -1);
     Var var = mem.declare(id, 1, addr);
     checkReport(var);
 };
@@ -258,7 +256,7 @@ AstroMem getAstroMem(int region)
 }
 
 private int checkReportSimpleConstraint(ConstraintContext ctx,
-                                        IntegerContext i_ctx, int curVal)
+                                        ExprContext i_ctx, int curVal)
 {
     if(hasErrorNode(ctx))
         return -1;
@@ -266,7 +264,7 @@ private int checkReportSimpleConstraint(ConstraintContext ctx,
         reportError(ctx, "'%s' already set", ctx.start.getText());
         return -1;
     }
-    return parseInt(i_ctx.i);
+    return reportFold2Int(i_ctx, 0);
 }
 
 @Override
@@ -290,8 +288,8 @@ public void exitRsv_loc(Rsv_locContext ctx)
 {
     if(hasErrorNode(ctx))
         return;
-    int r1 = parseInt(ctx.range.get(0).i);
-    int r2 = ctx.range.size() == 1 ? r1 + 1 : parseInt(ctx.range.get(1).i);
+    int r1 = reportFold2Int(ctx.range.get(0), 0);
+    int r2 = ctx.range.size() == 1 ? r1 + 1 : reportFold2Int(ctx.range.get(1), 0);
     if(r1 > r2) {
         reportError(ctx, "'%s' %d is greater than %d", ctx.getText(), r1, r2);
         int t = r1;

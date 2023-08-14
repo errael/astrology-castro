@@ -22,6 +22,8 @@ layout memory { base 100; limit 150; }
 layout macro { base 100; limit 150; }
 layout switch { base 100; limit 150; }
 
+var cprintf_save_area[10];
+
 var expect;
 var result;
 var test_name[2];
