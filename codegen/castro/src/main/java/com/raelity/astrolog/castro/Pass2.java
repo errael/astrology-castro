@@ -33,6 +33,7 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUMMY;
 import static com.raelity.astrolog.castro.Util.getText;
 import static com.raelity.astrolog.castro.antlr.AstroLexer.Tilde;
 import static com.raelity.astrolog.castro.Constants.isConstantName;
+import static com.raelity.astrolog.castro.optim.FoldConstants.fold2Int;
 
 ////////////////////////////////////////////////////////////////////
 // TODO: In addition to vars, check switch/macro
@@ -119,7 +120,7 @@ public void exitLvalIndirect(LvalIndirectContext ctx)
 public void exitLvalArray(LvalArrayContext ctx)
 {
     checkReportUnknownVar(ctx, ctx.id);
-    Integer constVal = Util.expr2constInt(ctx.idx);
+    Integer constVal = fold2Int(ctx.idx);
     // If var's null, should have already been an error
     Var var = registers.getVar(ctx.id.getText());
     if(var == null && !apr.hasError()) {

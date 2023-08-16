@@ -31,11 +31,11 @@ public static final String FUNC_ID_SWITCH = "switch";
 public static final String FUNC_ID_MACRO = "macro";
 
 /**
- * isConst - False means this given call is not a constant, ignore all else.
- * displayAddr - user defined address
- * realAddr - 
+ * isConst - False means this given call is not a constant, ignore all else.<br>
+ * realVal - constant value of the specific function call<br>
+ * displayVal - user specified value of the specific function call<br>
  */
-public static record FunctionConstValue(boolean isConst, int realAddr, int displayAddr){};
+public static record FunctionConstValue(boolean isConst, int realVal, int displayVal){};
 public static FunctionConstValue NOT_CONST_VALUE = new FunctionConstValue(false, 0, 0);
 
     /**

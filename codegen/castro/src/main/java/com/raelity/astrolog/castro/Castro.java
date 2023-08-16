@@ -32,6 +32,7 @@ import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
+import com.raelity.astrolog.castro.optim.FoldConstants;
 
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.addLookup;
@@ -323,6 +324,10 @@ public static void main(String[] args)
 
     // Note that outName can only be non-null if inputFiles is size 1.
     boolean success = Compile.compile(inputFiles, outName);
+
+    if(optVerbose > 0) {
+        FoldConstants.outputStats(lookup(CastroErr.class).pw());
+    }
     
     for(CastroIO tout : CentralLookup.getDefault().lookupAll(CastroIO.class)) {
         // ERROR

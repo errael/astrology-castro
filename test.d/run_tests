@@ -26,6 +26,7 @@ TESTS="
     errors-3
     errors-4
     errors-5
+    errors-6
     errors-oom
 "
 

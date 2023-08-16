@@ -9,10 +9,10 @@
 
 ; MACRO ma01 @50 
 ~M 50 ' 
-    =a Add Add Add 1 3 5 @a  
+    =a Add 9 @a  
     =b 7  
     =c 15  
-    =d Add Add 3 4 @a  
+    =d Add 7 @a  
     =e Add 100 @z  
     =f 102  
     =g 26  

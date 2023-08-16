@@ -48,11 +48,10 @@ import static com.raelity.astrolog.castro.antlr.AstroLexer.PlusAssign;
 import static com.raelity.astrolog.castro.antlr.AstroLexer.Tilde;
 import static com.raelity.astrolog.castro.antlr.AstroParser.MinusAssign;
 import static com.raelity.astrolog.castro.tables.Ops.astroCode;
-import static com.raelity.astrolog.castro.Util.expr2constInt;
 import static com.raelity.astrolog.castro.Util.parseInt;
 import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
 import static com.raelity.astrolog.castro.Constants.isConstantName;
-import static com.raelity.astrolog.castro.optim.FoldConstants.fold2int;
+import static com.raelity.astrolog.castro.optim.FoldConstants.fold2Int;
 
 /**
  * Generate the AstroExpression code.
@@ -250,7 +249,7 @@ String genUnOp(ExprUnOpContext ctx, Token opToken, String expr)
     int opType = opToken.getType();
     switch(opType) {
     case Minus -> {
-        Integer constExpr = expr2constInt(ctx.e);
+        Integer constExpr = fold2Int(ctx.e);
         if(constExpr == null)
             sb.append("Neg ");
         else {
@@ -287,7 +286,7 @@ String genBinOp(ExprBinOpContext ctx, Token opToken, String lhs, String rhs)
     // Optim: turn "lhs + 1", "lhs - 1" into "Inc lhs", "Dec lhs"
     int op = opToken.getType();
     if((op == Plus || op == Minus)
-            && (i = expr2constInt(ctx.r)) != null
+            && (i = fold2Int(ctx.r)) != null
             && i == 1)
         sb.append(astroOpByOne(op)).append(' ').append(lhs);
     else
@@ -313,7 +312,7 @@ private StringBuilder lvalVarIntAddr(StringBuilder lsb, LvalContext lval_ctx)
     }
     case LvalIndirectContext ctx -> { if(Boolean.FALSE) Objects.nonNull(ctx); }
     case LvalArrayContext ctx -> {
-        Integer constVal = expr2constInt(ctx.idx);
+        Integer constVal = fold2Int(ctx.idx);
         if(constVal != null) {
             lsb.append(registers.getVar(lvalName).getAddr() + constVal).append(' ');
             resolved = true;
@@ -345,7 +344,7 @@ private StringBuilder lvalWriteVar(StringBuilder lsb, LvalContext lval_ctx,
         lsb.append("@").append(lvalReadVar(lvalName)).append(' ');
     }
     case LvalArrayContext ctx -> {
-        Integer constVal = expr2constInt(ctx.idx);
+        Integer constVal = fold2Int(ctx.idx);
         // Don't need to do a runtime add if idx is constant
         if(constVal != null)
             lsb.append(registers.getVar(lvalName).getAddr() + constVal).append(' ');
@@ -382,7 +381,7 @@ String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String _rhs)
         reportError(ctx, "'%s' is a constant name, can't write", ctx.l.id.getText());
         return ctx.l.id.getText();
     }
-    String rhs = fold2int(ctx.e, _rhs);
+    String rhs = fold2Int(ctx.e, _rhs);
     int opType = opToken.getType();
     if(opType == Assign) {
         // Just a simple assign
@@ -393,7 +392,7 @@ String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String _rhs)
     } else {
         boolean canOptim = false;
         if(opType == PlusAssign || opType == MinusAssign) {
-            Integer constVal = expr2constInt(ctx.e);
+            Integer constVal = fold2Int(ctx.e);
             if(constVal != null && 1 == constVal)
                 canOptim = true;
         }
@@ -447,7 +446,7 @@ String genLval(LvalArrayContext ctx, String expr)
 {
     sb.setLength(0);
     String lvalName = ctx.id.getText();
-    Integer constVal = expr2constInt(ctx.idx);
+    Integer constVal = fold2Int(ctx.idx);
     // Don't need to do a runtime add if idx is constant
     if(constVal != null)
         sb.append('@').append(registers.getVar(lvalName).getAddr() + constVal).append(' ');

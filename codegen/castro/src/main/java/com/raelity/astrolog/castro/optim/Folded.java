@@ -4,28 +4,179 @@
 
 package com.raelity.astrolog.castro.optim;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
+
+import com.raelity.astrolog.castro.Util;
+
 /**
+ * Immutable constant value.
  * Might extend with optype and/or precedence if want to get fancy.
  */
 public class Folded
 {
-    long l;
+private final long v;
 
-    public Folded(long l)
+static Folded get(long v)
+{
+    if(!Util.isOverflow(v))
+        return new Folded(v);
+    else
+        return new OverflowFolded(v);
+}
+
+static Folded get(ParserRuleContext ctx)
+{
+    return new NotFolded(ctx);
+}
+
+static Folded get(Token token)
+{
+    return new NotFolded(token);
+}
+
+Folded(long v)
+{
+    this.v = v;
+}
+
+/** only used to get the final result. */
+int val() {
+    return (int)v;
+}
+
+/** Used to get intermediate results. */
+long lval() {
+    return v;
+}
+
+/** @return true if a valid constant, overflow is not valid. */
+boolean isConstant() {
+    return true;
+}
+
+/** @return if this is an overflow record */
+boolean isOverflow()
+{
+    return false;
+}
+
+/** @return if this is a variable record */
+boolean isVariable()
+{
+    return false;
+}
+
+ParserRuleContext ctx()
+{
+    throw new IllegalStateException();
+}
+
+Token token()
+{
+    throw new IllegalStateException();
+}
+
+@Override
+public String toString()
+{
+    return "Folded{" + "l=" + v + '}';
+}
+
+
+    /**
+     * A non-constant involed in folding,
+     * represent a variable part of an expresstion.
+     */
+    private static class NotFolded extends Folded
     {
-        this.l = l;
+        final ParserRuleContext ctx;
+        final Token token;
+
+        NotFolded(ParserRuleContext ctx)
+        {
+            super(Long.MIN_VALUE);
+            this.ctx = ctx;
+            token = null;
+        }
+
+        NotFolded(Token token)
+        {
+            super(Long.MIN_VALUE);
+            ctx = null;
+            this.token = token;
+        }
+
+        @Override
+        int val()
+        {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        boolean isConstant()
+        {
+            return false;
+        }
+
+        @Override
+        boolean isOverflow()
+        {
+            return false;
+        }
+
+        @Override
+        boolean isVariable()
+        {
+            return true;
+        }
+
+        @Override
+        ParserRuleContext ctx()
+        {
+            return ctx;
+        }
+
+        @Override
+        Token token()
+        {
+            return token;
+        }
     }
 
-    /** only used to get the final result. */
-    public int val() {
-        // TODO: overflow if doesn't fit in an int
-        return (int)l;
-    }
-
-    @Override
-    public String toString()
+    /**
+     * Overflow constant.
+     */
+    private static class OverflowFolded extends Folded
     {
-        return "Folded{" + "l=" + l + '}';
+        OverflowFolded(long v)
+        {
+            super(v);
+        }
+
+        @Override
+        int val()
+        {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        boolean isOverflow()
+        {
+            return true;
+        }
+
+        @Override
+        boolean isConstant()
+        {
+            return false;
+        }
+
+        @Override
+        boolean isVariable()
+        {
+            return false;
+        }
     }
 
 }

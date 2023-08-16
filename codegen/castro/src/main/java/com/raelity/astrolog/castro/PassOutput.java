@@ -34,12 +34,11 @@ import static com.raelity.astrolog.castro.GenPrefixExpr.switchCommandExpressions
 import static com.raelity.astrolog.castro.OutputOptions.*;
 import static com.raelity.astrolog.castro.Util.cleanString;
 import static com.raelity.astrolog.castro.Util.collectAssignStrings;
-import static com.raelity.astrolog.castro.Util.expr2constInt;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.Util.writeRegister;
 import static com.raelity.astrolog.castro.mems.Registers.VAR_CPRINTF_SAVE;
-import static com.raelity.astrolog.castro.optim.FoldConstants.fold2int;
+import static com.raelity.astrolog.castro.optim.FoldConstants.fold2Int;
 
 /**
  * Generate and Output the Astrolog code, as a .as file,
@@ -312,7 +311,7 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
                 int offset = 0;
                 if(sc_ctx.l instanceof LvalArrayContext arr_ctx) {
                     // can only check if there's a constant index
-                    Integer constVal = expr2constInt(arr_ctx.idx);
+                    Integer constVal = fold2Int(arr_ctx.idx);
                     if(constVal != null) {
                         offset = constVal;
                         int size = var.getSize();
@@ -542,7 +541,7 @@ public void exitVarDef(VarDefContext ctx)
                         .collect(Collectors.toList());
         for(ExprString es : les) {
             sb.append("~1 '");
-            writeRegister(sb, addr).append(' ').append(fold2int(es.e, es.s));
+            writeRegister(sb, addr).append(' ').append(fold2Int(es.e, es.s));
             removeTrailingBlanks(sb).append("'\n");
             addr++;
         }

@@ -20,6 +20,7 @@ import com.raelity.astrolog.castro.Castro.CastroMapName;
 import com.raelity.astrolog.castro.Castro.MacrosAccum;
 import com.raelity.astrolog.castro.Castro.RegistersAccum;
 import com.raelity.astrolog.castro.Castro.SwitchesAccum;
+import com.raelity.astrolog.castro.Constants.Constant;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
@@ -41,6 +42,7 @@ import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 
 import static com.raelity.astrolog.castro.Castro.MAP_EXT;
+import static com.raelity.astrolog.castro.Constants.ConstantFlag.SRC_USER;
 import static com.raelity.astrolog.castro.Constants.FK_F0_KEY_CODE;
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.*;
@@ -374,6 +376,14 @@ private static boolean createMap()
         switches.dumpVars(out, true, EnumSet.of(BUILTIN), true, false);
         out.println();
 
+        for(Constant info : Constants.toList(EnumSet.of(SRC_USER))) {
+            String fn = "";
+            if(info.token() != null)
+                fn = Util.fileName(info.token());
+            out.printf("const %s {%s};    // %s:%d\n",
+                       info.id(), info.sval(), fn, info.token().getLine());
+        }
+
     } catch(IOException ex) {
         // TODO: FOR NOW count the error in the first file's apr.
         workingFileData.get(0).castroIO.getApr().countError();
@@ -530,13 +540,13 @@ private static void addCastroFunctions()
     public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
                                      List<String> args)
     {
-        FunctionConstValue constAddr = constValue(ctx);
-        if(!constAddr.isConst()) {
+        FunctionConstValue constVal = constValue(ctx);
+        if(!constVal.isConst()) {
             ExprContext sw = ctx.fc.args.get(0);
             reportError(sw, "Switch '%s' @%d is not a function key address",
-                        sw.getText(), constAddr.displayAddr());
+                        sw.getText(), constVal.displayVal());
         }
-        sb.append(constAddr.realAddr()).append(' ');
+        sb.append(constVal.realVal()).append(' ');
         return sb;
     }
 
