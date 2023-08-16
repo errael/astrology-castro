@@ -190,21 +190,21 @@ expr returns [int fBlock = 0]
     | l=expr o='&' r=expr                         #exprBinOp
     | l=expr o='^' r=expr                         #exprBinOp
     | l=expr o='|' r=expr                         #exprBinOp
-    | <assoc=right> expr '?' expr ':' expr      #exprQuestOp
+    | <assoc=right> ec=expr '?' et=expr ':' ef=expr     #exprQuestOp
     | <assoc=right>
         l=lval ao=( '=' | '+=' | '-=' | '*=' | '/=' | '%='
                             | '<<=' | '>>=' | '&=' | '^=' | '|=' )
                     e=expr                          #exprAssOp
 
     | t=term                                        #exprTermOp
-    | brace_block                                   #exprBraceBlockOp
+    | bb=brace_block                                   #exprBraceBlockOp
 
-    | 'if' paren_expr expr                          #exprIfOp
-    | 'if' paren_expr expr 'else' expr              #exprIfElseOp
-    | 'repeat' paren_expr expr                      #exprRepeatOp
-    | 'while' paren_expr expr                       #exprWhileOp
-    | 'do' expr 'while' paren_expr                  #exprDowhileOp
-    | 'for' '(' l=lval '=' expr ';' expr ')' expr   #exprForOp
+    | 'if' p=paren_expr e=expr                              #exprIfOp
+    | 'if' p=paren_expr et=expr 'else' ef=expr              #exprIfElseOp
+    | 'repeat' p=paren_expr e=expr                          #exprRepeatOp
+    | 'while' p=paren_expr e=expr                           #exprWhileOp
+    | 'do' e=expr 'while' p=paren_expr                      #exprDowhileOp
+    | 'for' '(' l=lval '=' low=expr ';' up=expr ')' e=expr  #exprForOp
     ;
 
 term

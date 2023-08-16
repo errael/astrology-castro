@@ -13,3 +13,19 @@ var bar;
 var rr;
 
 const xxx { bar + rr };
+
+const some_const{1};
+
+var some_name;
+
+const some_const{1};
+
+const some_name {3};
+
+const fk_f0 {3};
+
+const o_jupi {4};
+
+const o_jupiter {4};
+
+const o_random_name {5};

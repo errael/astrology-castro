@@ -4,7 +4,9 @@
 
 package com.raelity.astrolog.castro.optim;
 
+import java.io.PrintWriter;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -76,10 +78,25 @@ import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.antlr.AstroLexer.*;
 
 /**
- * Fold an expression that only contains constants.
+ * Fold an expression that only contains integer constants.
+ * Calculate with long to easily detect overflow.
  * Note that before name/variable allocation, expressions that involve
- * addresses are considerered not constant. This comes into play
+ * addresses are considered not constant. This comes into play
  * when a constant expression is used to specify an address.
+ * 
+ * The polymorphic fold2Int and reportFold2Int are the primary entry points;
+ * they all take an ExprContext.
+ * The forms that take a default always return a value; the other forms
+ * return null if expr is not constant. The report variants generate
+ * an error if the expr is not constant.
+ * 
+ * Results are cached in a TreeProps.
+ * Call this from GenPrefixExpr for every expression. If that's OK,
+ * could incorporate into there, but that would be a performance optim,
+ * so wait until there's a complaint.
+ * 
+ * WIERDNESS: "Int(1 + 3 + 5)" emits "Int Add 4 5". The "1 + 3" gets folded
+ *            into 4. Need to do optimExpr(ctx, s, tag)
  * 
  * Assuming left-right, if the constants are at the end of an expression
  * this can be used, a + 3 - 4 + 6 is a + 5.
@@ -90,31 +107,42 @@ import static com.raelity.astrolog.castro.antlr.AstroLexer.*;
  *      (((3 - 4) + 6) + a)
  * handled more easily as 5 + a
  * IN ANY EVENT, insist on all constants, no vars
- * 
- * TODO: assume that pass3 or later, CHECK IT.
- * 
- * TODO: want two styles:
- *          - general folding optim
- *          - must be constant - this produces specific errors
- * probably two different entry points.
- *       
  */
 public class FoldConstants implements AstroParserVisitor<Folded>
 {
 private static TreeProps<Folded> folded = new TreeProps<>();
+private static int hit;
+private static int miss;
 // registers is not initialized until after alloc is frozen.
 private static Registers registers;
 
-private FoldConstants()
+private static FoldConstants INSTANCE;
+private static FoldConstants get()
 {
+    if(INSTANCE == null)
+        INSTANCE = new FoldConstants();
     if(registers == null && isAllocFrozen()) {
         registers = lookup(Registers.class);
     }
+    return INSTANCE;
+}
+
+private FoldConstants() { }
+
+public static void outputStats(PrintWriter pw) {
+    int n = folded.getMap().entrySet().stream()
+            .filter(e -> e.getValue().isConstant())
+            .collect(Collectors.counting()).intValue();
+    pw.printf("Constant Folding\n");
+    pw.printf("    Expr %d, constantExpr %d\n", folded.size(), n);
+    pw.printf("    hit %d, miss %d\n", hit, miss);
+
 }
 
 /** 
  * Convert the expression to a constant int.
  * Only simply operators are handled.
+ * 
  * @return constant int value of expression, or null if not constant.
  */
 public static Integer fold2Int(ExprContext ctx)
@@ -123,8 +151,11 @@ public static Integer fold2Int(ExprContext ctx)
 }
 
 // record ExprString(ExprContext e, String s){}
-/** Try to constant fold expr, return default if expr is not constant. */
-public static String fold2int(ExprContext e, String dflt)
+/** 
+ * Try to constant fold expr, return default if expr is not constant.
+ * @return String of expr value, or default
+ */
+public static String fold2Int(ExprContext e, String dflt)
 {
     Integer f = fold2Int(e);
     return f != null ? f.toString() + ' ' : dflt;
@@ -133,6 +164,8 @@ public static String fold2int(ExprContext e, String dflt)
 /**
  * Convert the expression to a constant int; report error on token
  * that is not an int.
+ * 
+ * @return constant int value of expression, or null if not constant.
  */
 public static Integer reportFold2Int(ExprContext ctx)
 {
@@ -149,33 +182,47 @@ public static int reportFold2Int(ExprContext ctx, int dflt)
     return i == null ? dflt : i;
 }
 
-private static Integer fold2Int(ExprContext ctx, boolean report)
+private static Folded checkCache(ExprContext ctx)
 {
     Folded f = folded.get(ctx);
+    //System.err.printf("fold2Int: %s\n", ctx.getText());
     if(f != null)
-        return f.val();
-    FoldConstants fc = new FoldConstants();
-    f = fc.expr2constInt(ctx, report);
-    if(f != null) {
-        folded.put(ctx, f);
-        return f.val();
-    }
-    return null;
+        hit++;
+    else
+        miss++;
+    return f;
+}
+
+/** Only save "not constant" if after alloc frozen */
+private static void addCache(ExprContext ctx, Folded f)
+{
+    Folded cur;
+    if(f.isConstant() || isAllocFrozen())
+        if((cur = folded.getMap().putIfAbsent(ctx, f)) != null
+                && cur.lval() != f.lval())
+            throw new IllegalStateException();
+}
+
+/**
+ * return null if expr can not be folded.
+ */
+private static Integer fold2Int(ExprContext ctx, boolean report)
+{
+    Folded f = get().expr2constInt(ctx, report);
+    return f.isConstant() ? f.val() : null;
 }
 
 private Folded expr2constInt(ExprContext ctx, boolean report)
 {
     try {
-        return visitExpr(ctx);
-        // TODO catch overflow, report error, return null;
-    } catch(CancelFolding ex) {
-        if(report) {
-            if(ex.ctx != null)
-                reportError(ex.ctx, "'%s' is not a constant", ex.ctx.getText());
+        Folded f = visitExpr(ctx);
+        if(f.isVariable() && report) {
+            if(f.ctx() != null)
+                reportError(f.ctx(), "'%s' is not a constant", f.ctx().getText());
             else
-                reportError(ex.token, "'%s' is not a constant", ex.token.getText());
+                reportError(f.token(), "'%s' is not a constant", f.token().getText());
         }
-        return null;
+        return f;
     } catch(AbortFolding ex) {
         throw ex;
     }
@@ -183,38 +230,51 @@ private Folded expr2constInt(ExprContext ctx, boolean report)
 
 private Folded visitExpr(ExprContext ctx)
 {
-    return switch(ctx) {
+    Folded f = checkCache(ctx);
+    if(f != null)
+        return f;
+    f = switch(ctx) {
     case ExprUnOpContext ctx1 -> visitExprUnOp(ctx1);
     case ExprBinOpContext ctx1 -> visitExprBinOp(ctx1);
     case ExprTermOpContext ctx1 -> visitExprTermOp(ctx1);
     case ExprFuncContext ctx1 -> visitExprFunc(ctx1);
-    case null,default -> throw new CancelFolding(ctx);
+    case null,default -> Folded.get(ctx);
     };
+    if(f.isOverflow())
+        reportError(ctx, "integer overflow");
+    addCache(ctx, f);
+    return f;
 }
 
 @Override
 public Folded visitExprBinOp(ExprBinOpContext ctx)
 {
+    Folded l = visitExpr(ctx.l);
+    Folded r = visitExpr(ctx.r);
+    if(!l.isConstant())
+        return l;
+    if(!r.isConstant())
+        return r;
     return switch(ctx.o.getType()) {
-    case Star -> new Folded(visitExpr(ctx.l).l * visitExpr(ctx.r).l);
-    case Div -> new Folded(visitExpr(ctx.l).l / visitExpr(ctx.r).l);
-    case Mod -> new Folded(visitExpr(ctx.l).l % visitExpr(ctx.r).l);
-    case Plus -> new Folded(visitExpr(ctx.l).l + visitExpr(ctx.r).l);
-    case Minus -> new Folded(visitExpr(ctx.l).l - visitExpr(ctx.r).l);
-    case LeftShift -> new Folded(visitExpr(ctx.l).l << visitExpr(ctx.r).l);
-    case RightShift -> new Folded(visitExpr(ctx.l).l >> visitExpr(ctx.r).l);
+    case Star ->        Folded.get(l.lval() * r.lval());
+    case Div ->         Folded.get(l.lval() / r.lval());
+    case Mod ->         Folded.get(l.lval() % r.lval());
+    case Plus ->        Folded.get(l.lval() + r.lval());
+    case Minus ->       Folded.get(l.lval() - r.lval());
+    case LeftShift ->   Folded.get(l.lval() << r.lval());
+    case RightShift ->  Folded.get(l.lval() >> r.lval());
 
-    case And -> new Folded(visitExpr(ctx.l).l & visitExpr(ctx.r).l);
-    case Or -> new Folded(visitExpr(ctx.l).l | visitExpr(ctx.r).l);
-    case Caret -> new Folded(visitExpr(ctx.l).l ^ visitExpr(ctx.r).l);
+    case And ->         Folded.get(l.lval() & r.lval());
+    case Or ->          Folded.get(l.lval() | r.lval());
+    case Caret ->       Folded.get(l.lval() ^ r.lval());
         
-    // Seems no reason to handle this
-    case Less -> throw new CancelFolding(ctx.o);
-    case LessEqual -> throw new CancelFolding(ctx.o);
-    case Greater -> throw new CancelFolding(ctx.o);
-    case GreaterEqual -> throw new CancelFolding(ctx.o);
-    case Equal -> throw new CancelFolding(ctx.o);
-    case NotEqual -> throw new CancelFolding(ctx.o);
+    // Don't handle logical
+    case Less ->        Folded.get(ctx.o);
+    case LessEqual ->   Folded.get(ctx.o);
+    case Greater ->     Folded.get(ctx.o);
+    case GreaterEqual -> Folded.get(ctx.o);
+    case Equal ->       Folded.get(ctx.o);
+    case NotEqual ->    Folded.get(ctx.o);
     
     default -> throw new AbortFolding("Unknown BinOp: " + ctx.o.getText());
     };
@@ -223,15 +283,27 @@ public Folded visitExprBinOp(ExprBinOpContext ctx)
 @Override
 public Folded visitExprUnOp(ExprUnOpContext ctx)
 {
+    Folded e = visitExpr(ctx.e);
+    if(!e.isConstant())
+        return e;
     return switch(ctx.o.getType()) {
-    case Plus -> new Folded(visitExpr(ctx.e).l);
-    case Minus -> new Folded(- visitExpr(ctx.e).l);
-    case Tilde -> new Folded(~ visitExpr(ctx.e).l);
+    case Plus ->  Folded.get(e.lval());
+    case Minus -> Folded.get(- e.lval());
+    case Tilde -> Folded.get(~ e.lval());
 
-    case Not -> throw new CancelFolding(ctx.o);
+    // Don't handle logical
+    case Not -> Folded.get(ctx.o);
 
     default -> throw new AbortFolding("unknown UnOp");
     };
+}
+
+@Override
+public Folded visitExprFunc(ExprFuncContext ctx)
+{
+    Function f = Functions.get(ctx.fc.id.getText());
+    FunctionConstValue val = f.constValue(ctx);
+    return val.isConst() ? Folded.get(val.realVal()) : Folded.get(ctx.fc.id);
 }
 
 @Override
@@ -244,18 +316,19 @@ public Folded visitExprTermOp(ExprTermOpContext ctx)
         if(ts.l != null)
             yield visitLval(ts.l);
         // skip float
-        throw new CancelFolding(ts.f);
+        yield Folded.get(ctx.t);
     }
     case TermParenContext tp -> visitExpr(tp.p.e);
     case TermAddressOfContext ta -> visitTermAddressOf(ta);
-    case null,default -> throw new CancelFolding(ctx);
+
+    case null,default -> Folded.get(ctx);
     };
 }
 
 @Override
 public Folded visitInteger(IntegerContext ctx)
 {
-    return new Folded(parseInt(ctx.i));
+    return Folded.get(parseInt(ctx.i));
 }
 
 private Folded visitLval(LvalContext ctx)
@@ -265,11 +338,11 @@ private Folded visitLval(LvalContext ctx)
         if(isConstantName(ctx0.lvid)) {
             Integer constant = numericConstant(ctx0.lvid);
             if(constant != null)
-                yield new Folded(constant);
+                yield Folded.get(constant);
         }
-        throw new CancelFolding(ctx0.lvid);
+        yield Folded.get(ctx0.lvid);
     }
-    case null,default -> throw new CancelFolding(ctx);
+    case null,default -> Folded.get(ctx);
     };
 }
 
@@ -283,26 +356,21 @@ public Folded visitTermAddressOf(TermAddressOfContext ctx)
         throw new AbortFolding(ctx.lv.id.getText());
     return switch(ctx.lv) {
     case LvalMemContext ctx0 ->
-        new Folded(registers.getVar(ctx0.lvid.getText()).getAddr());
-    case LvalArrayContext ctx0 ->
-        new Folded(registers.getVar(ctx0.lvid.getText()).getAddr()
-                + visitExpr(ctx0.idx).l);
+        Folded.get(registers.getVar(ctx0.lvid.getText()).getAddr());
+    case LvalArrayContext ctx0 -> {
+        // TODO: 
+        Folded idx = visitExpr(ctx0.idx);
+        if(!idx.isConstant())
+            yield idx;
+        yield Folded.get(registers.getVar(ctx0.lvid.getText()).getAddr()
+                + idx.lval());
+    }
     case LvalIndirectContext ctx0 -> {
         if(Boolean.FALSE) Objects.nonNull(ctx0);
         throw new AbortFolding("Internal Error");
     }
     case null, default -> throw new IllegalArgumentException();
     };
-}
-
-@Override
-public Folded visitExprFunc(ExprFuncContext ctx)
-{
-    Function f = Functions.get(ctx.fc.id.getText());
-    FunctionConstValue constAddr = f.constValue(ctx);
-    if(constAddr.isConst())
-        return new Folded(constAddr.realAddr());
-    throw new CancelFolding(ctx);
 }
 
 @Override

@@ -1,5 +1,11 @@
-Error: errors-5.castro:7:6 variable 'foo' exists, can not create constant
-Error: errors-5.castro:11:0 'bar' is a constant, can not declare 'bar' as a variable
+Error: errors-5.castro:7:6 'foo' already defined as var: errors-5.castro:5:4
+Error: errors-5.castro:11:4 'bar' already defined as const: program constant errors-5.castro:8:6
 Error: errors-5.castro:15:18 'rr' is not a constant
+Error: errors-5.castro:21:6 'some_const' already defined as const: program constant errors-5.castro:17:6
+Error: errors-5.castro:23:6 'some_name' already defined as var: errors-5.castro:19:4
+Error: errors-5.castro:25:6 'fk_f0' already defined as const: Castro constant
+Error: errors-5.castro:27:6 'o_jupi' already defined as const: Astrolog constant
+Error: errors-5.castro:29:6 'o_jupiter' already defined as const: Astrolog constant
+Error: errors-5.castro:31:6 'o_random_name' already defined as const: Astrolog constant prefix
 Pass1: 0 syntax errors
-Pass1: 3 other errors
+Pass1: 9 other errors

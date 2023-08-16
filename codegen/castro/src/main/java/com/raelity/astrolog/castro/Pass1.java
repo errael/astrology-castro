@@ -51,6 +51,7 @@ import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.Constants.isConstantName;
 import static com.raelity.astrolog.castro.optim.FoldConstants.reportFold2Int;
+import static com.raelity.astrolog.castro.Util.isReportDupSym;
 
 
 /** During parse, handle constant definitions, variable declarations, layout,
@@ -65,6 +66,7 @@ private final Registers registers;
 private final Macros macros;
 private final Switches switches;
 private Layout workingLayout;
+private final String fileName;
 
 static void pass1() {
     AstroParseResult apr = lookup(AstroParseResult.class);
@@ -78,7 +80,8 @@ static void pass1() {
 
 public Pass1()
 {
-    this.wLineMap = createLineMap(lookup(CastroIO.class).inFile());
+    this.fileName = lookup(CastroIO.class).inFile();
+    this.wLineMap = createLineMap(fileName);
 
     this.registers = lookup(Registers.class);
     this.macros = lookup(Macros.class);
@@ -104,15 +107,10 @@ private boolean checkBuiltin(ParserRuleContext ctx, Token id,
 @Override
 public void exitConst(ConstContext ctx)
 {
-    if(isConstantName(ctx.id))
-        reportError(ctx.id, "constant '%s' already defined", ctx.id.getText());
-    else if(registers.getVar(ctx.id.getText()) != null)
-        reportError(ctx.id, "variable '%s' exists, can not create constant",
-                            ctx.id.getText());
-    else {
+    if(!isReportDupSym(ctx.id, true)) {
         Integer val = reportFold2Int(ctx.e);
         if(val != null)
-            Constants.declarConst(ctx.id.getText(), val);
+            Constants.declareConst(ctx.id, val);
     }
 }
 
@@ -147,10 +145,8 @@ void declareVar(VarDefContext ctx)
     if(hasErrorNode(idNode) || hasErrorNode(addrNode))
         return;
     Token id = idNode.getSymbol();
-    if( isConstantName(id)) {
-        reportError(ctx, "'%s' is a constant, can not declare '%s' as a variable", constantName(id), id.getText());
+    if(isReportDupSym(id, false))
         return;
-    }
     int addr = addrNode == null ? -1 : reportFold2Int(addrNode, -1);
     Var var = registers.declare(id, size, addr);
     checkReport(var);

@@ -1,0 +1,10 @@
+/*
+ * overflow
+ */
+
+macro ma {
+    a = 0x7fffffff - 1;
+    b = 0x7fffffff + 1; // OVFL
+    c = 0x1 << 30;
+    d = 0x1 << 31; // OVFL
+}

@@ -21,7 +21,9 @@ import org.antlr.v4.runtime.Token;
 import static com.raelity.astrolog.castro.Constants.ConstantFlag.*;
 import static com.raelity.astrolog.castro.Error.CONST_AMBIG;
 import static com.raelity.astrolog.castro.Util.reportError;
+import static com.raelity.astrolog.castro.Util.tokenLoc;
 import static com.raelity.astrolog.castro.tables.AstrologConstants.*;
+import static com.raelity.lib.collect.Util.intersects;
 
 /**
  * Handle constants. There are Astrolog Builtin constants.
@@ -29,6 +31,9 @@ import static com.raelity.astrolog.castro.tables.AstrologConstants.*;
  * <p>
  * For now, do a quick check for possible constant.
  * Would like to capture known constants from Astrolog. 
+ * <p>
+ * TODO: abstract base class for info, then fewer members
+ *       and can derive based on what's present.
  */
 public class Constants
 {
@@ -77,7 +82,7 @@ public static String constantName(Token token)
 {
     if(!get().isConstantNameCheck(token, true))
         return null;
-    Info info = get().findName(token);
+    Constant info = get().findName(token, true);
     return info != null ? info.id : token.getText();
 }
 
@@ -89,7 +94,7 @@ public static String constantName(Token token)
 // TODO: should return "best case" value in all cases. (there's a pun in there)
 public static String constant(Token token)
 {
-    Info match = get().findName(token);
+    Constant match = get().findName(token, true);
     
     // TODO: deal with QUOTE_IT when there's a blank in the name
     return match == null ? null
@@ -97,23 +102,38 @@ public static String constant(Token token)
            //: match.flags.contains(QUOTE_IT) ? "\"" + match.val + "\"" : match.val;
 }
 
-public static void declarConst(String id, int val)
+public static void declareConst(Token token, int val)
 {
-    get().addConstant(id, val, SRC_USER, EXACT);
+    String id = token.getText();
+    get().addConstant(id, val, token, SRC_USER, EXACT);
 }
 
 /** @return true if exact name match and value is known. */
 public static Integer numericConstant(Token token)
 {
-    Info match = get().findName(token);
+    Constant match = get().findName(token, true);
     return match == null ? null
            : match.flags.contains(NUMERIC) ? match.ival : null;
+}
+
+public static Constant constantInfo(Token token)
+{
+    return get().findName(token, false);
+}
+
+/** @return a alpha sorted list of constants which have any of specified flags */
+public static List<Constant> toList(EnumSet<ConstantFlag> flags)
+{
+    return get().constants.entrySet().stream()
+            .filter(e -> intersects(flags, e.getValue().flags))
+            .map(e -> e.getValue())
+            .collect(Collectors.toList());
 }
 
 private static final String astrologPrefix = "moahskwz";
 private static final String astrologPassthruPrefix = "kz";
 
-private final NavigableMap<String, Info> constants = new TreeMap<>();
+private final NavigableMap<String, Constant> constants = new TreeMap<>();
 private final Set<String> exactConstants = new HashSet<>();
 
 /** Available for short term use. */
@@ -135,27 +155,27 @@ private void initExactConstants()
 
     /** the "base" for X function keys. Add 1 for F1, ... */
     for(NameVal cc : castroConsts) {
-        addConstant(cc.n, cc.v, SRC_CASTRO, EXACT);
+        addConstant(cc.n, cc.v, null, SRC_CASTRO, EXACT);
     }
     // castroConsts = null; not that much mem
 }
 
-private void addConstant(String id, int val, ConstantFlag... flags)
+private void addConstant(String id, int val, Token token, ConstantFlag... flags)
 {
     EnumSet<ConstantFlag> f = EnumSet.noneOf(ConstantFlag.class);
     f.addAll(Arrays.asList(flags));
     f.add(NUMERIC);
-    addConstant(id, new Info(id, val, f));
+    addConstant(id, new Constant(id, val, f, token));
 }
 
 private void addConstant(String id, ConstantFlag... flags)
 {
     EnumSet<ConstantFlag> f = EnumSet.noneOf(ConstantFlag.class);
     f.addAll(Arrays.asList(flags));
-    addConstant(id, new Info(id, f));
+    addConstant(id, new Constant(id, f));
 }
 
-private void addConstant(String id, Info info)
+private void addConstant(String id, Constant info)
 {
     String lc = id.toLowerCase(Locale.ROOT);
     constants.put(lc, info);
@@ -166,7 +186,7 @@ private void addConstant(String id, Info info)
     }
 }
 
-private Info findName(Token token)
+private Constant findName(Token token, boolean reportNotFound)
 {
     String id = token.getText().toLowerCase(Locale.ROOT);
     boolean needsExact;
@@ -176,18 +196,18 @@ private Info findName(Token token)
     else if(hasAstrologPrefix(id)) {
         // An astrolog constant must have at leat 5 chars: 2(prefix) + 3(name)
         if(id.length() < 5) {
-            repErr(token);
+            repErr(token, reportNotFound);
             return null;
         }
         if(astrologPassthruPrefix.indexOf(id.charAt(0)) >= 0)
-            return new Info(token.getText(), EnumSet.of(NONE, QUOTE_IT));
+            return new Constant(token.getText(), EnumSet.of(NONE, QUOTE_IT));
         needsExact = false;
     } else {
-        repErr(token);
+        repErr(token, reportNotFound);
         return null;
     }
 
-    NavigableMap<String, Info> tail = constants.tailMap(id, true);
+    NavigableMap<String, Constant> tail = constants.tailMap(id, true);
     if(needsExact) {
         if(!tail.isEmpty() && id.equals(tail.firstKey()))
             return tail.firstEntry().getValue();
@@ -195,37 +215,38 @@ private Info findName(Token token)
             return null;
     }
 
-    List<Info> matches = new ArrayList<>();
-    List<Info> matches_low_pri = new ArrayList<>();
-    for(Entry<String, Info> entry : tail.entrySet()) {
+    List<Constant> matches = new ArrayList<>();
+    List<Constant> matches_low_pri = new ArrayList<>();
+    for(Entry<String, Constant> entry : tail.entrySet()) {
         String key = entry.getKey();
-        Info info = entry.getValue();
+        Constant info = entry.getValue();
         if(!key.startsWith(id))
             break;
         (info.flags.contains(LOW_PRI) ? matches_low_pri : matches).add(info);
     }
-    List<Info> winner = !matches.isEmpty() ? matches : matches_low_pri;
+    List<Constant> winner = !matches.isEmpty() ? matches : matches_low_pri;
     if(winner.isEmpty()) {
-        repErr(token);
+        repErr(token, reportNotFound);
         return null;
     }
     // When there's more than one match, take the first match.
-    Info winfo = winner.get(0);
+    Constant winfo = winner.get(0);
     if(winfo.flags.contains(EXACT) && !winfo.id.equalsIgnoreCase(id)) {
-        repErr(token);
+        repErr(token, reportNotFound);
         return null;
     }
     repErr(token, winner); // only does something if more than one match
     return winfo;
 }
 
-private void repErr(Token token)
+private void repErr(Token token, boolean reportNotFound)
 {
-    reportError(token, "constant '%s' not found", token.getText());
+    if(reportNotFound)
+        reportError(token, "constant '%s' not found", token.getText());
 
 }
 
-private void repErr(Token token, List<Info> matches)
+private void repErr(Token token, List<Constant> matches)
 {
     if(matches.size() <= 1)
         return;
@@ -245,7 +266,7 @@ private boolean isConstantNameCheck(Token token, boolean reportNotFound)
     if(exactConstants.contains(id))
         return true;
     if(hasAstrologPrefix(id)) {
-        if(reportNotFound && findName(token) == null)
+        if(reportNotFound && findName(token, false) == null)
             reportError(token, "'%s' is constant prefix, but '%s', not found",
                         id.substring(0, 2), id);
         return true;
@@ -261,47 +282,106 @@ private boolean hasAstrologPrefix(String id)
 }
 
 static enum ConstantFlag {
-    SRC_ASTROLOG,
-    SRC_CASTRO,
-    SRC_USER,
+    SRC_ASTROLOG("Astrolog constant"),
+    SRC_CASTRO("Castro constant"),
+    SRC_USER("program constant"),
     QUOTE_IT,  // requires quote on output
     LOW_PRI, // Use this if no other match
     EXACT, // must be an exact match
     NUMERIC, // integer value available
-    NONE,
+    NONE,;
+
+    private final String desc;
+    private ConstantFlag()
+    {
+        this("");
+    }
+    private ConstantFlag(String desc)
+    {
+        this.desc = desc;
     }
 
-    private static class Info
+    public String desc()
+    {
+        return desc;
+    }
+
+}
+
+    static class Constant
     {
     private final String id;
     private final String sval;
     private final int ival;
     private final EnumSet<ConstantFlag> flags;
+    private final Token token;
 
     /** For ASTROLOG, String val gets passed through. */
-    private Info(String val, EnumSet<ConstantFlag> flags)
+    private Constant(String val, EnumSet<ConstantFlag> flags)
     {
         this.id = val;
         this.sval = val;
         this.flags = flags;
         this.ival = Integer.MIN_VALUE;
+        this.token = null;
     }
     // Something with a numeric value
-    private Info(String id, int ival, EnumSet<ConstantFlag> type)
+    public Constant(String id, int ival, EnumSet<ConstantFlag> type, Token token)
     {
         this.id = id;
         this.ival = ival;
         this.sval = String.valueOf(ival);
         this.flags = type;
+        this.token = token;
     }
     /** For CASTRO/USER, id is generated as val. */
-    private Info(String id, String val, EnumSet<ConstantFlag> type)
+    private Constant(String id, String val, EnumSet<ConstantFlag> type)
     {
         this.id = id;
         this.sval = val;
         this.flags = type;
         this.ival = Integer.MIN_VALUE;
+        this.token = null;
     }
+
+        public String id()
+        {
+            return id;
+        }
+
+        public String sval()
+        {
+            return sval;
+        }
+
+        public int ival()
+        {
+            return ival;
+        }
+
+        public EnumSet<ConstantFlag> flags()
+        {
+            return EnumSet.copyOf(flags);
+        }
+
+        public Token token()
+        {
+            return token;
+        }
+
+        public String desc()
+        {
+            String d;
+            if(flags.contains(SRC_USER)) {
+                d = String.format("%s %s", SRC_USER.desc(), tokenLoc(token));
+            } else if(flags.contains(SRC_ASTROLOG)) {
+                d = SRC_ASTROLOG.desc();
+            } else if(flags.contains(SRC_CASTRO)) {
+                d = SRC_CASTRO.desc();
+            } else
+                d = ""; // impossible
+            return d;
+        }
 
     @Override
     public String toString()
@@ -354,7 +434,7 @@ private void setupAstrologImport()
             EnumSet<ConstantFlag> flags = EnumSet.of(SRC_ASTROLOG, ci.flag);
             String s = castroId(name, flags);
             constants.put((ci.prefix + s).toLowerCase(),
-                           new Info(ci.prefix + s, ci.prefix + name, flags));
+                           new Constant(ci.prefix + s, ci.prefix + name, flags));
         }
     }
     astrologConstantAliases("A_", szAspectName, szAspectAbbrev);
@@ -375,7 +455,7 @@ private void astrologConstantAliases(String prefix,
         EnumSet<ConstantFlag> flags = EnumSet.of(SRC_ASTROLOG, LOW_PRI);
         String s = castroId(alias, flags);
         constants.put((prefix + s).toLowerCase(),
-                          new Info(prefix + s, prefix + name, flags));
+                          new Constant(prefix + s, prefix + name, flags));
     }
 }
 

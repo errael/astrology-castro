@@ -159,6 +159,7 @@ Probably the trickiest thing when writing castro programs is dealing with `switc
 
 ###     Statement summary
 These are the top level statements
+- `const` declares a constant.
 - `layout` directives constrain automatic allocation. The three regions are memory/macro/switch. `layout` is optional and, if present, must be before anything else.
 - `var` declarations and initialization.
 - `macro` definitions result in `~M` `Astrolog`commands.

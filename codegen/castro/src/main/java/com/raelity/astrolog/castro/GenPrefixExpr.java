@@ -9,14 +9,16 @@ import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
+import com.raelity.astrolog.castro.tables.Functions;
+import com.raelity.astrolog.castro.tables.Functions.Function;
 
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
 import static com.raelity.antlr.ParseTreeUtil.hasErrorNode;
 import static com.raelity.astrolog.castro.Util.lookup;
+import static com.raelity.astrolog.castro.optim.FoldConstants.fold2Int;
 
 /**
  * Process the tree so that each top level expr node has a String property
@@ -34,7 +36,6 @@ import static com.raelity.astrolog.castro.Util.lookup;
  */
 public abstract class GenPrefixExpr extends AstroParserBaseListener
 {
-
 final AstroParseResult apr;
 final TreeProps<String> lvalArrayIndex = new TreeProps<>(); // OUCH
 /** May need to look  at the expressions individually later; NOTE static.
@@ -93,6 +94,28 @@ private static PrintWriter getOut()
     return lookup(CastroIO.class).pw();
 }
 
+private boolean optimConstant = true;
+private boolean dump = false;
+
+/**
+ * 
+ */
+@SuppressWarnings("UseOfSystemOutOrSystemErr")
+private String optimExprPrefixRem(ExprContext ctx, String tag)
+{
+    String s = apr.prefixExpr.removeFrom(ctx);
+    if(!optimConstant)
+        return s;
+
+    if(!dump)
+        return fold2Int(ctx, s);
+    else {
+        Integer f2i = fold2Int(ctx);
+        if(dump)System.err.printf("%s: '%s' %s\n", tag, s, f2i);
+        return f2i != null ? f2i.toString() + ' ' : s;
+    }
+}
+
 @Override
 public void exitEveryRule(ParserRuleContext ctx)
 {
@@ -104,57 +127,63 @@ public void exitEveryRule(ParserRuleContext ctx)
 @Override
 public void exitExprIfOp(ExprIfOpContext ctx)
 {
-    String s = genIfOp(ctx,
-                       apr.prefixExpr.removeFrom(ctx.paren_expr().expr()),
-                       apr.prefixExpr.removeFrom(ctx.expr()));
+    String p = optimExprPrefixRem(ctx.p.e, "IF p");
+    String e = optimExprPrefixRem(ctx.e, "IF et");
+
+    String s = genIfOp(ctx, p, e);
     apr.prefixExpr.put(ctx, s);
 }
 
 @Override
 public void exitExprIfElseOp(ExprIfElseOpContext ctx)
 {
-    String s = genIfElseOp(ctx,
-                           apr.prefixExpr.removeFrom(ctx.paren_expr().expr()),
-                           apr.prefixExpr.removeFrom(ctx.expr(0)),
-                           apr.prefixExpr.removeFrom(ctx.expr(1)));
+    String p = optimExprPrefixRem(ctx.p.e, "IFE p");
+    String et = optimExprPrefixRem(ctx.et, "IFE et");
+    String ef = optimExprPrefixRem(ctx.ef, "IFE ef");
+
+    String s = genIfElseOp(ctx, p, et, ef);
     apr.prefixExpr.put(ctx, s);
 }
 
 @Override
 public void exitExprRepeatOp(ExprRepeatOpContext ctx)
 {
-    String s = genRepeatOp(ctx,
-                           apr.prefixExpr.removeFrom(ctx.paren_expr().expr()),
-                           apr.prefixExpr.removeFrom(ctx.expr()));
+    String p = optimExprPrefixRem(ctx.p.e, "REP p");
+    String e = optimExprPrefixRem(ctx.e, "REP e");
+
+    String s = genRepeatOp(ctx, p, e);
     apr.prefixExpr.put(ctx, s);
 }
 
 @Override
 public void exitExprWhileOp(ExprWhileOpContext ctx)
 {
-    String s = genWhileOp(ctx,
-                          apr.prefixExpr.removeFrom(ctx.paren_expr().expr()),
-                          apr.prefixExpr.removeFrom(ctx.expr()));
+    String p = optimExprPrefixRem(ctx.p.e, "WHI p");
+    String e = optimExprPrefixRem(ctx.e, "WHI e");
+
+    String s = genWhileOp(ctx, p, e);
     apr.prefixExpr.put(ctx, s);
 }
 
 @Override
 public void exitExprDowhileOp(ExprDowhileOpContext ctx)
 {
-    String s = genDoWhileOp(ctx,
-                            apr.prefixExpr.removeFrom(ctx.expr()),
-                            apr.prefixExpr.removeFrom(ctx.paren_expr().expr()));
+    String e = optimExprPrefixRem(ctx.e, "DOW e");
+    String p = optimExprPrefixRem(ctx.p.e, "DOW p");
+    String s = genDoWhileOp(ctx, e, p);
     apr.prefixExpr.put(ctx, s);
 }
 
 @Override
 public void exitExprForOp(ExprForOpContext ctx)
 {
-    String s = genForOp(ctx,
-                        apr.prefixExpr.removeFrom(ctx.lval()),
-                        apr.prefixExpr.removeFrom(ctx.expr(0)),
-                        apr.prefixExpr.removeFrom(ctx.expr(1)),
-                        apr.prefixExpr.removeFrom(ctx.expr(2)));
+    // TODO: lval OPTIM
+    String l   = apr.prefixExpr.removeFrom(ctx.l);
+    String low = optimExprPrefixRem(ctx.low, "For low");
+    String up  = optimExprPrefixRem(ctx.up, "For up");
+    String e   = optimExprPrefixRem(ctx.e, "For e");
+
+    String s = genForOp(ctx, l, low, up, e);
     apr.prefixExpr.put(ctx, s);
 }
 
@@ -162,60 +191,64 @@ public void exitExprForOp(ExprForOpContext ctx)
 public void exitExprBraceBlockOp(ExprBraceBlockOpContext ctx)
 {
     String s = genBraceBlockOp(ctx,
-            ctx.brace_block().bs.stream()
-                .map((bsctx) -> apr.prefixExpr.removeFrom(bsctx.e.e))
+            ctx.bb.bs.stream()
+                .map((bsctx) -> optimExprPrefixRem(bsctx.e.e, "BBexpr"))
                 .collect(Collectors.toCollection(ArrayList::new)));
-        apr.prefixExpr.put(ctx, s);
+    apr.prefixExpr.put(ctx, s);
 }
 
 @Override
 public void exitExprFunc(ExprFuncContext ctx)
 {
-    String s = genFuncCallOp(ctx,
-                             ctx.fc.id.getText(),
-                             ctx.fc.args.stream()
-                                     .map((arg) -> apr.prefixExpr.removeFrom(arg))
-                                     .collect(Collectors.toList()));
+    String id = ctx.fc.id.getText();
+    Function f = Functions.get(id);
+    List<String> args = ctx.fc.args.stream()
+            .map((arg) -> f.targetMemSpace() == null
+                          ? optimExprPrefixRem(arg, "FArg")
+                          : apr.prefixExpr.removeFrom(arg))
+            .collect(Collectors.toList());
+    String s = genFuncCallOp(ctx, id, args);
     apr.prefixExpr.put(ctx, s);
 }
 
 @Override
 public void exitExprUnOp(ExprUnOpContext ctx)
 {
-    String s = genUnOp(ctx,
-                       ((TerminalNode)ctx.getChild(0)).getSymbol(),
-                       apr.prefixExpr.removeFrom(ctx.expr()));
+    String e = optimExprPrefixRem(ctx.e, "UnOp");
+
+    String s = genUnOp(ctx, ctx.o, e);
     apr.prefixExpr.put(ctx, s);
 }
 
 @Override
 public void exitExprQuestOp(ExprQuestOpContext ctx)
 {
-    String s = genQuestColonOp(ctx,
-                               apr.prefixExpr.removeFrom(ctx.expr(0)),
-                               apr.prefixExpr.removeFrom(ctx.expr(1)),
-                               apr.prefixExpr.removeFrom(ctx.expr(2)));
+    String ec = optimExprPrefixRem(ctx.ec, "EQC c");
+    String et = optimExprPrefixRem(ctx.et, "EQC et");
+    String ef = optimExprPrefixRem(ctx.ef, "EQC ef");
+
+    String s = genQuestColonOp(ctx, ec, et, ef);
     apr.prefixExpr.put(ctx, s);
 }
 
 @Override
 public void exitExprBinOp(ExprBinOpContext ctx)
 {
-    String s = genBinOp(ctx,
-                        ((TerminalNode)ctx.getChild(1)).getSymbol(),
-                        apr.prefixExpr.removeFrom(ctx.getChild(0)),
-                        apr.prefixExpr.removeFrom(ctx.getChild(2)));
+    String l = optimExprPrefixRem(ctx.l, "BinOp l");
+    String r = optimExprPrefixRem(ctx.r, "BinOp r");
+
+    String s = genBinOp(ctx, ctx.o, l, r);
     apr.prefixExpr.put(ctx, s);
 }
 
 @Override
 public void exitExprAssOp(ExprAssOpContext ctx)
 {
-    // TODO: check the expr is constant
-    String s = genAssOp(ctx,
-                        ((TerminalNode)ctx.getChild(1)).getSymbol(),
-                        apr.prefixExpr.removeFrom(ctx.getChild(0)),
-                        apr.prefixExpr.removeFrom(ctx.getChild(2)));
+    // TODO: lval OPTIM
+    String l = apr.prefixExpr.removeFrom(ctx.l);
+    String e = optimExprPrefixRem(ctx.e, "AssOp");
+
+    String s = genAssOp(ctx, ctx.ao, l, e);
     apr.prefixExpr.put(ctx, s);
 }
 
@@ -233,6 +266,7 @@ public void exitLvalMem(LvalMemContext ctx)
     apr.prefixExpr.put(ctx, s);
 }
 
+// TODO: lval OPTIM
 @Override
 public void exitLvalArray(LvalArrayContext ctx)
 {
@@ -240,7 +274,9 @@ public void exitLvalArray(LvalArrayContext ctx)
     // in the case where it is used as the target of an assignment
     // or if the address &arr[expr] is taken.
     String expr = apr.prefixExpr.removeFrom(ctx.idx);
+    //String expr = optimExprPrefixRem(ctx.idx, "LVidx");
     lvalArrayIndex.put(ctx, expr);
+
     String s = genLval(ctx, expr);
     apr.prefixExpr.put(ctx, s);
 }
@@ -307,14 +343,9 @@ protected String genString(Token token)
 @Override
 public void exitStr_expr(Str_exprContext ctx)
 {
-    if(ctx.s != null) {
-        String s = genString(ctx.s);
-        apr.prefixExpr.put(ctx, s);
-        return;
-    }
-
-    // bring up the expr
-    String s = apr.prefixExpr.removeFrom(ctx.e);
+    String s = ctx.s != null
+             ? genString(ctx.s)
+             : apr.prefixExpr.removeFrom(ctx.e); // bring up the expr
     apr.prefixExpr.put(ctx, s);
 }
 
@@ -342,7 +373,9 @@ public void exitTermSingle(TermSingleContext ctx)
 @Override
 public void exitTermParen(TermParenContext ctx)
 {
-    apr.prefixExpr.put(ctx, apr.prefixExpr.removeFrom(ctx.p.e));
+    String e = apr.prefixExpr.removeFrom(ctx.p.e);
+    //String e = optimExpr(ctx.p.e, "TermParen");
+    apr.prefixExpr.put(ctx, e);
 }
 }
     

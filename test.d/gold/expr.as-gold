@@ -108,7 +108,7 @@
     If @a Add @b  If @c @d   
     If @a @b   
     If @c @d   
-    = Add 100 Add 3 4 Add Var @y While Lt @103 @x =b Add @b @c  
+    = 107 Add Var @y While Lt @103 @x =b Add @b @c  
     DoWhile @c Do @a @b  
     While @a @b  
     Add DoWhile @b @a 33  

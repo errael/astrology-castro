@@ -61,6 +61,14 @@ switch test_castro_folding {
     SetString test_name[1] ": fold2"
     ~1 {a  = s_FK_f0 + s_FK_f0 + s_FK_f0 + s_FK_f0 - 2 * (s_FK_f0 + s_FK_f0); }
     ~1 { result = a; expect = 0; macro(check); }
+
+    SetString test_name[1] ": fold3"
+    ~1 {
+        a = 1 << 30;
+        b = 1;
+        c = b << 30;
+    }
+    ~1 { result = a; expect = c; macro(check); }
 }
 
 const cc_small_size {3};

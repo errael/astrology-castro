@@ -22,18 +22,21 @@ import org.antlr.v4.runtime.tree.xpath.XPath;
 
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroWarningOptions;
+import com.raelity.astrolog.castro.Constants.Constant;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.IntegerContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.lib.CentralLookup;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
+import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
 
 import static com.raelity.antlr.ParseTreeUtil.getNthParent;
+import static com.raelity.astrolog.castro.Constants.constantInfo;
+import static com.raelity.astrolog.castro.Constants.isConstantName;
 import static com.raelity.astrolog.castro.antlr.AstroParser.BinaryConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.HexadecimalConstant;
 import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
@@ -130,11 +133,26 @@ private static RS radixString(Token token)
     };
 }
 
+public static boolean isOverflow(long l)
+{
+    return l < Integer.MIN_VALUE || l > Integer.MAX_VALUE;
+}
+
 public static int parseInt(Token token)
 {
+    boolean overflow;
+    long l = 0;
     RS rs = radixString(token);
-    int i = Integer.parseInt(rs.s, rs.radix);
-    return i;
+    try {
+        l = Long.parseLong(rs.s, rs.radix);
+        overflow = isOverflow(l);
+    } catch(NumberFormatException ex) {
+        // assume it's overflow, parser insures good characters
+        overflow = true;
+    }
+    if(overflow)
+        reportError(token, "'%s' integer overflow", token.getText());
+    return (int)l;
 }
 
 /** Extract the string(s) without sourounding quotes. */
@@ -149,7 +167,6 @@ public static List<String> collectAssignStrings(Switch_cmdContext sc_ctx)
 /** For addr output something like either "=x" or "= 100". */
 public static StringBuilder writeRegister(StringBuilder sb, int addr)
 {
-    //String lvalName = ctx.id.getText();
     if(addr >= 1 && addr <= 26)
         sb.append('=').append((char)('a' + addr - 1));
     else
@@ -228,20 +245,21 @@ public static boolean macroSwitchFuncArgs(Func_callContext ctx, AstroMem memSpac
     return true;
 }
 
-private static XPath xpathConstInt;
-/** @return IntegerConstext if pt is expr that's an integer constant, else null */
-public static Integer expr2constInt(ParseTree pt)
-{
-    if( xpathConstInt == null) {
-        xpathConstInt = new XPath(lookup(AstroParseResult.class).getParser(),
-                                  "/expr/term/integer");
-    }
-    Collection<ParseTree> constVal = xpathConstInt.evaluate(pt);
-    if(constVal.isEmpty())
-        return null;
-    IntegerContext i_ctx = (IntegerContext)constVal.iterator().next();
-    return parseInt(i_ctx.i);
-}
+//private static XPath xpathConstInt;
+///** @return IntegerConstext if pt is expr that's an integer constant, else null */
+////public static Integer expr2constInt(ParseTree pt)
+//public static Integer expr2constInt(ExprContext pt)
+//{
+//    if( xpathConstInt == null) {
+//        xpathConstInt = new XPath(lookup(AstroParseResult.class).getParser(),
+//                                  "/expr/term/integer");
+//    }
+//    Collection<ParseTree> constVal = xpathConstInt.evaluate(pt);
+//    if(constVal.isEmpty())
+//        return null;
+//    IntegerContext i_ctx = (IntegerContext)constVal.iterator().next();
+//    return parseInt(i_ctx.i);
+//}
 
 ///////////////////////////////////////////////////////////////////
 //
@@ -260,17 +278,18 @@ public static LvalMemContext expr2LvalMem(ExprContext ctx)
 }
 
 private static XPath xpathFuncArgLval;
-public static Collection<ParseTree> expr2Lvals(ParseTree pt)
+private static Collection<ParseTree> expr2Lvals(ParseTree pt)
 {
     if(xpathFuncArgLval == null)
         xpathFuncArgLval = new XPath(lookup(AstroParseResult.class).getParser(),
                                      "/expr/term/lval");
     return xpathFuncArgLval.evaluate(pt);
 }
-public static boolean isLvalExpr(ParseTree pt)
-{
-    return !expr2Lvals(pt).isEmpty();
-}
+
+//public static boolean isLvalExpr(ParseTree pt)
+//{
+//    return !expr2Lvals(pt).isEmpty();
+//}
 
 
 
@@ -358,6 +377,18 @@ public static String getLineText(int line, CharStream cs)
     return interval != null ? cs.getText(interval) : "";
 }
 
+/** @return fileName for token relative to CWD. */
+public static String fileName(Token token)
+{
+    String fName = token.getTokenSource().getSourceName();
+    if(!fName.equals(IntStream.UNKNOWN_SOURCE_NAME)) {
+        Path path = Path.of(fName).toAbsolutePath(); 
+        Path cwd = Path.of(System.getProperty("user.dir")).toAbsolutePath();
+        fName = cwd.relativize(path).toString();
+    }
+    return fName;
+}
+
 /** @return "fname:line:charpos" */
 // TODO: return record("fname:line:charpos", "originalline text")
 public static String tokenLoc(ParserRuleContext ctx)
@@ -368,18 +399,59 @@ public static String tokenLoc(Token token)
 {
     if(token == null)
         return "";
-    String fName = token.getTokenSource().getSourceName();
-    if(!fName.equals(IntStream.UNKNOWN_SOURCE_NAME)) {
-        Path path = Path.of(fName).toAbsolutePath(); 
-        Path cwd = Path.of(System.getProperty("user.dir")).toAbsolutePath();
-        fName = cwd.relativize(path).toString();
-    }
     return String.format("%s:%d:%d",
-                         fName,
-                         token.getLine(),
+                         fileName(token),
+                         token.getLine(),
                          token.getCharPositionInLine());
 }
 
+/** Token is either constant or variable; check if already defined.
+ * Do not check Var vs Var; it's a special case handled elsewhere,
+ * see checkReport below.
+ * Report an error if a dup.
+ * 
+ * @param token token in process of being defined
+ * @param isConstant true if token represents a constant
+ * @return true if already defined.
+ */
+public static boolean isReportDupSym(Token newToken, boolean isConstant)
+{
+    String otherDef = null;
+    boolean otherIsConstant = false; // not used unless there's dup
+    boolean isDup = false;
+    String id = null;
+
+    if(isConstant) {
+        id = newToken.getText();
+        Var var = lookup(Registers.class).getVar(id);
+        if(var != null) {
+            otherDef = tokenLoc(var.getId());
+            otherIsConstant = false;
+        }
+    }
+    if(otherDef == null) {
+        boolean isConstantName = isConstantName(newToken);
+        if(isConstantName) {
+            id = newToken.getText();
+            otherIsConstant = true;
+            Constant constantInfo = constantInfo(newToken);
+            if(constantInfo != null)
+                otherDef = constantInfo.desc();
+            else // TODO: getting rid of else allows defining exact
+                otherDef = "Astrolog constant prefix";
+        }
+    }
+    if(otherDef != null) {
+        isDup = true;
+        reportError(newToken, "'%s' already defined as %s: %s",
+                    id, otherIsConstant ? "const" : "var", otherDef);
+    }
+
+    return isDup;
+}
+
+
+/** If the Var has conficts with another Var report the errors */
 public static void checkReport(Var var, Object... msg)
 {
     if(!var.hasError())
