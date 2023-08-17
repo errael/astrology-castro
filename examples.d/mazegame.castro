@@ -22,8 +22,8 @@ const MAZE_MEM {50};
 layout memory { limit MAZE_MEM; }
 
 /*
- * Start switch allocation over the last chunk of function keys.
- * Start at Alt-F1.
+ * Start switch allocation at Alt-F1 (out of the way,last chunk of FKeys).
+ * After Astrolog 7.60, can allocate switch commands after FKeys.
  */
 layout switch { base A_FK_F0 + 1; }
 

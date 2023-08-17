@@ -410,7 +410,7 @@ public static String tokenLoc(Token token)
  * see checkReport below.
  * Report an error if a dup.
  * 
- * @param token token in process of being defined
+ * @param newToken token in process of being defined
  * @param isConstant true if token represents a constant
  * @return true if already defined.
  */

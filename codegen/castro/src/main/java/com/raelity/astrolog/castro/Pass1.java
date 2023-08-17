@@ -9,8 +9,11 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.ParseTreeListener;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
+import com.raelity.astrolog.castro.Castro.CastroLineMaps;
 import com.raelity.astrolog.castro.LineMap.WriteableLineMap;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser;
@@ -42,47 +45,77 @@ import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
 
 import static com.raelity.antlr.ParseTreeUtil.hasErrorNode;
-import static com.raelity.astrolog.castro.Constants.constantName;
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.LineMap.WriteableLineMap.createLineMap;
 import static com.raelity.astrolog.castro.Util.checkReport;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
-import static com.raelity.astrolog.castro.Constants.isConstantName;
 import static com.raelity.astrolog.castro.optim.FoldConstants.reportFold2Int;
 import static com.raelity.astrolog.castro.Util.isReportDupSym;
+import static com.raelity.astrolog.castro.Util.replaceLookup;
 
 
-/** During parse, handle constant definitions, variable declarations, layout,
- * valid function name; and build line index map to interval.
+/** Pass1, handle constant definitions, variable declarations, layout,
+ * valid function name; parse pre-pass build line index map to interval.
+ * <p>
+ * Actually two passes. Parse pass only builds line map,
+ * then vist for pass1 goal.
+ * TODO: There are ways to build line map without parsing the file.
  * Publish {@link AstroMem}s and {@link LineMap} to lookup.
  */
 class Pass1 extends AstroParserBaseListener
 {
 /** use line number as index, first entry is null. */
-private final WriteableLineMap wLineMap;
 private final Registers registers;
 private final Macros macros;
 private final Switches switches;
 private Layout workingLayout;
-private final String fileName;
+
+    private static class BuildLineMap implements ParseTreeListener
+    {
+    private final WriteableLineMap wLineMap;
+    private final String fileName;
+
+    public BuildLineMap()
+    {
+        this.fileName = lookup(CastroIO.class).inFile();
+        this.wLineMap = createLineMap(fileName);
+    }
+
+    @Override
+    public void exitEveryRule(ParserRuleContext ctx)
+    {
+        wLineMap.extendLine(ctx.start, ctx.stop);
+    }
+    
+    @Override public void visitTerminal(TerminalNode tn) { }
+    @Override public void visitErrorNode(ErrorNode en) { }
+    @Override public void enterEveryRule(ParserRuleContext prc) { }
+    }
 
 static void pass1() {
     AstroParseResult apr = lookup(AstroParseResult.class);
-    apr.getParser().addParseListener(new Pass1());
 
+    // Build the line map
+    BuildLineMap blm = new BuildLineMap();
+    apr.getParser().addParseListener(blm);
     // parse the file/program
     ProgramContext program = apr.getParser().program();
     // save result
     apr.setContext(program);
+
+    // Install the line map for use during pass1
+    replaceLookup(lookup(CastroLineMaps.class).lineMaps().get(blm.fileName));
+
+    // Now run the first pass
+    Pass1 pass1 = new Pass1();
+    ParseTreeWalker walker = new ParseTreeWalker();
+    walker.walk(pass1, apr.getProgram());
 }
 
 public Pass1()
 {
-    this.fileName = lookup(CastroIO.class).inFile();
-    this.wLineMap = createLineMap(fileName);
-
     this.registers = lookup(Registers.class);
     this.macros = lookup(Macros.class);
     this.switches = lookup(Switches.class);
@@ -305,13 +338,6 @@ public void exitExprFunc(ExprFuncContext ctx)
         Functions.recordUnknownFunction(fc_ctx.id.getText());
     }
     f.checkReportArgs(fc_ctx);
-}
-
-/** build the LineMap */
-@Override
-public void exitEveryRule(ParserRuleContext ctx)
-{
-    wLineMap.extendLine(ctx.start, ctx.stop);
 }
     
 }

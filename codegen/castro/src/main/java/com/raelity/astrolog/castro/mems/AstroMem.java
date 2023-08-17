@@ -26,7 +26,9 @@ import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeMap;
 import com.google.common.collect.TreeRangeSet;
 
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.TokenSource;
 
 import com.raelity.astrolog.castro.AstroParseResult;
 import com.raelity.astrolog.castro.Castro.MemAccum;
@@ -789,9 +791,10 @@ private String lcase(String name)
         this.addr = addr;
     }
 
+
     public Token getId()
     {
-        return original == null ? id : original.getId();
+        return original == null ? (!isTest ? id : testId) : original.getId();
     }
 
     public void setId(Token id)
@@ -816,6 +819,72 @@ private String lcase(String name)
                 + ", state=" + state + '}';
     }
     
+    }
+
+    // The only method used is getLine, and that's during unit test.
+    TestId testId = new TestId();
+    private static class TestId implements Token
+    {
+        @Override
+        public String getText()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public int getType()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public int getLine()
+        {
+            return 777;
+        }
+
+        @Override
+        public int getCharPositionInLine()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public int getChannel()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public int getTokenIndex()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public int getStartIndex()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public int getStopIndex()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public TokenSource getTokenSource()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public CharStream getInputStream()
+        {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
     }
 
 }

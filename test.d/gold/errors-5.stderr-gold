@@ -1,11 +1,11 @@
-Error: errors-5.castro:7:6 'foo' already defined as var: errors-5.castro:5:4
-Error: errors-5.castro:11:4 'bar' already defined as const: program constant errors-5.castro:8:6
-Error: errors-5.castro:15:18 'rr' is not a constant
-Error: errors-5.castro:21:6 'some_const' already defined as const: program constant errors-5.castro:17:6
-Error: errors-5.castro:23:6 'some_name' already defined as var: errors-5.castro:19:4
-Error: errors-5.castro:25:6 'fk_f0' already defined as const: Castro constant
-Error: errors-5.castro:27:6 'o_jupi' already defined as const: Astrolog constant
-Error: errors-5.castro:29:6 'o_jupiter' already defined as const: Astrolog constant
-Error: errors-5.castro:31:6 'o_random_name' already defined as const: Astrolog constant prefix
+Error: errors-5.castro:7:6 'const foo {S_FK_F0 + 5};' 'foo' already defined as var: errors-5.castro:5:4
+Error: errors-5.castro:11:4 'var bar;' 'bar' already defined as const: program constant errors-5.castro:8:6
+Error: errors-5.castro:15:18 'const xxx { bar + rr };' 'rr' is not a constant
+Error: errors-5.castro:21:6 'const some_const{1};' 'some_const' already defined as const: program constant errors-5.castro:17:6
+Error: errors-5.castro:23:6 'const some_name {3};' 'some_name' already defined as var: errors-5.castro:19:4
+Error: errors-5.castro:25:6 'const fk_f0 {3};' 'fk_f0' already defined as const: Castro constant
+Error: errors-5.castro:27:6 'const o_jupi {4};' 'o_jupi' already defined as const: Astrolog constant
+Error: errors-5.castro:29:6 'const o_jupiter {4};' 'o_jupiter' already defined as const: Astrolog constant
+Error: errors-5.castro:31:6 'const o_random_name {5};' 'o_random_name' already defined as const: Astrolog constant prefix
 Pass1: 0 syntax errors
 Pass1: 9 other errors
