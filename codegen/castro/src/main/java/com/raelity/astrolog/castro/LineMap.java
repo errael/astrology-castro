@@ -104,6 +104,9 @@ public String getFileName()
         includeLineStart(line, startIndex);
         int stopIndex = stop.getStopIndex();
         includeLineStop(line, stopIndex);
+        //System.err.printf("extendLine: %s %s %d %s\n",
+        //                  start.getText(), stop.getText(),
+        //                  start.getLine(), insureLine(start.getLine()));
     }
     
     private Interval insureLine(int line)

@@ -29,13 +29,18 @@ public Registers()
 @Override
 void dumpVar(PrintWriter out, Var var, boolean includeFileName)
 {
-    String f = includeFileName ? var.getFileName() : "";
+    String f = "";
+    String lino = "";
+    if(includeFileName) {
+        f = var.getFileName();
+        lino = ":" + var.getId().getLine();
+    }
     if(var.getSize() == 1)
-        out.printf("var %s @%d;    // %s %s\n", var.getName(),
-                   var.getAddr(), var.getState(), f);
+        out.printf("var %s @%d;    // %s %s%s\n", var.getName(),
+                   var.getAddr(), var.getState(), f, lino);
     else
-        out.printf("var %s[%d] @%d;    // %s %s\n", var.getName(),
-                   var.getSize(), var.getAddr(), var.getState(), f);
+        out.printf("var %s[%d] @%d;    // %s %s%s\n", var.getName(),
+                   var.getSize(), var.getAddr(), var.getState(), f, lino);
 }
             
 }

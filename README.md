@@ -1,4 +1,4 @@
-# castro - v1 beta.4
+# castro - v1 beta.6
 `castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression` (and WYSIWYG). `castro` is a standalone tool. It outputs a `.as` file that can be used with `Astrolog`'s command switch `-i <name>.as`. `castro` easily interoperates with existing `Astrolog` command switch files.
 
 Some motivating factors for `castro`
@@ -66,9 +66,11 @@ macro b_macro @55 { ... }       // from another file: '~1 "Macro 55"'
 ```
 When the address is specified, it may be a constant expression
 ```
-const some_const {33}
-switch b_switch @some_const { ... }
-macro b_macro @some_const + 7 { ... }
+const xxx_base {33};
+const yyy_base {50};
+switch sw_01 @xxx_base { ... }      // assign to switch addr 33
+switch sw_02 @xxx_base + 1 { ... }  // assign to switch addr 34
+macro ma_01 @yyy_base + 7 { ... }   // assign to macro addr 57
 ```
 
 
@@ -229,7 +231,7 @@ switch nameId @12 {
 ```
 All `Astrolog` commands that start with `~`, except `~0`, `_~0`, take an `AstroExpression` as an argument; it is delineated with `{` and `}`. An `AstroExpression` can be used as an argument to a `command switch macro`; it is delineated by `{~` and `}`. `SetString` is used to assign strings. `~2`, `~20`, `~M` commands are not directly supported.
 
-Note that `@12` assigns 12 to the switch address which binds it to **F12**; it is optional. `Astrolog` versions after v7.60 are expected to support `command switch macro` numbers outside the function key range, as it does with the `AstroExpression macro`.
+Note that `@12` assigns 12 to the switch address which binds it to **F12**; see [Function key slots](https://github.com/errael/astrology-castro/wiki/castro-constants#function-key-slots). If a switch address is not assigned, it will be allocated; use [layout](layout) to specify where allocation range. `Astrolog` versions after v7.60 are expected to support `command switch macro` numbers outside the function key range, as it does with the `AstroExpression macro`.
 
 ####    castro printf
 
@@ -281,7 +283,7 @@ var var_name5 @addr_base;
 var var_name6 @addr_base + 1;   // address can be a constant expression
 
 // both size and address can be a constant expression
-var var_name7[some_size+3] @addr_base + 1;
+var var_name7[some_size+3] @addr_base + 2;
 ```
 
 #####   Initializing numeric variables
@@ -315,7 +317,7 @@ Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `set
 - Handle single file, out of normally multi-file, compilation. Uses something like the .map file as input; maybe a `--extern-file` option. Not sure this is an essential feature. May be too confusing; just compile them all.
 - Warn if switch/macro used before defined in same file.
 ```
-    run { ~1 { switch(some_switch); }
+    run { ~1 { switch(some_switch); } }
     switch some_switch { -YYT "Boo\n" }
 ```
 - Generate a `.xref` output file which lists vars with where they are used.

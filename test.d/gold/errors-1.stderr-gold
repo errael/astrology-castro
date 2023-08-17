@@ -1,13 +1,12 @@
-Error: errors-1.castro:5:4 'zero' [OVERLAP_ERR]  conflicts with  '#created_min'  'a'  'b'
-Error: errors-1.castro:7:0 'c' builtin variable declaration requires initializer
-Error: errors-1.castro:8:0 'd' Can not specify address of builtin variable
-Error: errors-1.castro:10:0 must specify array size if no initializers
-Error: errors-1.castro:11:0 too many initializers
-Error: errors-1.castro:12:4 constant 'o_xx' not found
-Error: errors-1.castro:12:0 'o_xx' is a constant, can not declare 'o_xx' as a variable
-Error: errors-1.castro:83:0 too many initializers
+Error: errors-1.castro:5:4 'var zero[3] @0;' 'zero' [OVERLAP_ERR]  conflicts with  '#created_min'  'a'  'b'
+Error: errors-1.castro:7:0 'var c;' 'c' builtin variable declaration requires initializer
+Error: errors-1.castro:8:0 'var d @40;' 'd' Can not specify address of builtin variable
+Error: errors-1.castro:10:0 'var arr2[];' must specify array size if no initializers
+Error: errors-1.castro:11:0 'var arr3[2] {1, 2, 3};' too many initializers
+Error: errors-1.castro:12:4 'var o_xx;' 'o_xx' already defined as const: Astrolog constant prefix
+Error: errors-1.castro:83:0 'var v1 {1, 2};' too many initializers
 Pass1: 0 syntax errors
-Pass1: 8 other errors
+Pass1: 7 other errors
 Error: errors-1.castro:16:8 '    a = o_ne;' constant 'o_ne' not found
 Error: errors-1.castro:17:8 '    b = o_xxxx;' constant 'o_xxxx' not found
 Error: errors-1.castro:19:11 '    switch(arr);' 'arr' is not a defined switch
