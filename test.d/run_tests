@@ -20,6 +20,7 @@ TESTS="
     special-func
     switch
     unary-ops
+    log-ops
     warnings
     errors-1
     errors-2

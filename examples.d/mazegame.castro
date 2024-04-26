@@ -13,19 +13,24 @@ copy {
 ; https://github.com/CruiserOne/Astrolog/blob/master/mazegame.as
 }
 
+const AS770 {0};
+
+/*
+ * Astrolog 7.60 start switch allocation at Alt-F1 (last chunk of FKeys).
+ * Astrolog 7.70 and later, can allocate switch commands after FKeys.
+ */
+const SWITCH_BASE {A_FK_F0 + 1};        // AS760
+//const SWITCH_BASE {A_FK_F0 + 13};     // AS770
+
 const MAZE_MEM {50};
 
 /*
  * Limit automatic variable allocation, unbounded maze starts at 50.
- * By setting this, there's an error if auto alloc runs out of space.
+ * By setting this limit, there's an error if auto alloc runs out of space.
  */
 layout memory { limit MAZE_MEM; }
 
-/*
- * Start switch allocation at Alt-F1 (out of the way,last chunk of FKeys).
- * After Astrolog 7.60, can allocate switch commands after FKeys.
- */
-layout switch { base A_FK_F0 + 1; }
+layout switch { base SWITCH_BASE; }
 
 /** Start macro allocation somewhere random for no reason */
 layout macro { base 55; }
@@ -230,12 +235,30 @@ run {
 
 run { ~XQ { Macro(nav_info[cur_nav_idx]); } }
 
-run {
+switch setupWinMenu760 {
     ~WQ {
         if (z == 40082) z = 40152;
         if (z == 40131) z = 40150;
         if (z == 40281) z = 40153;
         if (z == 40086) z = 40151;
+    }
+}
+
+switch setupWinMenu770 {
+    ~WQ {
+        if (z == 40084) z = 40155;
+        if (z == 40134) z = 40153;
+        if (z == 40284) z = 40156;
+        if (z == 40089) z = 40154;
+    }
+}
+
+run {
+    ~1 {
+        if(AS770)
+            Switch(setupWinMenu770)
+        else
+            Switch(setupWinMenu760);
     }
 }
 

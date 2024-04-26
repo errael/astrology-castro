@@ -9,7 +9,8 @@
 
 pluginManagement {
     resolutionStrategy {
-        def ver = '19.0.1'
+        // def ver = '19.0.1'
+        def ver = '21.0.0'
         try {
             ver = "${frgaal_version}"
         } catch(MissingPropertyException e) { }

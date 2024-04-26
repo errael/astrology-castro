@@ -103,7 +103,7 @@ public static String getVersionString()
     try(InputStream resourceStream = loader.getResourceAsStream(resourceName)) {
         props.load(resourceStream);
 
-    version = props.getProperty("version");
+        version = props.getProperty("version");
 
     } catch(IOException ex) {
         version = "#MissingReourceFile#";
@@ -115,6 +115,7 @@ public static String getVersionString()
 public static String getAstrologVersionString()
 {
     return "7.60";
+    //return "7.70";
 }
 
 public static String getCompactAstrologVersionString()
@@ -125,7 +126,8 @@ public static String getCompactAstrologVersionString()
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 private static void version()
 {
-    System.out.printf("castro %s\n", getVersionString());
+    System.out.printf("castro %s (Astrolog %s)\n",
+            getVersionString(), getAstrologVersionString());
     System.exit(0);
 }
 
@@ -293,9 +295,11 @@ public static void main(String[] args)
                            System.getProperty("os.name")));
 
     List<String> inputFiles = new ArrayList<>(Arrays.asList(args).subList(g.getOptind(), args.length));
+//System.err.printf("OUTPUT-1\n");
     if(!checkFileIssues(inputFiles))
         usage();
     
+//System.err.printf("OUTPUT-2\n");
     addLookup(new CastroOutputOptions(oset));
     addLookup(new CastroWarningOptions(warnset));
     if(mapName != null)
@@ -321,6 +325,7 @@ public static void main(String[] args)
             System.exit(1);
         return;
     }
+//System.err.printf("OUTPUT-3\n");
 
     // Note that outName can only be non-null if inputFiles is size 1.
     boolean success = Compile.compile(inputFiles, outName);
@@ -356,13 +361,15 @@ static boolean checkFileIssues(List<String> inputFiles)
     // First just spin through and get rid of stuff that have access problems.
     for(Iterator<Path> it = paths.iterator(); it.hasNext();) {
         Path path = it.next();
-        try (InputStream is = Files.newInputStream(path)) { 
-            is.read();
-        } catch(IOException ex) {
-            System.err.printf("%s %s\n", ex.getClass().getSimpleName(),ex.getMessage());
-            it.remove();
-            read_error = true;
-        }
+        if(!"-".equals(path.toString()))
+            try (InputStream is = Files.newInputStream(path)) { 
+                is.read();
+            } catch(IOException ex) {
+                System.err.printf("%s %s\n",
+                                  ex.getClass().getSimpleName(), ex.getMessage());
+                it.remove();
+                read_error = true;
+            }
     }
 
     // Can't have the same file in the list more than once
