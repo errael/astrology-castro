@@ -54,12 +54,12 @@ java {
 
 //task javadocs19(type: Javadoc) {
 tasks.withType(Javadoc) {
-    executable = '/ref/openjdk/jdk-19/bin/javadoc'
+    executable = '/ref/openjdk/jdk-21/bin/javadoc'
 
     exclude '**/astrolog/castro/antlr/**'
 
     options.addBooleanOption('-enable-preview', true)
-    options.addStringOption('-release', '19')
+    options.addStringOption('-release', '21')
 
 
     failOnError false

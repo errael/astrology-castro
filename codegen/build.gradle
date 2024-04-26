@@ -5,14 +5,14 @@
 allprojects {
 
     group = 'com.raelity.astrolog'
-    version = "0.8.4"
+    version = "0.9.1"
 
     afterEvaluate {
         if(project.hasProperty('java')) {
             project.ext {
                 frgaal_target = '11'
-                frgaal_source = '19'
-                frgaal_preview = true
+                frgaal_source = '21'
+                frgaal_preview = false
             } 
 
             project.targetCompatibility = frgaal_target

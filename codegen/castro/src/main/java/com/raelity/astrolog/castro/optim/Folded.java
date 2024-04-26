@@ -25,6 +25,11 @@ static Folded get(long v)
         return new OverflowFolded(v);
 }
 
+static Folded get(boolean boolval)
+{
+    return new Folded(boolval ? 1 : 0);
+}
+
 static Folded get(ParserRuleContext ctx)
 {
     return new NotFolded(ctx);
@@ -48,6 +53,11 @@ int val() {
 /** Used to get intermediate results. */
 long lval() {
     return v;
+}
+
+/** Used to get result as a boolean. */
+boolean boolval() {
+    return v != 0;
 }
 
 /** @return true if a valid constant, overflow is not valid. */

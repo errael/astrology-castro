@@ -11,7 +11,8 @@ set -e
 ASTROLOG=/junk/install/astrolog.d/base/astrolog
 
 astrolog() {
-    $ASTROLOG "$@"
+    # "-." exits with 2, so use "-n"
+    $ASTROLOG "$@" -n
 }
 
 INFRA_MAP=infra_testing
@@ -21,6 +22,7 @@ INFRA_FILES="
     castro_constants
     astrolog_constants
     expressions
+    logical_ops
     flow_control
     functions
     test_infra
@@ -32,7 +34,7 @@ PRINTF_OUTPUT=printf_results
 PRINTF_FILE=cprintf
 
 usage() {
-    echo "$CMD [-l] [-h] [--clean]"
+    echo "$CMD [-h] [--clean]"
     echo "    --clean   rm .as, .def, .map files"
     echo "    -h    output this message"
 
@@ -51,7 +53,6 @@ typeset -i cleanflag
 while true
 do
     case "$1" in
-#       -l) lflag=1;                                shift   ;;
         --clean) cleanflag=1;                       shift   ;;
         -h) usage                                           ;;
         --) shift
@@ -121,7 +122,10 @@ report_errors() {
 
 run_printf_tests() {
     run_echo castro $PRINTF_FILE.castro
-    run_echo astrolog -i $PRINTF_FILE.as > $PRINTF_OUTPUT
+
+    date > $PRINTF_OUTPUT
+    run_echo astrolog -i $PRINTF_FILE.as >> $PRINTF_OUTPUT
+    date >> $PRINTF_OUTPUT
 
     grep PRINT $PRINTF_OUTPUT | tee $PRINTF_OUTPUT-2
 
@@ -136,8 +140,11 @@ run_infra_tests() {
 
     run_echo castro --mapname=$INFRA_MAP ${infra_files[@]/%/.castro}
 
+    date > $INFRA_OUTPUT
     temp=(${infra_files[@]/%/.as})
-    run_echo astrolog ${temp[@]/#/-i } > $INFRA_OUTPUT
+    run_echo astrolog ${temp[@]/#/-i } >> $INFRA_OUTPUT
+    date >> $INFRA_OUTPUT
+
     grep -E 'PASS|FAIL' $INFRA_OUTPUT
 
     if grep -q FAIL $INFRA_OUTPUT

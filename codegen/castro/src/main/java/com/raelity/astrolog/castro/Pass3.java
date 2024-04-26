@@ -51,6 +51,8 @@ import static com.raelity.astrolog.castro.tables.Ops.astroCode;
 import static com.raelity.astrolog.castro.Util.parseInt;
 import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
 import static com.raelity.astrolog.castro.Constants.isConstantName;
+import static com.raelity.astrolog.castro.antlr.AstroParser.AndAnd;
+import static com.raelity.astrolog.castro.antlr.AstroParser.OrOr;
 import static com.raelity.astrolog.castro.optim.FoldConstants.fold2Int;
 
 /**
@@ -278,18 +280,36 @@ String genQuestColonOp(ExprQuestOpContext ctx,
     return sb.toString();
 }
 
+private boolean useAstroBool = true;
+private String wrapBool(String some_var)
+{
+    return useAstroBool ? "Bool " + some_var.strip() + " "
+           : "Neq "  + some_var.strip() + " 0 ";
+}
+
 @Override
 String genBinOp(ExprBinOpContext ctx, Token opToken, String lhs, String rhs)
 {
     sb.setLength(0);
     Integer i = null;
-    // Optim: turn "lhs + 1", "lhs - 1" into "Inc lhs", "Dec lhs"
     int op = opToken.getType();
     if((op == Plus || op == Minus)
             && (i = fold2Int(ctx.r)) != null
             && i == 1)
+        // Optim: turn "lhs + 1", "lhs - 1" into "Inc lhs", "Dec lhs"
         sb.append(astroOpByOne(op)).append(' ').append(lhs);
-    else
+    else if(op == AndAnd || op == OrOr) {
+        // TODO: Considerable optimization is possible.
+        //          const && expr, const || expr
+        if(op == AndAnd)
+            sb.append(astroControlOp(Flow.IF)).append(' ')
+                    .append(lhs)
+                    .append(wrapBool(rhs));
+        else
+            sb.append(astroControlOp(Flow.IF_ELSE)).append(' ')
+                    .append(lhs).append("1 ")
+                    .append(wrapBool(rhs));
+    } else
         sb.append(astroOp(op)).append(' ')
                 .append(lhs).append(rhs);
     return sb.toString();

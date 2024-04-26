@@ -1,4 +1,4 @@
-# castro - v1 beta.6
+# castro - v1 beta for 770
 `castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression` (and WYSIWYG). `castro` is a standalone tool. It outputs a `.as` file that can be used with `Astrolog`'s command switch `-i <name>.as`. `castro` easily interoperates with existing `Astrolog` command switch files.
 
 Some motivating factors for `castro`
@@ -53,7 +53,7 @@ For more examples, there is
 
 `castro` works with existing `command switch` files and their declared switch/macro/variables.
 
-`castro` has a [layout directive](#layout) which constrains the addresses which it automatically allocate to specified areas; in addition, it is possible to assign addresses. In order to reference items _defined in an existing command switch file_, use
+`castro` has a [layout directive](#layout) which constrains the addresses which it automatically allocates to specified areas; in addition, it is possible to assign addresses. In order to reference items _defined in an existing command switch file_, use
 ```
 switch a_switch @33;     // in a non castro file there's: -M0 33 "..."
 macro a_macro @50;       // in a non castro file there's: ~M 50 "..."
@@ -82,11 +82,14 @@ macro ma_01 @yyy_base + 7 { ... }   // assign to macro addr 57
 
 - Everything has a value, `if`, `while`, `do`, `for`, `repeat`, `{}`, assignments, expressions as described in the `Astrolog` documentation.
 - No semi-colons before `else` or before while in `do while()`.
-- No `||` or `&&`, only `|`,`&`. Primary downside is no short circuit execution.
+- Implement a _no short circuit_ (both sides are always executed)
+  logical and/or like:
+  `Bool(expr1) & Bool(expr2)`/`Bool(expr1) | Bool(expr2)`.
+  Note that `&&` and `||` short circuit as expected.
 - No user defined functions, only builtin functions.
 - Address of and indirect, `&var_name`, `&arr_name[expr]` and `*var_name` supported;
   nothing more complex.
-- Integer constants are decimal, hex (0x), binary(0b), octal(0o).
+- Integer constants are decimal, hex (`0x`), binary(`0b`), octal(`0o`).
 - Floating constants are decimal ###.###, exponents not supported.
 
 ####    variable differences
@@ -116,7 +119,8 @@ the console. The `--fo=min` option might be handy.
 Running `castro`  on a file produces 3 output files. For example, if there's `foo.castro` then executing `castro foo.castro` creates
 - `foo.as` can be executed by `Astrolog` with `-i foo.as`
 - `foo.def` has details of allocation
-- `foo.map` has a summary of allocation for all files
+- `foo.map` has a summary of allocation;
+   includes the file and line number where each item is defined
 
 Use `castro --gui ...` or `castro --console ...` to see how a file is parsed.
 
@@ -155,14 +159,14 @@ Some errors that `castro` reports, may in fact not be errors depending on the ta
 
 ##      Castro Language
 
-Probably the trickiest thing when writing castro programs is dealing with `switch` versus `macro`; it's like having two languages. The `switch` format is the familiar `Astrolog command switch file. `switch` and `run` is almost free form input, very little checking, and delcarative; and `macro` is strictly parsed and procedural. `switch` has two mechanisms that embed `macro` like procedures
+Probably the trickiest thing when writing castro programs is dealing with `switch` versus `macro`; it's like having two languages. The `switch` format is the familiar `Astrolog` command switch file. `switch` and `run` is almost free form input, very little checking, and delcarative; and `macro` is strictly parsed and procedural. `switch` has two mechanisms that embed `macro` like procedures
 - `AstroExpression` command switch hooks: `~cmd { ... }`
 - `AstroExpression` as a command switch argument `-Xxx {~ ... }`
 
 ###     Statement summary
 These are the top level statements
 - `const` declares a constant.
-- `layout` directives constrain automatic allocation. The three regions are memory/macro/switch. `layout` is optional and, if present, must be before anything else.
+- `layout` directives constrain automatic allocation. The three spaces/regions are `memory`/`macro`/`switch`. `layout` is optional and, if present, must be before anything else.
 - `var` declarations and initialization.
 - `macro` definitions result in `~M` `Astrolog`commands.
 - `switch` definitions result in `-M0` `Astrolog` commands.
@@ -231,7 +235,7 @@ switch nameId @12 {
 ```
 All `Astrolog` commands that start with `~`, except `~0`, `_~0`, take an `AstroExpression` as an argument; it is delineated with `{` and `}`. An `AstroExpression` can be used as an argument to a `command switch macro`; it is delineated by `{~` and `}`. `SetString` is used to assign strings. `~2`, `~20`, `~M` commands are not directly supported.
 
-Note that `@12` assigns 12 to the switch address which binds it to **F12**; see [Function key slots](https://github.com/errael/astrology-castro/wiki/castro-constants#function-key-slots). If a switch address is not assigned, it will be allocated; use [layout](layout) to specify where allocation range. `Astrolog` versions after v7.60 are expected to support `command switch macro` numbers outside the function key range, as it does with the `AstroExpression macro`.
+Note that `@12` assigns 12 to the switch address which binds it to **F12**; see [Function key slots](https://github.com/errael/astrology-castro/wiki/castro-constants#function-key-slots). If a switch address is not assigned, it will be allocated; use [layout](layout) to specify the allocation range. `Astrolog` versions after v7.60 support `command switch macro` numbers outside of the function key range.
 
 ####    castro printf
 
@@ -246,7 +250,7 @@ Note that `@12` assigns 12 to the switch address which binds it to **F12**; see 
 ```
 Example: `cprintf "v1 %d, v2 %d" {~ 3 + 4; 7 + 4; }`
 
-`cprintf` optionally does a **save/restore of the variables** it uses. It does this by looking for an array variable named `cprintf_save_area` and using it if found. Recursive use of cprintf will not restore reliably.
+`cprintf` optionally does a **save/restore of the variables** it uses. It does this by looking for an array variable named `cprintf_save_area` and using it if found. _Nested use of cprintf will not restore reliably_.
 ```
 var cprintf_save_area[10];  // save area for cprintf temps, up to 10.
 ```
@@ -254,7 +258,7 @@ var cprintf_save_area[10];  // save area for cprintf temps, up to 10.
 **Warning**: cprintf uses the lower memory locations for the cprintf arguments, up to 10: `%a`, `%b`, `%c`, ..., `%i`, `%j`, by default these are changed. Declare `cprintf_save_area` to avoid interference.
 
 ###     run
-The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
+The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the `run`'s switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
 
 ###     copy
 The `copy{LITERALLY_COPIED_TO_OUTPUT}` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround. All whitespace, including newlines, is copied as is. Use '\\}' to include a '}' in the output. It's unclear if this is needed, it does provide a way to redefine a macro/switch.
@@ -301,7 +305,12 @@ Builtin variables are initialized like other variables; but their **address can 
 
 #####   Initializing string variables
 
-Strings are initialized in `switch {...}` or `run {...}`.
+Initialize variables with strings in variable declarations like:
+```
+var some_strings[] { "string1", "string2", "string3" };
+```
+
+Set strings programatically in `switch {...}` or `run {...}` like:
 ```
 var var1;
 var var_array[4];
@@ -313,16 +322,26 @@ switch someSwitch {
 ```
 Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `setstrings`, `AssignStrings`, or `assignstrings`.
 
-##      TODO
-- Handle single file, out of normally multi-file, compilation. Uses something like the .map file as input; maybe a `--extern-file` option. Not sure this is an essential feature. May be too confusing; just compile them all.
-- Warn if switch/macro used before defined in same file.
-```
-    run { ~1 { switch(some_switch); } }
-    switch some_switch { -YYT "Boo\n" }
-```
-- Generate a `.xref` output file which lists vars with where they are used.
-- Handle parsing inside a `switch`/`run` better so fewer words require quoting.
+##### The same variable can reference both a number and a string
 
+Given this file: **share.castro**
+```
+var share[] { 0, 1, 2 };
+run {
+    SetString share[0] "zero" "one" "two"
+    // share[1] references both a string and a number
+    cprintf "share[1]: %s - %d\n" {~ &share[1]; share[1]; }
+}
+```
+Compile and run it:
+```
+$ castro share.castro
+$ astrolog -i share.as
+```
+And see the output:
+```
+share[1]: one - 1
+```
 
 ##     Warnings/Oddities:
 - `castro` checks for valid `AstroExpression` function names. There is no such check for valid switch commands; if that information becomes available, `castro` will use it.
@@ -399,10 +418,14 @@ Also can specify `layout` for `switch`/`macro`. `limit` is exclusive, all else i
 ```
 var a {123};    // init builtin variable a to 123
 var var1 @30;   // declare variable var1 assigned to specific location
+
 var var2[3] {456, 789}; // declare var2 with 3 elements, init first two.
+var some_strings[] { "string1", "string2", "string3" };
 ```
 
 ### castro functions
+
+Some functions are part of the `castro` language.
 
 See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
 
@@ -471,3 +494,15 @@ switch cpr {
 ### castro help output
 
 See [output of `castro -h`](https://github.com/errael/astrology-castro/wiki/castro-help)
+
+
+##      TODO
+- Handle single file, out of normally multi-file, compilation. Uses something like the .map file as input; maybe a `--extern-file` option. Not sure this is an essential feature. May be too confusing; just compile them all.
+- Warn if switch/macro used before defined in same file.
+```
+    run { ~1 { switch(some_switch); } }
+    switch some_switch { -YYT "Boo\n" }
+```
+- Generate a `.xref` output file which lists vars with where they are used.
+- Handle parsing inside a `switch`/`run` better so fewer words require quoting.
+

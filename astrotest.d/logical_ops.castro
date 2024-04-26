@@ -1,0 +1,329 @@
+/*
+ * Test logical operations; essentially '&&' and '||'.
+ * Verify correct results and short circuiting.
+ */
+
+layout memory { base 450; limit 500; }
+layout macro { base 450; limit 500; }
+layout switch { base 450; limit 500; }
+
+switch test_logical_ops {
+    // run the tests
+    ~1 {
+        Switch(test_constant_log_ops);
+        Switch(test_simple_log_ops);
+        Switch(test_long_constant_log_ops);
+        Switch(test_long_log_ops);
+        Switch(test_log_AndAnd2);
+        Switch(test_log_OrOr2);
+        Switch(test_log_AndAnd4);
+        Switch(test_log_OrOr4);
+    }
+
+    // Uncomment the following to see what failure output looks like
+    // ~1 { Switch(test_force_fail); }
+}
+
+var zero {0};
+var one {1};
+
+switch test_constant_log_ops {
+    SetString test_name[0] "test_log_simple"
+
+    SetString test_name[1] ": 1&&1"
+    ~1 { result = 1 && 1; expect = 1; macro(check); }
+    SetString test_name[1] ": 1&&0"
+    ~1 { result = 1 && 0; expect = 0; macro(check); }
+    SetString test_name[1] ": 0&&1"
+    ~1 { result = 0 && 1; expect = 0; macro(check); }
+    SetString test_name[1] ": 0&&0"
+    ~1 { result = 0 && 0; expect = 0; macro(check); }
+
+    SetString test_name[1] ": 1||1"
+    ~1 { result = 1 || 1; expect = 1; macro(check); }
+    SetString test_name[1] ": 1||0"
+    ~1 { result = 1 || 0; expect = 1; macro(check); }
+    SetString test_name[1] ": 0||1"
+    ~1 { result = 0 || 1; expect = 1; macro(check); }
+    SetString test_name[1] ": 0||0"
+    ~1 { result = 0 || 0; expect = 0; macro(check); }
+}
+
+switch test_simple_log_ops {
+    SetString test_name[1] ": one&&1"
+    ~1 { result = one && 1; expect = 1; macro(check); }
+    SetString test_name[1] ": one&&0"
+    ~1 { result = one && 0; expect = 0; macro(check); }
+    SetString test_name[1] ": zero&&1"
+    ~1 { result = zero && 1; expect = 0; macro(check); }
+    SetString test_name[1] ": zero&&0"
+    ~1 { result = zero && 0; expect = 0; macro(check); }
+
+    SetString test_name[1] ": 1&&one"
+    ~1 { result = 1 && one; expect = 1; macro(check); }
+    SetString test_name[1] ": 1&&zero"
+    ~1 { result = 1 && zero; expect = 0; macro(check); }
+    SetString test_name[1] ": 0&&one"
+    ~1 { result = 0 && one; expect = 0; macro(check); }
+    SetString test_name[1] ": 0&&zero"
+    ~1 { result = 0 && zero; expect = 0; macro(check); }
+
+    SetString test_name[1] ": one||1"
+    ~1 { result = one || 1; expect = 1; macro(check); }
+    SetString test_name[1] ": one||0"
+    ~1 { result = one || 0; expect = 1; macro(check); }
+    SetString test_name[1] ": zero||1"
+    ~1 { result = zero || 1; expect = 1; macro(check); }
+    SetString test_name[1] ": zero||0"
+    ~1 { result = zero || 0; expect = 0; macro(check); }
+
+    SetString test_name[1] ": 1||one"
+    ~1 { result = 1 || one; expect = 1; macro(check); }
+    SetString test_name[1] ": 1||zero"
+    ~1 { result = 1 || zero; expect = 1; macro(check); }
+    SetString test_name[1] ": 0||one"
+    ~1 { result = 0 || one; expect = 1; macro(check); }
+    SetString test_name[1] ": 0||zero"
+    ~1 { result = 0 || zero; expect = 0; macro(check); }
+}
+
+switch test_long_constant_log_ops {
+    SetString test_name[0] "test_log_simple"
+
+    SetString test_name[1] ": && 1..."
+    ~1 { result = 1 && 1 && 1 && 1 && 1 && 1 && 1 && 1;
+            expect = 1; macro(check); }
+    SetString test_name[1] ": || 0..."
+    ~1 { result = 0 || 0 || 0 || 0 || 0 || 0 || 0 || 0;
+            expect = 0; macro(check); }
+
+    SetString test_name[1] ": && 0..."
+    ~1 { result = 0 && 0 && 0 && 0 && 0 && 0 && 0 && 0;
+            expect = 0; macro(check); }
+    SetString test_name[1] ": || 1..."
+    ~1 { result = 1 || 1 || 1 || 1 || 1 || 1 || 1 || 1;
+            expect = 1; macro(check); }
+}
+
+switch test_long_log_ops {
+    SetString test_name[0] "test_log_simple"
+
+    SetString test_name[1] ": && one..."
+    ~1 { result = one && one && one && one && one && one && one && one;
+            expect = 1; macro(check); }
+    SetString test_name[1] ": || zero..."
+    ~1 { result = zero || zero || zero || zero || zero || zero || zero || zero;
+            expect = 0; macro(check); }
+
+    SetString test_name[1] ": && zero..."
+    ~1 { result = zero && zero && zero && zero && zero && zero && zero && zero;
+            expect = 0; macro(check); }
+    SetString test_name[1] ": || one..."
+    ~1 { result = one || one || one || one || one || one || one || one;
+            expect = 1; macro(check); }
+}
+
+
+/*
+ * There's an array of variables that are used in the logical ops;
+ * Their index is used to create masks and values to check results.
+ * Each test is run twice, "e1 && e2" and "macro(e1) && macro(e2);
+ * the second form is used to check short circuiting and that the
+ * variable is accessed at most once.
+ *
+ * Variables are numbered 1 to N; indexes of zero are unused.
+ * The name of the variable is at the same address as the variable.
+ */
+
+var lo_initialize_vars[] { 0, 1, 2, 3, 4 }; // variable initial values.
+var lo_vars[] { 0, 0, 0, 0, 0 };    // the variables
+run { SetString lo_vars[0] "xxx" "e1" "e2" "e3" "e4" }  // The variables names.
+
+// first set up:
+//      init_vars        // which variables are non-zero
+var lo_expect;           // expected result of logical operation
+var lo_expect_trigger;   // which variables are examined/short-ciruit detect
+
+var log_ops_index;
+var log_ops_p[] {
+    MacroAddress(andand2_1), MacroAddress(andand2_2),
+    MacroAddress(oror2_1), MacroAddress(oror2_2),
+    MacroAddress(andand4_1), MacroAddress(andand4_2),
+    MacroAddress(oror4_1), MacroAddress(oror4_2),
+};
+
+const andand2 {0};
+macro andand2_1 { macro(e1) && macro(e2); }
+macro andand2_2 { lo_vars[1] && lo_vars[2]; }
+const oror2 {2};
+macro oror2_1 { macro(e1) || macro(e2); }
+macro oror2_2 { lo_vars[1] || lo_vars[2]; }
+const andand4 {4};
+macro andand4_1 { macro(e1) && macro(e2) && macro(e3) && macro(e4); }
+macro andand4_2 { lo_vars[1] && lo_vars[2] && lo_vars[3] && lo_vars[4]; }
+const oror4 {6};
+macro oror4_1 { macro(e1) || macro(e2) || macro(e3) || macro(e4); }
+macro oror4_2 { lo_vars[1] || lo_vars[2] || lo_vars[3] || lo_vars[4]; }
+
+switch lo_run_the_ops {
+    SetString test_name[1] ""
+    ~1 {    macro(lo_init);
+            lo_resultA = macro(log_ops_p[log_ops_index]); //macro(e1) && macro(e2);
+            result = lo_resultA; expect = lo_expect; macro(check); }
+    SetString test_name[1] ": triggers"
+    ~1 { result = lo_triggers; expect = lo_expect_trigger; macro(check); }
+    SetString test_name[1] ": simple check"
+    ~1 {    result = macro(log_ops_p[log_ops_index + 1]); //lo_vars[1] && lo_vars[2];
+            expect = lo_resultA; macro(check); }
+
+    // ~1 { macro(lo_dump); }
+}
+
+switch test_log_AndAnd2 {
+    ~1 { log_ops_index = andand2; }
+
+    SetString test_name[0] "test_log_AndAnd_vars2: 1-1"
+    // Both variables examined/trigger.
+    ~1 {    init_vars = 0b11; lo_expect = 1; lo_expect_trigger = 0b11;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_AndAnd_vars2: 0-1"
+    // Both variables examined/trigger.
+    ~1 {    init_vars = 0b01; lo_expect = 0; lo_expect_trigger = 0b11;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_AndAnd_vars2: 1-0"
+    // First variable examined/trigger.
+    ~1 {    init_vars = 0b10; lo_expect = 0; lo_expect_trigger = 0b01;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_AndAnd_vars2: 0-0"
+    // First variable examined/trigger.
+    ~1 {    init_vars = 0b00; lo_expect = 0; lo_expect_trigger = 0b01;
+            switch(lo_run_the_ops); }
+}
+
+switch test_log_OrOr2 {
+    ~1 { log_ops_index = oror2; }
+
+    SetString test_name[0] "test_log_OrOr_vars2: 1-1"
+    // Both variables examined/trigger.
+    ~1 {    init_vars = 0b11; lo_expect = 1; lo_expect_trigger = 0b01;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_OrOr_vars2: 0-1"
+    // Both variables examined/trigger.
+    ~1 {    init_vars = 0b01; lo_expect = 1; lo_expect_trigger = 0b01;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_OrOr_vars2: 1-0"
+    // First variable examined/trigger.
+    ~1 {    init_vars = 0b10; lo_expect = 1; lo_expect_trigger = 0b11;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_OrOr_vars2: 0-0"
+    // First variable examined/trigger.
+    ~1 {    init_vars = 0b00; lo_expect = 0; lo_expect_trigger = 0b11;
+            switch(lo_run_the_ops); }
+}
+
+switch test_log_AndAnd4 {
+    ~1 { log_ops_index = andand4; }
+
+    SetString test_name[0] "test_log_AndAnd_vars4: 1-1-1-1"
+    ~1 {    init_vars = 0b1111; lo_expect = 1; lo_expect_trigger = 0b1111;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_AndAnd_vars4: 1-1-1-0"
+    ~1 {    init_vars = 0b1110; lo_expect = 0; lo_expect_trigger = 0b0001;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_AndAnd_vars4: 1-0-1-1"
+    ~1 {    init_vars = 0b1011; lo_expect = 0; lo_expect_trigger = 0b0111;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_AndAnd_vars4: 0-1-1-1"
+    ~1 {    init_vars = 0b0111; lo_expect = 0; lo_expect_trigger = 0b1111;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_AndAnd_vars4: 0-0-0-0"
+    ~1 {    init_vars = 0b0000; lo_expect = 0; lo_expect_trigger = 0b0001;
+            switch(lo_run_the_ops); }
+}
+
+switch test_log_OrOr4 {
+    ~1 { log_ops_index = oror4; }
+
+    SetString test_name[0] "test_log_OrOr_vars4: 1-1-1-1"
+    ~1 {    init_vars = 0b1111; lo_expect = 1; lo_expect_trigger = 0b0001;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_OrOr_vars4: 1-1-1-0"
+    ~1 {    init_vars = 0b1110; lo_expect = 1; lo_expect_trigger = 0b0011;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_OrOr_vars4: 1-0-1-1"
+    ~1 {    init_vars = 0b1011; lo_expect = 1; lo_expect_trigger = 0b0001;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_OrOr_vars4: 0-1-1-1"
+    ~1 {    init_vars = 0b0111; lo_expect = 1; lo_expect_trigger = 0b0001;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_OrOr_vars4: 0-0-0-0"
+    ~1 {    init_vars = 0b0000; lo_expect = 0; lo_expect_trigger = 0b1111;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_OrOr_vars4: 1-0-0-0"
+    ~1 {    init_vars = 0b1000; lo_expect = 1; lo_expect_trigger = 0b1111;
+            switch(lo_run_the_ops); }
+
+    SetString test_name[0] "test_log_OrOr_vars4: 1-1-0-0"
+    ~1 {    init_vars = 0b1100; lo_expect = 1; lo_expect_trigger = 0b0111;
+            switch(lo_run_the_ops); }
+}
+
+switch lo_info {
+    cprintf "init_vars: %d, result %d, trig %d\n"
+        {~ init_vars; lo_resultA; lo_triggers;}
+}
+switch lo_vdisp { cprintf "var: %s, val %d\n" {~ &lo_vars[vidx]; lo_vars[vidx]; } }
+macro lo_dump {
+    Switch(lo_info);
+    for(vidx = 1; sizeof(lo_vars) - 1) {
+        Switch(lo_vdisp);
+    }
+}
+
+macro get_var {
+    lo_triggers += (1 << (vidx-1));     // by "+=", not "|=", detect multiple hits
+    lo_vars[vidx]; // return the variable
+}
+
+var init_vars;      // Variables to initialize to non-zero values, bit 0 is e1
+var lo_triggers;    // when a variable is used, "trigger += (1 << vidx)"
+var lo_resultA;
+var lo_resultB;
+
+var vidx;           // index of the variable under consideration
+var lo_temp_bit;
+
+// Note: bit 0 of init_vars is e1
+macro lo_init {
+    lo_triggers = 0;
+    lo_resultA = -1;
+    lo_resultB = -1;
+
+    lo_temp_bit = 1;
+    for(vidx = 1; sizeof(lo_vars) - 1) {
+        lo_vars[vidx] = init_vars & lo_temp_bit ? lo_initialize_vars[vidx] : 0;
+        lo_temp_bit <<= 1;
+    }
+}
+
+macro e1 { vidx = 1; macro(get_var); }
+macro e2 { vidx = 2; macro(get_var); }
+macro e3 { vidx = 3; macro(get_var); }
+macro e4 { vidx = 4; macro(get_var); }
+
+

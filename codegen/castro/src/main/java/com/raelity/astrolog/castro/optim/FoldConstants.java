@@ -263,19 +263,24 @@ public Folded visitExprBinOp(ExprBinOpContext ctx)
     case Minus ->       Folded.get(l.lval() - r.lval());
     case LeftShift ->   Folded.get(l.lval() << r.lval());
     case RightShift ->  Folded.get(l.lval() >> r.lval());
-
+        
     case And ->         Folded.get(l.lval() & r.lval());
     case Or ->          Folded.get(l.lval() | r.lval());
     case Caret ->       Folded.get(l.lval() ^ r.lval());
         
-    // Don't handle logical
+        // Don't handle logical TODO:
     case Less ->        Folded.get(ctx.o);
     case LessEqual ->   Folded.get(ctx.o);
     case Greater ->     Folded.get(ctx.o);
     case GreaterEqual -> Folded.get(ctx.o);
+
+        // TODO:
     case Equal ->       Folded.get(ctx.o);
     case NotEqual ->    Folded.get(ctx.o);
-    
+        //
+    case AndAnd ->      Folded.get(l.boolval() && r.boolval());
+    case OrOr ->        Folded.get(l.boolval() || r.boolval());
+        
     default -> throw new AbortFolding("Unknown BinOp: " + ctx.o.getText());
     };
 }
