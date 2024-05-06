@@ -23,6 +23,7 @@ INFRA_FILES="
     astrolog_constants
     expressions
     logical_ops
+    macro_functions
     flow_control
     functions
     test_infra

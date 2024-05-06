@@ -4,6 +4,7 @@ package com.raelity.astrolog.castro;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -83,7 +84,7 @@ private Pass3(AstroParseResult apr)
 
 StringBuilder sb = new StringBuilder();
 
-private String astroControlOp(Flow op)
+private static String astroControlOp(Flow op)
 {
     return Ops.astroCode(op.key());
 }
@@ -203,7 +204,7 @@ String genForOp(ExprForOpContext ctx,
 }
 
 /** Append the first n items onto the StringBuilder */
-private void appendSubBlock(StringBuilder sb, Flow doOp,
+private static void appendSubBlock(StringBuilder sb, Flow doOp,
                                               int n, List<String> statements)
 {
     sb.append(astroControlOp(doOp)).append(' ');
@@ -211,10 +212,10 @@ private void appendSubBlock(StringBuilder sb, Flow doOp,
         sb.append(statements.remove(0));
 }
 
-@Override
-String genBraceBlockOp(ExprBraceBlockOpContext ctx, List<String> statements)
+/** Create an Astrolog Expression, Do*, that executes the listed expressions. */
+public static StringBuilder appendDo(StringBuilder sb,
+                               List<String> statements, Supplier<String> err)
 {
-    sb.setLength(0);
     if(statements.size() == 1)
         sb.append(statements.remove(0)).append(' ');
     // The interesting case is when there are 5 or more statements;
@@ -222,14 +223,22 @@ String genBraceBlockOp(ExprBraceBlockOpContext ctx, List<String> statements)
     // use Do3, add 3 statements, the 4th statement is another Do*.
     while(!statements.isEmpty()) {
         switch(statements.size()) {
-        case 1 -> throw new IllegalStateException(ctx.getText());
+        case 1 -> throw new IllegalStateException(err != null ? err.get() : "");
         case 2 -> appendSubBlock(sb, Flow.XDO, 2, statements);
         case 3 -> appendSubBlock(sb, Flow.XDO2, 3, statements);
         case 4 -> appendSubBlock(sb, Flow.XDO3, 4, statements);
         default -> appendSubBlock(sb, Flow.XDO3, 3, statements);
         }
     }
-    return sb.toString();
+    return sb;
+}
+
+/** Note {@linkplain  statements} is consumed. */
+@Override
+String genBraceBlockOp(ExprBraceBlockOpContext ctx, List<String> statements)
+{
+    sb.setLength(0);
+    return appendDo(sb, statements, () -> ctx.getText()).toString();
 }
 
 @Override
@@ -280,10 +289,10 @@ String genQuestColonOp(ExprQuestOpContext ctx,
     return sb.toString();
 }
 
-private boolean useAstroBool = true;
 private String wrapBool(String some_var)
 {
-    return useAstroBool ? "Bool " + some_var.strip() + " "
+    return Castro.compileTarget >= 770
+           ? "Bool " + some_var.strip() + " "
            : "Neq "  + some_var.strip() + " 0 ";
 }
 

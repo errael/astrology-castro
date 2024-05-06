@@ -76,7 +76,9 @@ assign_macro_addr : 'macro' id=Identifier '@' addr=expr ';' ;
 assign_switch_addr : 'switch' id=Identifier '@' addr=expr ';' ;
 
 macro
-    : 'macro' id=Identifier ('@' addr=expr)? '{' bs+=astroExprStatement + '}'
+    : 'macro' id=Identifier ('@' addr=expr)?
+            ( has_paren='(' (args+=Identifier (',' args+=Identifier)*)? ')' )?
+            '{' bs+=astroExprStatement + '}'
     ;
 
 /*

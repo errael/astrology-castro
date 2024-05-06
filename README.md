@@ -1,5 +1,5 @@
-# castro - v1 beta for 770
-`castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression` (and WYSIWYG). `castro` is a standalone tool. It outputs a `.as` file that can be used with `Astrolog`'s command switch `-i <name>.as`. `castro` easily interoperates with existing `Astrolog` command switch files.
+# castro - v1 beta for 770 with macro functions
+`castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression`. `castro` is a standalone tool. It outputs a `.as` file that can be used with `Astrolog`'s command switch `-i <name>.as`. `castro` easily interoperates with existing `Astrolog` command switch files.
 
 Some motivating factors for `castro`
 - familiar expression syntax (avoid writing and maintaining the prefix notation expressions),
@@ -42,6 +42,24 @@ which generates
 
 This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpression` basics. See [discussions](https://github.com/errael/astrology-castro/discussions) for musings on possible extensions.
 
+castro 0.9.1 introduces macro functions. From the previous example the macro can be defined as follows and the years are provided _when the macro is invoked_. **NOTE: There is no stack**; in the example, yearA and yearB are global variables, **beware of recusion**. Macro functions are syntactic sugar.
+```
+macro progressByYears(yearA, yearB) {           // declares globals yearA/yearB
+    Switch(progressedAspectsBetweenYearsAB);
+}
+
+run { ~1 { progressByYears(1973, 1975); } }
+```
+This generates the following, use the same `switch progressedAspectsBetweenYearsAB`
+```
+; MACRO progressByYears
+~M 1 'Switch 1'
+
+; RUN 
+~1 "Do2 = 27 1973 = 28 1975 Macro 1" 
+```
+
+
 For more examples, there is 
 - [mazegame ported to castro](examples.d/mazegame.castro)
 - [astroExpressionDocsCommandSwitches.castro](examples.d/astroExpressionDocsCommandSwitches.castro) has the examples from `Astrolog` website under [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express) ported to castro.
@@ -77,6 +95,10 @@ macro ma_01 @yyy_base + 7 { ... }   // assign to macro addr 57
 ###      Differences from "C"
 
 `castro` has a weird looking printf, see [castro printf](#castro-printf). And examples [cprintf.castro](examples.d/cprintf.castro) for a description that compiles and runs.
+
+####    macro function
+
+Macro functions use globals for function parameters. There is no stack; no recursion.
 
 ####    statement/expression differences
 
