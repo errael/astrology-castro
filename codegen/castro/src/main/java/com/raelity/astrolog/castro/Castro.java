@@ -112,10 +112,12 @@ public static String getVersionString()
     return version;
 }
 
+//public static int compileTarget = 760;
+public static int compileTarget = 770;
+
 public static String getAstrologVersionString()
 {
-    return "7.60";
-    //return "7.70";
+    return compileTarget >= 770 ? "7.70" : "7.60";
 }
 
 public static String getCompactAstrologVersionString()

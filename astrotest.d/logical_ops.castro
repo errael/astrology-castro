@@ -50,6 +50,13 @@ switch test_constant_log_ops {
 }
 
 switch test_simple_log_ops {
+//    ~1 {
+//        Switch(test_simple_log_ops_A);
+//        Switch(test_simple_log_ops_A);
+//    }
+//}
+//
+//switch test_simple_log_ops_A {
     SetString test_name[1] ": one&&1"
     ~1 { result = one && 1; expect = 1; macro(check); }
     SetString test_name[1] ": one&&0"
@@ -67,7 +74,9 @@ switch test_simple_log_ops {
     ~1 { result = 0 && one; expect = 0; macro(check); }
     SetString test_name[1] ": 0&&zero"
     ~1 { result = 0 && zero; expect = 0; macro(check); }
-
+//}
+//
+//switch test_simple_log_ops_B {
     SetString test_name[1] ": one||1"
     ~1 { result = one || 1; expect = 1; macro(check); }
     SetString test_name[1] ": one||0"

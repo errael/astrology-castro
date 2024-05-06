@@ -1,0 +1,20 @@
+
+macro m1(mafu1a, mafu1b) {
+    mafu1a + mafu1b;
+}
+
+macro m2(mafu2a, mafu2b) {
+    mafu2a + mafu2b;
+}
+
+macro m3(mafu3a, mafu3b) {
+    m1(mafu3a, mafu3b);
+}
+
+switch s1 {
+    ~1 {
+        m1(4, 3);
+        m2(m1(a,b), m1(c,d));
+        m3(m1(3, 4), m1(103, 104));
+    }
+}

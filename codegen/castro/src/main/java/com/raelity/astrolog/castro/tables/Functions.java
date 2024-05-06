@@ -6,17 +6,22 @@
 
 package com.raelity.astrolog.castro.tables;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+import com.raelity.astrolog.castro.Pass3;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
+import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
+import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 
 import static com.raelity.astrolog.castro.Error.FUNC_CASTRO;
@@ -41,7 +46,7 @@ public static FunctionConstValue NOT_CONST_VALUE = new FunctionConstValue(false,
     /**
      * The base class for any function; codegen and checking.
      * Could be regular Astrolog function, special func like switch/macro,
-     * castro function.
+     * castro function. User defined function (really a macro).
      */
     abstract public static class Function
     {
@@ -60,6 +65,10 @@ public static FunctionConstValue NOT_CONST_VALUE = new FunctionConstValue(false,
     public boolean isInvalid() {
         return false;
     }
+
+    public boolean isBuiltin() {
+        return true;
+    };
 
     /** Check for special func args; returns true if no further
      * checking needed, doesn't mean there's not an error.
@@ -174,6 +183,14 @@ public static void addFunction(Function f, String... aliases)
     }
 }
 
+public static void addUserFunction(String name, List<String> args)
+{
+    UserFunction f = new UserFunction(name, args);
+    if(functions.funcsModifiableMap.putIfAbsent(
+            f.name().toLowerCase(Locale.ROOT), f) != null)
+        throw new IllegalArgumentException();
+}
+
 /** dummyFunction is a singleton DummyFunction */
 private static Function dummyFunction = new DummyFunction();
 
@@ -261,6 +278,8 @@ private void addAlias(String castroName, String astroName)
         throw new IllegalArgumentException();
 }
 
+// Replace an existing function by the param function;
+// based on the function name.
 private void replaceWith(Function f)
 {
     // Something should already be there
@@ -319,6 +338,75 @@ void add(String funcName, int narg, String types)
         return sb;
     }
     } /////////// AstrologFunction
+
+    /* ************************************************************* */
+
+    /**
+     * A UserFunction is basically a macro.
+     * The macro name must be followed by "( ... )", zero or more arguments;
+     * otherwise it is a simple macro.
+     */
+    private static class UserFunction extends Function
+    {
+    /** The declared argument names are the variables for the user func. */
+    // A sorted set, argument declaration order, would be nice.
+    private final List<String> argNames;
+    
+    private UserFunction(String funcName, List<String> argNames)
+    {
+        super(funcName, argNames.size());
+
+        if(new HashSet<>(argNames).size() != argNames.size())
+            throw new IllegalArgumentException();
+
+        this.argNames = List.copyOf(argNames);
+    }
+    
+    @Override
+    public boolean isBuiltin()
+    {
+        return false;
+    }
+    
+    /** Assign the arguments to the macro's variables, invoke the macro.
+     * Create a list that has the code to initialize macro function arguments;
+     * for "m1(a + 13, b + 7)" it looks something like:
+     * <br> "= 123 Add @a 13"
+     * <br> "= 127 Add @b 7"
+     * <br> "Macro 1"
+     * <p>
+     * Then encapsulate the code into a single Astrolog "DO*" expression.
+     */
+    @Override
+    public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
+                                                           List<String> args)
+    {
+        if(argNames.size() != args.size())
+            throw new IllegalArgumentException();
+
+        List<String> callMacro = new ArrayList<>();
+        Registers regs = lookup(Registers.class);
+        // Set up the macro parameters.
+        for(int i = 0; i < args.size(); i++) {
+            Var var = regs.getVar(argNames.get(i));
+            callMacro.add("= " + var.getAddr() + " " + args.get(i));
+        }
+        // Add the call to invoke the macro.
+        Var macro = lookup(Macros.class).getVar(name());
+        callMacro.add("Macro " + macro.getAddr() + " ");
+        Pass3.appendDo(sb, callMacro, () -> "UserFunctionCall");
+
+        return sb;
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format("UserFunction{name:%s, args:%s}",
+                             name(), argNames);
+    }
+    
+    }
 
     /* ************************************************************* */
     private static class SwitchFunction extends SwitchMacroFunction

@@ -14,6 +14,9 @@ import static com.raelity.astrolog.castro.antlr.AstroLexer.*;
 public class Ops
 {
 
+// TODO: add "&&" and "||" where needed, but since they can not be
+//       invoked, why bother?
+
 public static enum Flow {
 DO_WHILE(Do), IF_ELSE(Else),
 FOR(For), IF(If),

@@ -3,6 +3,9 @@
 package com.raelity.astrolog.castro;
 
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.google.common.collect.Range;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -221,7 +224,29 @@ private void declareSwithOrMacro(AstroMem mem, ExprContext ctx, Token id)
 @Override
 public void exitMacro(MacroContext ctx)
 {
-    declareSwithOrMacro(macros, ctx.addr, ctx.id);
+    Function f = Functions.get(ctx.id.getText());
+    // If a macro is declared with arguments,
+    // then it must have a unique function name.
+    if(ctx.has_paren == null || f.isInvalid()) {
+        if(ctx.has_paren != null) {
+            List<String> args = ctx.args.stream()
+                    .filter((token) -> {
+                        // Declare this argument variable; discard if error.
+                        Var var = registers.declare(token, 1, -1);
+                        checkReport(var);
+                        return !var.hasError();
+                    })
+                    .map((token) -> token.getText())
+                    .collect(Collectors.toList());
+            Functions.addUserFunction(ctx.id.getText(), args);
+        }
+        declareSwithOrMacro(macros, ctx.addr, ctx.id);
+    } else {
+        if(f.isBuiltin())
+            reportError(ctx, "'%s' is a builtin function", f.name());
+        else
+            reportError(ctx, "'%s' already declared as a function", f.name());
+    }
 }
 
 @Override

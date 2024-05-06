@@ -1,0 +1,58 @@
+/*
+ * Test macro functions
+ */
+
+layout memory { base 500; limit 550; }
+layout macro { base 500; limit 550; }
+layout switch { base 500; limit 550; }
+
+switch test_macro_functions {
+    ~1 {
+        Switch(test_simple_macro_function);
+        Switch(test_nested_macro_function);
+    }
+
+    // Uncomment the following to see what failure output looks like
+    // ~1 { Switch(test_force_fail); }
+}
+
+macro m1(mafu1a, mafu1b) {
+    mafu1a + mafu1b;
+}
+
+
+switch test_simple_macro_function {
+    SetString test_name[0] "test_simple_macro_functions"
+
+    SetString test_name[1] ": (param1, param2): a + b"
+    ~1 { result = m1(4, 3); expect = 7; macro(check); }
+
+    SetString test_name[1] ": manual: a + b"
+    ~1 {
+        mafu1a = 9;
+        mafu1b = 8;
+        result = Macro(m1); expect = 17; macro(check);
+    }
+}
+
+macro m2(mafu2a, mafu2b) {
+    mafu2a + mafu2b;
+}
+
+macro m3(mafu3a, mafu3b) {
+    m1(mafu3a, mafu3b);
+}
+
+switch test_nested_macro_function {
+    SetString test_name[0] "test_nested_macro_functions"
+
+    SetString test_name[1] ": m2(m1(a,b), m1(c,d))"
+    ~1 { result = m2(m1(3, 4), m1(103, 104)); expect = 214; macro(check); }
+    // >>>>>>>    ^^ using m1 here fails <<<<<<<<
+
+    SetString test_name[1] ": m1(a,b) + m1(c,d)"
+    ~1 { result = m1(3, 4) + m1(103, 104); expect = 214; macro(check); }
+
+    SetString test_name[1] ": m3(m1(a,b), m1(c,d)): m3 uses m1"
+    ~1 { result = m3(m1(3, 4), m1(103, 104)); expect = 214; macro(check); }
+}

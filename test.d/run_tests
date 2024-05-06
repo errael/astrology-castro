@@ -21,6 +21,7 @@ TESTS="
     switch
     unary-ops
     log-ops
+    macro_functions
     warnings
     errors-1
     errors-2
