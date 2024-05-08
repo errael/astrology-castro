@@ -1,0 +1,4 @@
+Warn: errors-7.castro:6:4 '    bar(a, b);' unknown function 'bar'
+Warn: errors-7.castro:5:4 '    foo(a);' unknown function 'foo'
+Error: errors-7.castro:7:4 '    foo();' unknown function 'foo', args expect 1 not 0
+Error: errors-7.castro:8:4 '    foo(b,c);' unknown function 'foo', args expect 1 not 2

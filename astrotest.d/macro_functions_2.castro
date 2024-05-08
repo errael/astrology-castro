@@ -1,0 +1,8 @@
+/*
+ * This file is for testing macro function definitions
+ * is a different file.
+ */
+
+macro mafu4(mafu4a, mafu4b, mafu4c) {
+    mafu4a + mafu4b + mafu4c;
+}

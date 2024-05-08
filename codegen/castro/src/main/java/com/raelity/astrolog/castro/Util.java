@@ -303,30 +303,28 @@ public static PrintWriter getErr()
 // what has had an error reported.
 //
 
-public static void reportError(ParserRuleContext ctx, Object... msg)
+public static void reportError(Object ctx_or_token, Object... msg)
 {
-    reportError(null, ctx, msg);
+    reportError((Error)null, ctx_or_token, msg);
 }
 
-public static void reportError(Error err, ParserRuleContext ctx, Object... msg)
+public static void reportError(Error err, Object ctx_or_token, Object... msg)
 {
-    if(didError(ctx))
-        return;
-    report(err, ctx.start, msg);
-    setError(ctx);
-}
-
-public static void reportError(Token token, Object... msg)
-{
-    reportError(null, token, msg);
-}
-
-public static void reportError(Error err, Token token, Object... msg)
-{
-    if(didError(token))
-        return;
-    report(err, token, msg);
-    setError(token);
+    switch(ctx_or_token) {
+    case Token token -> {
+        if(didError(token))
+            return;
+        report(err, token, msg);
+        setError(token);
+    }
+    case ParserRuleContext ctx -> {
+        if(didError(ctx))
+            return;
+        report(err, ctx.start, msg);
+        setError(ctx);
+    }
+    default -> throw new IllegalArgumentException(ctx_or_token.getClass().getName());
+    }
 }
 
 private static void report(Error err, Token token, Object... msg)

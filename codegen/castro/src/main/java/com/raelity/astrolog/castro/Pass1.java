@@ -48,7 +48,6 @@ import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Functions.Function;
 
 import static com.raelity.antlr.ParseTreeUtil.hasErrorNode;
-import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.LineMap.WriteableLineMap.createLineMap;
 import static com.raelity.astrolog.castro.Util.checkReport;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
@@ -117,7 +116,7 @@ static void pass1() {
     walker.walk(pass1, apr.getProgram());
 }
 
-public Pass1()
+private Pass1()
 {
     this.registers = lookup(Registers.class);
     this.macros = lookup(Macros.class);
@@ -227,7 +226,7 @@ public void exitMacro(MacroContext ctx)
     Function f = Functions.get(ctx.id.getText());
     // If a macro is declared with arguments,
     // then it must have a unique function name.
-    if(ctx.has_paren == null || f.isInvalid()) {
+    if(ctx.has_paren == null || f.isInvalid() || f.isUnknown()) {
         if(ctx.has_paren != null) {
             List<String> args = ctx.args.stream()
                     .filter((token) -> {
@@ -359,8 +358,11 @@ public void exitExprFunc(ExprFuncContext ctx)
     Func_callContext fc_ctx = ctx.fc;
     Function f = Functions.get(fc_ctx.id.getText());
     if(f.isInvalid()) {
-        reportError(FUNC_UNK, fc_ctx.id, "unknown function '%s'", fc_ctx.id.getText());
-        Functions.recordUnknownFunction(fc_ctx.id.getText());
+        // Assume it's really a function, at least for now.
+        Functions.addUnkownFunction(fc_ctx.id, fc_ctx.args.size());
+        f = Functions.get(fc_ctx.id.getText());
+    } else if(f.isUnknown()) {
+        f.addReference(fc_ctx.id, fc_ctx.args.size());
     }
     f.checkReportArgs(fc_ctx);
 }

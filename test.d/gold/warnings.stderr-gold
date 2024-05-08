@@ -1,9 +1,10 @@
-Warn: warnings.castro:10:4 '    foo();' unknown function 'foo'
-Warn: warnings.castro:11:4 '    bar(a, b);' unknown function 'bar'
 Warn: warnings.castro:16:4 '    Lat(a);' function 'Lat' argument count, expect 0 not 1
 Warn: warnings.castro:17:4 '    Int();' function 'Int' argument count, expect 1 not 0
 Warn: warnings.castro:18:4 '    Tween(a,b);' function 'Tween' argument count, expect 3 not 2
 Warn: warnings.castro:19:4 '    dbox(a,b,c);' function 'dbox' argument count, expect 4 not 3
+Warn: warnings.castro:11:4 '    bar(a, b);' unknown function 'bar'
+Warn: warnings.castro:10:4 '    foo();' unknown function 'foo'
+Warn: warnings.castro:12:4 '    foo();' unknown function 'foo'
 Warn: warnings.castro:27:4 'var rr @35;' 'rr' assigned to reserve area
 Warn: warnings.castro:35:8 '    a = pp[4];' 'pp[4]' array index out of bounds
 Warn: warnings.castro:37:8 '    a = qq[1];' 'qq[1]' array index out of bounds
