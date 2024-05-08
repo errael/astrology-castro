@@ -13,7 +13,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+
+import org.antlr.v4.runtime.Token;
 
 import com.raelity.astrolog.castro.Pass3;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
@@ -24,8 +27,7 @@ import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 
-import static com.raelity.astrolog.castro.Error.FUNC_CASTRO;
-import static com.raelity.astrolog.castro.Error.FUNC_NARG;
+import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.macroSwitchFuncArgs;
 import static com.raelity.astrolog.castro.Util.reportError;
@@ -35,6 +37,8 @@ public class Functions
 public static final String FUNC_ID_SWITCH = "switch";
 public static final String FUNC_ID_MACRO = "macro";
 
+private record FunctionUsage(Token id, int narg) {}
+
 /**
  * isConst - False means this given call is not a constant, ignore all else.<br>
  * realVal - constant value of the specific function call<br>
@@ -42,6 +46,27 @@ public static final String FUNC_ID_MACRO = "macro";
  */
 public static record FunctionConstValue(boolean isConst, int realVal, int displayVal){};
 public static FunctionConstValue NOT_CONST_VALUE = new FunctionConstValue(false, 0, 0);
+
+private static void reportFuncNargError(Object ctx_or_token,
+                                        String name, int expect, int result)
+{
+    reportError(FUNC_NARG, ctx_or_token,
+                "function '%s' argument count, expect %d not %d",
+                name, expect, result);
+}
+
+private static void reportUserFuncNargError(Object ctx_or_token,
+                                            String name, int expect, int result)
+{
+    reportError(ctx_or_token,
+                "\"%s\" expects %d arguments for macro function call not %d",
+                name, expect, result);
+}
+
+private static String lc(String s)
+{
+    return s.toLowerCase(Locale.ROOT);
+}
 
     /**
      * The base class for any function; codegen and checking.
@@ -70,6 +95,18 @@ public static FunctionConstValue NOT_CONST_VALUE = new FunctionConstValue(false,
         return true;
     };
 
+    public boolean isUnknown() {
+        return false;
+    }
+
+    List<FunctionUsage> getReferences() {
+        return Collections.emptyList();
+    }
+
+    public void addReference(Token id, int narg) {
+        // typically don't care about references.
+    }
+
     /** Check for special func args; returns true if no further
      * checking needed, doesn't mean there's not an error.
      * Typically meaningfull where unusual arguments
@@ -94,11 +131,8 @@ public static FunctionConstValue NOT_CONST_VALUE = new FunctionConstValue(false,
      */
     public boolean checkReportArgs(Func_callContext ctx)
     {
-        if(ctx.args.size() != narg()
-                && !Functions.isUnknownFunction(ctx.id.getText())) {
-            reportError(FUNC_NARG, ctx,
-                        "function '%s' argument count, expect %d not %d",
-                        ctx.id.getText(), narg(), ctx.args.size());
+        if(ctx.args.size() != narg()) {
+            reportFuncNargError(ctx, ctx.id.getText(), narg(), ctx.args.size());
             return false;
         }
         return true;
@@ -161,11 +195,8 @@ public static FunctionConstValue NOT_CONST_VALUE = new FunctionConstValue(false,
     @Override
     public boolean checkReportArgs(Func_callContext ctx)
     {
-        if(ctx.strs.size() != narg()
-                && !Functions.isUnknownFunction(ctx.id.getText())) {
-            reportError(FUNC_NARG, ctx,
-                        "function '%s' argument count, expect %d not %d",
-                        ctx.id.getText(), narg(), ctx.strs.size());
+        if(ctx.strs.size() != narg()) {
+            reportFuncNargError(ctx, ctx.id.getText(), narg(), ctx.strs.size());
             return false;
         }
         return true;
@@ -173,10 +204,36 @@ public static FunctionConstValue NOT_CONST_VALUE = new FunctionConstValue(false,
 
     } /////////// class StringArgsFunction
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// public methods to work with functions
+//
+
+/**
+ * If unknown function is a warning,
+ * then convert any unknown functions to AstrologFunctions.
+ */
+public static void cleanupAfterFirstPass()
+{
+    for( Entry<String, Function> e : functions.funcsModifiableMap.entrySet()) {
+        Function f = e.getValue();
+        if(f.isUnknown()) {
+            for(FunctionUsage ref : f.getReferences()) {
+                if(f.narg() == ref.narg())
+                    reportError(FUNC_UNK, ref.id(), "unknown function '%s'", f.name());
+                else
+                    reportError(ref.id(),
+                                "unknown function '%s', args expect %d not %d",
+                                f.name(), f.narg(), ref.narg());
+            }
+            e.setValue(new AstrologFunction(f.name(), f.narg()));
+        }
+    }
+}
+
 public static void addFunction(Function f, String... aliases)
 {
-    if(functions.funcsModifiableMap.putIfAbsent(
-            f.name().toLowerCase(Locale.ROOT), f) != null)
+    if(functions.funcsModifiableMap.putIfAbsent(lc(f.name()), f) != null)
         throw new IllegalArgumentException();
     for(String alias : aliases) {
         functions.addAlias(alias, f.name());
@@ -185,9 +242,29 @@ public static void addFunction(Function f, String... aliases)
 
 public static void addUserFunction(String name, List<String> args)
 {
+    Function fAlready = Functions.get(name);
+    if(fAlready.isUnknown()) {
+        for(FunctionUsage reference : fAlready.getReferences()) {
+            if(reference.narg() != args.size()) {
+                // The macro was used with a different arg count than
+                // the declaration. Uses of this macro must get an error.
+                reportUserFuncNargError(reference.id(),
+                                        name, args.size(), fAlready.narg());
+            }
+        }
+
+        // Take the unknown function out of the table.
+        functions.funcsModifiableMap.remove(lc(name));
+    }
     UserFunction f = new UserFunction(name, args);
-    if(functions.funcsModifiableMap.putIfAbsent(
-            f.name().toLowerCase(Locale.ROOT), f) != null)
+    if(functions.funcsModifiableMap.putIfAbsent(lc(f.name()), f) != null)
+        throw new IllegalArgumentException();
+}
+
+public static void addUnkownFunction(Token id, int narg)
+{
+    UnknownFunction f = new UnknownFunction(id, narg);
+    if(functions.funcsModifiableMap.putIfAbsent(lc(f.name()), f) != null)
         throw new IllegalArgumentException();
 }
 
@@ -199,7 +276,7 @@ private static Function dummyFunction = new DummyFunction();
  */
 public static Function get(String funcName)
 {
-    String lcName = funcName.toLowerCase(Locale.ROOT);
+    String lcName = lc(funcName);
     String realName = functions.aliasFuncs.get(lcName);
     if(realName != null)
         lcName = realName;
@@ -224,40 +301,18 @@ public static boolean funcSwitchOrMacro(String funcName)
 // https://stackoverflow.com/questions/66428518/java-read-only-view-of-the-union-of-two-maps;
 // But, unknown only needs to be a set; since unkown rest of info is derived.
 
-/** Track a special function (unknown or magic);
- * further inquiries about this
- * name will not return null and narg returns 0. 
- * Keep a set of special function names. And add the unknown
- * to the main map to keep the rest of the code simple.
- */
-public static void recordUnknownFunction(String funcName)
-{
-    String lc = funcName.toLowerCase(Locale.ROOT);
-    if(functions.funcs.containsKey(lc) || functions.unknownFuncs.containsKey(lc))
-        throw new IllegalArgumentException(funcName);
-    functions.unknownFuncs.put(lc, null);
-    functions.add(lc, 0, "R_");
-}
-
-public static boolean isUnknownFunction(String funcName)
-{
-    return functions.unknownFuncs.containsKey(funcName.toLowerCase(Locale.ROOT));
-}
-
 // singleton
 private static final Functions functions = new Functions();
 
 private final Map<String, Function> funcsModifiableMap;
 private final Map<String, Function> funcs;
 private final Map<String,String> aliasFuncs;
-private final Map<String,Object> unknownFuncs;
 
 private Functions() {
     // ~500 items, 700 entries, load-factor .72
     // keep modifiable funcs around to add unknown func.
-    this.funcsModifiableMap = new HashMap<>(700);
+    this.funcsModifiableMap = new HashMap<>(800);
     this.funcs = Collections.unmodifiableMap(funcsModifiableMap);
-    this.unknownFuncs = new HashMap<>();
     this.aliasFuncs = new HashMap<>();
     new AstrologFunctions(this).createEntries();
 
@@ -273,8 +328,7 @@ private Functions() {
 
 private void addAlias(String castroName, String astroName)
 {
-    if(aliasFuncs.putIfAbsent(castroName.toLowerCase(Locale.ROOT),
-                              astroName.toLowerCase(Locale.ROOT)) != null)
+    if(aliasFuncs.putIfAbsent(lc(castroName), lc(astroName)) != null)
         throw new IllegalArgumentException();
 }
 
@@ -283,7 +337,7 @@ private void addAlias(String castroName, String astroName)
 private void replaceWith(Function f)
 {
     // Something should already be there
-    if(funcsModifiableMap.put(f.name().toLowerCase(Locale.ROOT), f) == null)
+    if(funcsModifiableMap.put(lc(f.name()), f) == null)
         throw new IllegalArgumentException();
 }
 
@@ -291,8 +345,7 @@ private void replaceWith(Function f)
 void add(String funcName, int narg, String types)
 {
     Objects.nonNull(types);
-    funcsModifiableMap.put(funcName.toLowerCase(Locale.ROOT),
-                           new AstrologFunction(funcName, narg));
+    funcsModifiableMap.put(lc(funcName), new AstrologFunction(funcName, narg));
 }
 
     private static class DummyFunction extends Function
@@ -342,6 +395,60 @@ void add(String funcName, int narg, String types)
     /* ************************************************************* */
 
     /**
+     * Record name and number of args.
+     * May be replaced by a user function.
+     * At the end of pass1 these removed if not converted.
+     */
+    private static class UnknownFunction extends Function
+    {
+    private List<FunctionUsage> references = new ArrayList<>();
+    public UnknownFunction(Token id, int narg)
+    {
+        super(id.getText(), narg);
+        references.add(new FunctionUsage(id, narg));
+    }
+
+    @Override
+    public boolean isUnknown() {
+        return true;
+    }
+
+    @Override
+    public boolean isBuiltin() {
+        return false;
+    };
+
+    @Override
+    List<FunctionUsage> getReferences() {
+        return Collections.unmodifiableList(references);
+    }
+
+    @Override
+    public void addReference(Token id, int narg) {
+        references.add(new FunctionUsage(id, narg));
+    }
+
+    /**
+     * Check for correct number of args.
+     * UnknownFunction not handled here; just say it's ok.
+     */
+    @Override
+    public boolean checkReportArgs(Func_callContext ctx)
+    {
+        return true;
+    }
+
+    @Override
+    public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
+                                                           List<String> args)
+    {
+        throw new IllegalStateException();
+    }
+    }
+
+    /* ************************************************************* */
+
+    /**
      * A UserFunction is basically a macro.
      * The macro name must be followed by "( ... )", zero or more arguments;
      * otherwise it is a simple macro.
@@ -367,6 +474,22 @@ void add(String funcName, int narg, String types)
     {
         return false;
     }
+
+    /**
+     * Check for correct number of args.
+     * A user function must match narg; no warning.
+     * @return true if nargs is OK, else false if bad num args.
+     */
+    @Override
+    public boolean checkReportArgs(Func_callContext ctx)
+    {
+        if(ctx.args.size() != narg()) {
+
+            reportUserFuncNargError(ctx, ctx.id.getText(), narg(), ctx.args.size());
+            return false;
+        }
+        return true;
+    }
     
     /** Assign the arguments to the macro's variables, invoke the macro.
      * Create a list that has the code to initialize macro function arguments;
@@ -381,8 +504,10 @@ void add(String funcName, int narg, String types)
     public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
                                                            List<String> args)
     {
-        if(argNames.size() != args.size())
+        if(argNames.size() != args.size()) {
+
             throw new IllegalArgumentException();
+        }
 
         List<String> callMacro = new ArrayList<>();
         Registers regs = lookup(Registers.class);

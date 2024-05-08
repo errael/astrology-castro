@@ -9,7 +9,7 @@ layout memory { reserve 30:40; }
 macro func_unk {
     foo();
     bar(a, b);
-    foo(a);
+    foo(); //foo(a); // inconsistent args is always an error
 }
 
 macro func_narg {

@@ -1,0 +1,9 @@
+/*
+ * Macro function argument errors
+ */
+macro func_unk {
+    foo(a);
+    bar(a, b);
+    foo();
+    foo(b,c);
+}

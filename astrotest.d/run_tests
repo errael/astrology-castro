@@ -24,6 +24,7 @@ INFRA_FILES="
     expressions
     logical_ops
     macro_functions
+    macro_functions_2
     flow_control
     functions
     test_infra
