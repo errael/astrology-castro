@@ -11,6 +11,9 @@ import com.raelity.astrolog.castro.Util;
 
 /**
  * Immutable constant value.
+ * When an expression is encountered that is not constant,
+ * create a fold with the the ctx/token of the error.
+ * 
  * Might extend with optype and/or precedence if want to get fancy.
  */
 public class Folded
@@ -30,11 +33,13 @@ static Folded get(boolean boolval)
     return new Folded(boolval ? 1 : 0);
 }
 
+/** Not constant: NotFolded */
 static Folded get(ParserRuleContext ctx)
 {
     return new NotFolded(ctx);
 }
 
+/** Not constant: NotFolded */
 static Folded get(Token token)
 {
     return new NotFolded(token);

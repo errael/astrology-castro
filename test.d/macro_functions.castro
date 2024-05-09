@@ -18,3 +18,21 @@ switch s1 {
         m3(m1(3, 4), m1(103, 104));
     }
 }
+
+macro m5(mafu5a) {
+    mafu5a * 2;
+}
+
+macro m6(mafu6a) {
+    mafu6a * 3;
+}
+
+macro m7(mafu7a) {
+    mafu7a * 4;
+}
+
+switch s2 {
+    ~1 {
+        m5(m6(m7(3)));
+    }
+}

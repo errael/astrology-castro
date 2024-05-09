@@ -283,7 +283,13 @@ var cprintf_save_area[10];  // save area for cprintf temps, up to 10.
 The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the `run`'s switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
 
 ###     copy
-The `copy{LITERALLY_COPIED_TO_OUTPUT}` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround. All whitespace, including newlines, is copied as is. Use '\\}' to include a '}' in the output. It's unclear if this is needed, it does provide a way to redefine a macro/switch.
+The `copy{LITERALLY_COPIED_TO_OUTPUT}` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround. All whitespace, including newlines, is copied as is. Use '\\}' to include a '}' in the output. This is needed because some things don't parse correctly, and I can be lazy, for example
+
+```
+copy { -zl 121W57'26.9 37N17'28.2 ; Default location      [longitude and latitude] }
+```
+
+It also provide a way to redefine a macro/switch.
 
 ###     Constants
 

@@ -175,8 +175,11 @@ void declareVar(VarDefContext ctx)
                 size = ctx.init.size();
         }
     }
-    if(ctx.init.size() > size)
+    // Skip giving an error if size is negative;
+    // there'll be an error further down...
+    if(ctx.init.size() > size && size >= 0) {
         reportError(ctx, "too many initializers");
+    }
     if(hasErrorNode(idNode) || hasErrorNode(addrNode))
         return;
     Token id = idNode.getSymbol();

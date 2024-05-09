@@ -7,9 +7,10 @@
 // Space: Switches. Layout: null
 
 // Space: Registers errors-7.castro
-// used [(-∞..27), [2147483647..+∞)]
-// free [[27..2147483647)]
-// errors: 0
+// used [(-∞..37), [2147483647..+∞)]
+// free [[37..2147483647)]
+// errors: 1
+var arr[10] @27;    // [ALLOC] 
 
 // Space: Macros errors-7.castro
 // used [(-∞..2), [2147483647..+∞)]

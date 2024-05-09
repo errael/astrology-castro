@@ -30,3 +30,16 @@ run { ~1 { z = sizeof(v_foo); } }
 switch sw01 @swma { -XXX }
 macro ma01 @swma +12 { a; }
 
+var var_sizeof_a { sizeof(v_foo) };
+var var_sizeof_b { sizeof(v_foo) + 34 };
+var var_sizeof_c { sizeof(v_foo) + sizeof(v_bar) };
+
+const const_sizeof_c { sizeof(v_foo) + sizeof(v_bar) };
+
+macro const_m0 @const_sizeof_c {
+    sizeof(v_foo) + sizeof(v_bar);
+}
+
+macro const_m1 @sizeof(v_foo) + sizeof(v_bar) + 1 {
+    sizeof(v_foo) + sizeof(v_bar);
+}
