@@ -45,7 +45,7 @@ import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 import com.raelity.astrolog.castro.tables.Functions;
-import com.raelity.astrolog.castro.tables.Functions.Function;
+import com.raelity.astrolog.castro.tables.Function;
 
 import static com.raelity.antlr.ParseTreeUtil.hasErrorNode;
 import static com.raelity.astrolog.castro.LineMap.WriteableLineMap.createLineMap;

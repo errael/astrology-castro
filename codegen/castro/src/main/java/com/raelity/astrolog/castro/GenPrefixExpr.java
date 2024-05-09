@@ -13,7 +13,7 @@ import org.antlr.v4.runtime.Token;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 import com.raelity.astrolog.castro.tables.Functions;
-import com.raelity.astrolog.castro.tables.Functions.Function;
+import com.raelity.astrolog.castro.tables.Function;
 
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
 import static com.raelity.antlr.ParseTreeUtil.hasErrorNode;

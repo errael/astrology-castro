@@ -33,9 +33,9 @@ import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 import com.raelity.astrolog.castro.tables.Functions;
-import com.raelity.astrolog.castro.tables.Functions.Function;
+import com.raelity.astrolog.castro.tables.Function;
 import com.raelity.astrolog.castro.tables.Functions.FunctionConstValue;
-import com.raelity.astrolog.castro.tables.Functions.StringArgsFunction;
+import com.raelity.astrolog.castro.tables.Function.StringArgsFunction;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;

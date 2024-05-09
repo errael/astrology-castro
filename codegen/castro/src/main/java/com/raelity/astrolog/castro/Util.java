@@ -32,7 +32,7 @@ import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.tables.Functions;
-import com.raelity.astrolog.castro.tables.Functions.Function;
+import com.raelity.astrolog.castro.tables.Function;
 
 import static com.raelity.antlr.ParseTreeUtil.getNthParent;
 import static com.raelity.astrolog.castro.Constants.constantInfo;
