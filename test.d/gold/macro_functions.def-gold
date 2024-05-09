@@ -7,8 +7,8 @@
 // Space: Switches. Layout: null
 
 // Space: Registers macro_functions.castro
-// used [(-∞..33), [2147483647..+∞)]
-// free [[33..2147483647)]
+// used [(-∞..36), [2147483647..+∞)]
+// free [[36..2147483647)]
 // errors: 0
 var mafu1a @27;    // [ALLOC] 
 var mafu1b @28;    // [ALLOC] 
@@ -16,18 +16,25 @@ var mafu2a @29;    // [ALLOC]
 var mafu2b @30;    // [ALLOC] 
 var mafu3a @31;    // [ALLOC] 
 var mafu3b @32;    // [ALLOC] 
+var mafu5a @33;    // [ALLOC] 
+var mafu6a @34;    // [ALLOC] 
+var mafu7a @35;    // [ALLOC] 
 
 // Space: Macros macro_functions.castro
-// used [(-∞..4), [2147483647..+∞)]
-// free [[4..2147483647)]
+// used [(-∞..7), [2147483647..+∞)]
+// free [[7..2147483647)]
 // errors: 0
 macro m1 @1;    // [ALLOC] 
 macro m2 @2;    // [ALLOC] 
 macro m3 @3;    // [ALLOC] 
+macro m5 @4;    // [ALLOC] 
+macro m6 @5;    // [ALLOC] 
+macro m7 @6;    // [ALLOC] 
 
 // Space: Switches macro_functions.castro
-// used [(-∞..2), [2147483647..+∞)]
-// free [[2..2147483647)]
+// used [(-∞..3), [2147483647..+∞)]
+// free [[3..2147483647)]
 // errors: 0
 switch s1 @1;    // [ALLOC] 
+switch s2 @2;    // [ALLOC] 
 

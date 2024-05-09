@@ -548,7 +548,7 @@ private static void addCastroFunctions()
             reportError(sw, "Switch '%s' @%d is not a function key address",
                         sw.getText(), constVal.displayVal());
         }
-        sb.append(constVal.realVal()).append(' ');
+        sb.append(constVal.constVal()).append(' ');
         return sb;
     }
 
@@ -571,6 +571,7 @@ private static void addCastroFunctions()
     }
 
     /* ************************************************************* */
+
     private static abstract class SwitchMacroAdress extends Function
     {
 
@@ -615,6 +616,12 @@ private static void addCastroFunctions()
     }
 
     /* ************************************************************* */
+
+    /**
+     * Add some code to verify that context is constant.
+     *
+     * <br>TODO: remove the checking code?
+     */
     private static class SizeOf extends Function
     {
     public SizeOf()
@@ -626,9 +633,31 @@ private static void addCastroFunctions()
     public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
                                      List<String> args)
     {
-        ExprContext arg = ctx.fc.args.get(0);
-        int size = lookup(Registers.class).getVar(arg.getText()).getSize();
+        int size = getSize(ctx);
         return sb.append(size). append(' ');
+    }
+
+    /**
+     * SizeOf is constant.
+     */
+    @Override
+    public Functions.FunctionConstValue constValue(ExprFuncContext ctx)
+    {
+        // Don't care if there has been allocation, only if the variable
+        // has a size.
+        int size = getSize(ctx);
+        return size < 1 ? NOT_CONST_VALUE : new FunctionConstValue(true, size, size);
+    }
+
+    private int getSize(ExprFuncContext ctx)
+    {
+        ExprContext arg = ctx.fc.args.get(0);
+        Var var = lookup(Registers.class).getVar(arg.getText());
+        int size = var != null ? var.getSize() : -1;
+        if(size < 1) {
+            reportError(ctx, "'%s' is not a constant yet", ctx.getText());
+        }
+        return size;
     }
 
     }

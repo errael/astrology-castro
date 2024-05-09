@@ -21,3 +21,23 @@
 -M0 1 ' 
     ~1 "Do2 = 27 4 = 28 3 Macro 1  Do2 = 29 Do2 = 27 @a = 28 @b Macro 1 = 30 Do2 = 27 @c = 28 @d Macro 1 Macro 2  Do2 = 31 Do2 = 27 3 = 28 4 Macro 1 = 32 Do2 = 27 103 = 28 104 Macro 1 Macro 3"  
 '
+
+; MACRO m5
+~M 4 ' 
+    Mul @33 2  
+'
+
+; MACRO m6
+~M 5 ' 
+    Mul @34 3  
+'
+
+; MACRO m7
+~M 6 ' 
+    Mul @35 4  
+'
+
+; SWITCH s2
+-M0 2 ' 
+    ~1 "Do = 33 Do = 34 Do = 35 3 Macro 6 Macro 5 Macro 4"  
+'

@@ -1,3 +1,7 @@
+Error: errors-7.castro:14:10 'var count[sizeof(arr)];' 'sizeof(arr)' is not a constant yet
+Error: errors-7.castro:14:4 'var count[sizeof(arr)];' 'count' [SIZE_ERR] 
+Pass1: 0 syntax errors
+Pass1: 2 other errors
 Warn: errors-7.castro:6:4 '    bar(a, b);' unknown function 'bar'
 Warn: errors-7.castro:5:4 '    foo(a);' unknown function 'foo'
 Error: errors-7.castro:7:4 '    foo();' unknown function 'foo', args expect 1 not 0

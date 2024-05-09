@@ -1,5 +1,5 @@
 /*
- * Macro function argument errors
+ * Macro function argument errors.
  */
 macro func_unk {
     foo(a);
@@ -7,3 +7,9 @@ macro func_unk {
     foo();
     foo(b,c);
 }
+
+/*
+ * SizeOf must take something that already has a size.
+ */
+var count[sizeof(arr)];
+var arr[10];

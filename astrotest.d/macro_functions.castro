@@ -11,6 +11,7 @@ switch test_macro_functions {
         Switch(test_simple_macro_function);
         Switch(test_nested_macro_function);
         Switch(test_external_macro_function);
+        Switch(test_more_nested_macro_function);
     }
 
     // Uncomment the following to see what failure output looks like
@@ -63,4 +64,32 @@ switch test_external_macro_function {
 
     SetString test_name[1] ": external macro function"
     ~1 { result = mafu4(5, 7, 9); expect = 21; macro(check); }
+}
+
+macro mafu5(mafu5a) {
+    mafu5a * 3;
+}
+
+macro mafu6(mafu6a) {
+    mafu6a * 4;
+}
+
+macro mafu7(mafu7a) {
+    mafu7a + 5;
+}
+
+switch s2 {
+    ~1 {
+        mafu5(mafu6(mafu7(3)));
+    }
+}
+
+switch test_more_nested_macro_function {
+    SetString test_name[0] "test_more_nested_macro_functions"
+
+    SetString test_name[1] ": m5(m6(m7(2)))"
+    ~1 { result = mafu5(mafu6(mafu7(2))); expect = 84; macro(check); }
+
+    SetString test_name[1] ": m7(m6(m5(2)))"
+    ~1 { result = mafu7(mafu6(mafu5(2))); expect = 29; macro(check); }
 }

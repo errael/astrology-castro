@@ -7,10 +7,17 @@ var mafu2a @29;    // [ALLOC] macro_functions.castro:6
 var mafu2b @30;    // [ALLOC] macro_functions.castro:6
 var mafu3a @31;    // [ALLOC] macro_functions.castro:10
 var mafu3b @32;    // [ALLOC] macro_functions.castro:10
+var mafu5a @33;    // [ALLOC] macro_functions.castro:22
+var mafu6a @34;    // [ALLOC] macro_functions.castro:26
+var mafu7a @35;    // [ALLOC] macro_functions.castro:30
 
 macro m1 @1;    // [ALLOC] macro_functions.castro:2
 macro m2 @2;    // [ALLOC] macro_functions.castro:6
 macro m3 @3;    // [ALLOC] macro_functions.castro:10
+macro m5 @4;    // [ALLOC] macro_functions.castro:22
+macro m6 @5;    // [ALLOC] macro_functions.castro:26
+macro m7 @6;    // [ALLOC] macro_functions.castro:30
 
 switch s1 @1;    // [ALLOC] macro_functions.castro:14
+switch s2 @2;    // [ALLOC] macro_functions.castro:34
 

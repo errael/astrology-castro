@@ -308,7 +308,7 @@ public Folded visitExprFunc(ExprFuncContext ctx)
 {
     Function f = Functions.get(ctx.fc.id.getText());
     FunctionConstValue val = f.constValue(ctx);
-    return val.isConst() ? Folded.get(val.realVal()) : Folded.get(ctx.fc.id);
+    return val.isConst() ? Folded.get(val.constVal()) : Folded.get(ctx);
 }
 
 @Override
