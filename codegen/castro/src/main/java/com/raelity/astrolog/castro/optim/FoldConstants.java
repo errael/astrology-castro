@@ -66,7 +66,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.VarDefContext;
 import com.raelity.astrolog.castro.antlr.AstroParserVisitor;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.tables.Functions;
-import com.raelity.astrolog.castro.tables.Functions.Function;
+import com.raelity.astrolog.castro.tables.Function;
 import com.raelity.astrolog.castro.tables.Functions.FunctionConstValue;
 
 import static com.raelity.astrolog.castro.Compile.isAllocFrozen;
