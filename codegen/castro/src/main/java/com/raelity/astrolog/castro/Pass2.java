@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import com.raelity.antlr.ParseTreeUtil;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
@@ -24,6 +25,7 @@ import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Function;
+import com.raelity.astrolog.castro.visitors.MacroFunctionNesting;
 
 import static com.raelity.astrolog.castro.Constants.constant;
 import static com.raelity.astrolog.castro.Util.lookup;
@@ -33,7 +35,7 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.DUMMY;
 import static com.raelity.astrolog.castro.Util.getText;
 import static com.raelity.astrolog.castro.antlr.AstroLexer.Tilde;
 import static com.raelity.astrolog.castro.Constants.isConstantName;
-import static com.raelity.astrolog.castro.optim.FoldConstants.fold2Int;
+import static com.raelity.astrolog.castro.visitors.FoldConstants.fold2Int;
 
 ////////////////////////////////////////////////////////////////////
 // TODO: In addition to vars, check switch/macro
@@ -202,6 +204,18 @@ private boolean isDoneReportSpecialFuncArgs(Func_callContext ctx)
 public void exitFunc_call(Func_callContext ctx)
 {
     isDoneReportSpecialFuncArgs(ctx);
+}
+
+@Override
+public void enterExprFunc(ExprFuncContext ctx)
+{
+    MacroFunctionNesting.beginExprFunc(ctx);
+}
+
+@Override
+public void exitExprFunc(ExprFuncContext ctx)
+{
+    MacroFunctionNesting.endExprFunc(ctx);
 }
 
 

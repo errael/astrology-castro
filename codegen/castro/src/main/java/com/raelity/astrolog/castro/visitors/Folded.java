@@ -2,7 +2,7 @@
  * Copyright © 2023 by Ernie Rael. All rights reserved.
  */
 
-package com.raelity.astrolog.castro.optim;
+package com.raelity.astrolog.castro.visitors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;

@@ -18,7 +18,7 @@ import com.raelity.astrolog.castro.tables.Function;
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
 import static com.raelity.antlr.ParseTreeUtil.hasErrorNode;
 import static com.raelity.astrolog.castro.Util.lookup;
-import static com.raelity.astrolog.castro.optim.FoldConstants.fold2Int;
+import static com.raelity.astrolog.castro.visitors.FoldConstants.fold2Int;
 
 /**
  * Process the tree so that each top level expr node has a String property

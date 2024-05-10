@@ -38,7 +38,7 @@ import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.Util.writeRegister;
 import static com.raelity.astrolog.castro.mems.Registers.VAR_CPRINTF_SAVE;
-import static com.raelity.astrolog.castro.optim.FoldConstants.fold2Int;
+import static com.raelity.astrolog.castro.visitors.FoldConstants.fold2Int;
 
 /**
  * Generate and Output the Astrolog code, as a .as file,

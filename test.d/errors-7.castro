@@ -13,3 +13,26 @@ macro func_unk {
  */
 var count[sizeof(arr)];
 var arr[10];
+
+/*
+ * Macro function nesting.
+ */
+
+macro macFun1(macFun1_arg) { macFun1_arg; }
+macro macFun2(macFun2_arg1, macFun2_arg2) { macFun2_arg1; }
+macro macFun2B(macFun2B_arg1, macFun2B_arg2) { macFun2B_arg1; }
+
+// run { ~1 { macFun1(macFun1(x)); } } // OK
+run { ~1 { macFun2(macFun2(x, y), x); } } // ERROR
+// run { ~1 { macFun2(macFun2B(x, y), macFun2B(u, v)); } } // OK
+run { ~1 { macFun2(macFun2B(x, macFun2(a, b)), macFun2B(u, v)); } } // ERROR
+run { ~1 { macFun2(macFun2B(u, v), macFun2B(x, macFun2(a, b))); } } // ERROR
+run { ~1 { macFun2(macFun2B(u, v), macFun1(macFun2(a, b))); } } // ERROR
+// run { ~1 { macFun1(~macFun1(x)); } } // OK
+
+// run { ~1 { macFun2(macFun2B(x, y), macFun2B(u, v)); } } // OK
+// run { ~1 { macFun1(macFun1(x) + macFun1(y)); } } // OK
+// run { ~1 { macFun1(macFun1(x) ? macFun1(y) : macFun1(z)); } } // OK
+// run { ~1 { macFun1({macFun1(x); macFun1(y); macFun1(z);}); } } // OK
+// run { ~1 { macFun2B(a, {macFun2(j,k); macFun2(l,m); macFun2(n,o);}); } } // OK
+run { ~1 { macFun2B(a, {macFun2(j,k); macFun2B(l,m); macFun2(n,o);}); } } // ERROR

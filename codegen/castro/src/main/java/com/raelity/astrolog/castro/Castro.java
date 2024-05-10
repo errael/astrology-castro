@@ -32,7 +32,7 @@ import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
-import com.raelity.astrolog.castro.optim.FoldConstants;
+import com.raelity.astrolog.castro.visitors.FoldConstants;
 
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.addLookup;

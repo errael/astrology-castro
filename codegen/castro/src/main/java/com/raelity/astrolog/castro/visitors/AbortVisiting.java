@@ -2,7 +2,7 @@
  * Copyright © 2023 by Ernie Rael. All rights reserved.
  */
 
-package com.raelity.astrolog.castro.optim;
+package com.raelity.astrolog.castro.visitors;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -12,25 +12,34 @@ import org.antlr.v4.runtime.Token;
  * Like visiting a node that shouldn't be visited.
  */
 @SuppressWarnings("serial")
-public class AbortFolding extends RuntimeException
+public class AbortVisiting extends RuntimeException
 {
 public final Token token;
 public final ParserRuleContext ctx;
 
-public AbortFolding(String msg)
+/**
+ * See Visitor.
+ * This constructor is for the unimplemented ops that should not be used.
+ */
+public AbortVisiting()
+{
+    this("No trespassing.");
+}
+
+public AbortVisiting(String msg)
 {
     super(msg);
     this.token = null;
     this.ctx = null;
 }
 
-public AbortFolding(ParserRuleContext ctx)
+public AbortVisiting(ParserRuleContext ctx)
 {
     this.token = null;
     this.ctx = ctx;
 }
 
-public AbortFolding(Token token)
+public AbortVisiting(Token token)
 {
     this.token = token;
     this.ctx = null;

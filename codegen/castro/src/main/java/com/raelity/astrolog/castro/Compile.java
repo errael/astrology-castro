@@ -138,7 +138,7 @@ static boolean compile(List<String> inputFiles, String outName)
         if(apr.hasError())
             someError = true;
     }
-    Functions.cleanupAfterFirstPass();
+    Functions.cleanupAfterPass1();
     
     parsePass = false;
 

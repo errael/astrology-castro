@@ -54,7 +54,7 @@ import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
 import static com.raelity.astrolog.castro.Constants.isConstantName;
 import static com.raelity.astrolog.castro.antlr.AstroParser.AndAnd;
 import static com.raelity.astrolog.castro.antlr.AstroParser.OrOr;
-import static com.raelity.astrolog.castro.optim.FoldConstants.fold2Int;
+import static com.raelity.astrolog.castro.visitors.FoldConstants.fold2Int;
 
 /**
  * Generate the AstroExpression code.

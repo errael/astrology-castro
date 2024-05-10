@@ -5,7 +5,6 @@ package com.raelity.astrolog.castro.tables;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -21,6 +20,7 @@ import com.raelity.astrolog.castro.tables.Function.MacroFunction;
 import com.raelity.astrolog.castro.tables.Function.SwitchFunction;
 
 import static com.raelity.astrolog.castro.Error.*;
+import static com.raelity.astrolog.castro.Util.lc;
 import static com.raelity.astrolog.castro.Util.reportError;
 
 /**
@@ -55,11 +55,6 @@ static void reportUserFuncNargError(Object ctx_or_token,
                 name, expect, result);
 }
 
-private static String lc(String s)
-{
-    return s.toLowerCase(Locale.ROOT);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 // public methods to work with functions
@@ -69,7 +64,7 @@ private static String lc(String s)
  * If unknown function is a warning,
  * then convert any unknown functions to AstrologFunctions.
  */
-public static void cleanupAfterFirstPass()
+public static void cleanupAfterPass1()
 {
     for( Entry<String, Function> e : functions.funcsModifiableMap.entrySet()) {
         Function f = e.getValue();

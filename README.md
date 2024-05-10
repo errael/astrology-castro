@@ -213,6 +213,27 @@ This directive allows allocation of addresses between 101 inclusive and 111 excl
 ###     macro
 The `macro` statement defines an `AstroExpression macro` using `~M`; it contains expressions with function calls. See [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); there are a wide variety of function calls. The value of `Macro(some_macro)` is the value of the last statement/expr in some_macro as defined by `Astrolog`.
 
+A simple macro definition looks like
+```
+macro macName { ... }
+```
+A macro function definition looks like
+```
+macro macFunName(...) { ... }
+```
+
+A macro function definition is indicated by `()` after the macro name. There are zero or more parameters within the '()'. Each parameter becomes a named global. Macro function calls may nest only if the macro has one parameter. Different macros may nest. For example.
+```
+macro macFun1(macFun1_arg) { ... }
+macro macFun2(macFun2_arg1, macFun2_arg2) { ... }
+macro macFun2B(macFun2B_arg1, macFun2B_arg2) { ... }
+run { ~1 {
+    macFun1(manFun1(x)); // OK - can nest if only one parameter
+    macFun2(manFun2(x, y), x); // ERROR - two parameters can not nest
+    macFun2(manFun2B(x, y), manFun2B(u, v)); // OK - different macros
+} }
+```
+
 ####   Flow Control Statements
 - `if (`_expr_`)` _expr_
 - `if (`_expr_`)` _expr_ `else` _expr_
