@@ -53,7 +53,7 @@ import static com.raelity.astrolog.castro.Util.checkReport;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
-import static com.raelity.astrolog.castro.optim.FoldConstants.reportFold2Int;
+import static com.raelity.astrolog.castro.visitors.FoldConstants.reportFold2Int;
 import static com.raelity.astrolog.castro.Util.isReportDupSym;
 import static com.raelity.astrolog.castro.Util.replaceLookup;
 

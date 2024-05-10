@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStream;
@@ -87,6 +88,24 @@ private static void setError(Token token)
 // 
 //     return null;
 // }
+
+/*
+ * Convert the string to lower case.
+ */
+public static String lc(String s)
+{
+    return s.toLowerCase(Locale.ROOT);
+}
+
+/**
+ * Shorthand for "String.format(fmt, args)".
+ * @param fmt format
+ * @param args args
+ * @return string
+ */
+public static String sf(String fmt, Object... args) {
+    return args.length == 0 ? fmt : String.format(fmt, args);
+}
 
 /**
  * Strip leading/trailing quote and remove Embedded quotes.
@@ -492,5 +511,40 @@ public static void removeLookup(Object instance)
 public static void replaceLookup(Object instance)
 {
     CentralLookup.getDefault().replace(instance);
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+// Debug Support
+//
+
+/**
+ * Return a unique name for an Object, for example "String@89AB".
+ * Name is SimpleClassName followed by identityHashCode in hex.
+ * Used primarily for debug messages.
+ * @param o The Object
+ * @return unique name for the object or "null"
+ */
+// TODO: put this in utils/SSUtil
+public static String objectID(Object o) {
+    if (o == null) {
+        return "null";
+    }
+    return sf("%s@%X", o.getClass().getSimpleName(), System.identityHashCode(o));
+}
+
+/**
+ * Return a unique name for an Object, for example "String@89AB".
+ * Name is SimpleClassName followed by identityHashCode in hex.
+ * Used primarily for debug messages.
+ * @param o The Object
+ * @return unique name for the object or "null"
+ */
+// TODO: put this in utils/SSUtil
+public static String objectID(String tag, Object o) {
+    if (o == null) {
+        return "null";
+    }
+    return sf("%s @%X", tag, System.identityHashCode(o));
 }
 }

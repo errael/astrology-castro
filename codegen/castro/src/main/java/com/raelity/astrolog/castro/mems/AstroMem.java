@@ -10,7 +10,6 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -37,6 +36,7 @@ import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.lib.collect.ValueHashMap;
 import com.raelity.lib.collect.ValueMap;
 
+import static com.raelity.astrolog.castro.Util.lc;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
@@ -88,7 +88,6 @@ import static com.raelity.lib.collect.Util.intersects;
  */
 public abstract class AstroMem implements Iterable<Var>
 {
-public static final boolean ignore_case = true;
 private AstroMem defined;
 private AstroMem alloc;
 private MemAccum accum;
@@ -224,7 +223,7 @@ public Map<Range<Integer>, Var> getAllocationMap()
 public Var getVar(String name)
 {
     Objects.nonNull(name);
-    return vars.get(lcase(name));
+    return vars.get(lc(name));
 }
 
 /** Number of variables, not including externally specified/builtin.
@@ -572,11 +571,6 @@ public void dumpLayout(PrintWriter out)
     out.printf("// Space: %s. Layout: %s\n", memSpaceName, layoutRestrictions);
 }
 
-private String lcase(String name)
-{
-    return ignore_case ? name.toLowerCase(Locale.ROOT) : name;
-}
-
     private class VarIter implements Iterator<Var>
     {
         final Iterator<? extends VarKey> it;
@@ -665,7 +659,7 @@ private String lcase(String name)
     
     private Var(String name, int size, int addr, VarState... a_state)
     {
-        super(lcase(name));
+        super(lc(name));
         this.name = name;
         this.size = size;
         this.addr = addr;

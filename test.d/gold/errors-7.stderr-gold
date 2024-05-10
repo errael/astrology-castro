@@ -6,3 +6,9 @@ Warn: errors-7.castro:6:4 '    bar(a, b);' unknown function 'bar'
 Warn: errors-7.castro:5:4 '    foo(a);' unknown function 'foo'
 Error: errors-7.castro:7:4 '    foo();' unknown function 'foo', args expect 1 not 0
 Error: errors-7.castro:8:4 '    foo(b,c);' unknown function 'foo', args expect 1 not 2
+Error: errors-7.castro:26:19 'run { ~1 { macFun2(macFun2(x, y), x); } }' Can not nest call: 'macFun2' takes more than one arg
+Error: errors-7.castro:28:31 'run { ~1 { macFun2(macFun2B(x, macFun2(a, b)), macFun2B(u, v)); } }' Can not nest call: 'macFun2' takes more than one arg
+Error: errors-7.castro:29:47 'run { ~1 { macFun2(macFun2B(u, v), macFun2B(x, macFun2(a, b))); } }' Can not nest call: 'macFun2' takes more than one arg
+Error: errors-7.castro:30:43 'run { ~1 { macFun2(macFun2B(u, v), macFun1(macFun2(a, b))); } }' Can not nest call: 'macFun2' takes more than one arg
+Error: errors-7.castro:38:38 'run { ~1 { macFun2B(a, {macFun2(j,k); macFun2B(l,m); macFun2(n,o);}); } }' Can not nest call: 'macFun2B' takes more than one arg
+Pass2: 5 errors

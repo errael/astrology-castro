@@ -2,68 +2,26 @@
  * Copyright © 2023 by Ernie Rael. All rights reserved.
  */
 
-package com.raelity.astrolog.castro.optim;
+package com.raelity.astrolog.castro.visitors;
 
 import java.io.PrintWriter;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.antlr.v4.runtime.tree.ErrorNode;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.RuleNode;
-import org.antlr.v4.runtime.tree.TerminalNode;
-
 import com.raelity.astrolog.castro.TreeProps;
-import com.raelity.astrolog.castro.antlr.AstroParser.Assign_macro_addrContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Assign_switch_addrContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.AstroExprStatementContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.BaseContstraintContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Brace_blockContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ConstContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.CopyContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprAssOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprBinOpContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprBraceBlockOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprDowhileOpContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprForOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprIfElseOpContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprIfOpContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprQuestOpContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprRepeatOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprTermOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprUnOpContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ExprWhileOpContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Expr_semiContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.FloatContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.IntegerContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.LayoutContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Layout_regionContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.LimitContstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalArrayContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Opt_semiContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Paren_exprContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.ReserveContstraintContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Rsv_locContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.RunContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Str_exprContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Sw_nameContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.TermAddressOfContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.TermParenContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.TermSingleContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.VarContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.VarDefContext;
-import com.raelity.astrolog.castro.antlr.AstroParserVisitor;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Function;
@@ -108,7 +66,8 @@ import static com.raelity.astrolog.castro.antlr.AstroLexer.*;
  * handled more easily as 5 + a
  * IN ANY EVENT, insist on all constants, no vars
  */
-public class FoldConstants implements AstroParserVisitor<Folded>
+//public class FoldConstants implements AstroParserVisitor<Folded>
+public class FoldConstants extends Visitor<Folded>
 {
 private static TreeProps<Folded> folded = new TreeProps<>();
 private static int hit;
@@ -223,7 +182,7 @@ private Folded expr2constInt(ExprContext ctx, boolean report)
                 reportError(f.token(), "'%s' is not a constant", f.token().getText());
         }
         return f;
-    } catch(AbortFolding ex) {
+    } catch(AbortVisiting ex) {
         throw ex;
     }
 }
@@ -281,7 +240,7 @@ public Folded visitExprBinOp(ExprBinOpContext ctx)
     case AndAnd ->      Folded.get(l.boolval() && r.boolval());
     case OrOr ->        Folded.get(l.boolval() || r.boolval());
         
-    default -> throw new AbortFolding("Unknown BinOp: " + ctx.o.getText());
+    default -> throw new AbortVisiting("Unknown BinOp: " + ctx.o.getText());
     };
 }
 
@@ -299,7 +258,7 @@ public Folded visitExprUnOp(ExprUnOpContext ctx)
     // Don't handle logical
     case Not -> Folded.get(ctx.o);
 
-    default -> throw new AbortFolding("unknown UnOp");
+    default -> throw new AbortVisiting("unknown UnOp");
     };
 }
 
@@ -355,10 +314,10 @@ private Folded visitLval(LvalContext ctx)
 public Folded visitTermAddressOf(TermAddressOfContext ctx)
 {
     if(!isAllocFrozen())
-        throw new AbortFolding(ctx.lv.id.getText());
+        throw new AbortVisiting(ctx.lv.id.getText());
 
     if(isConstantName(ctx.lv.id))
-        throw new AbortFolding(ctx.lv.id.getText());
+        throw new AbortVisiting(ctx.lv.id.getText());
     return switch(ctx.lv) {
     case LvalMemContext ctx0 ->
         Folded.get(registers.getVar(ctx0.lvid.getText()).getAddr());
@@ -372,280 +331,10 @@ public Folded visitTermAddressOf(TermAddressOfContext ctx)
     }
     case LvalIndirectContext ctx0 -> {
         if(Boolean.FALSE) Objects.nonNull(ctx0);
-        throw new AbortFolding("Internal Error");
+        throw new AbortVisiting("Internal Error");
     }
     case null, default -> throw new IllegalArgumentException();
     };
-}
-
-@Override
-public Folded visitProgram(ProgramContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitLvalMem(LvalMemContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitLvalArray(LvalArrayContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitLvalIndirect(LvalIndirectContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitAssign_macro_addr(Assign_macro_addrContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitAssign_switch_addr(Assign_switch_addrContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitLayout(LayoutContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitLayout_region(Layout_regionContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitBaseContstraint(BaseContstraintContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitLimitContstraint(LimitContstraintContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitReserveContstraint(ReserveContstraintContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitRsv_loc(Rsv_locContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitVar(VarContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitVarDef(VarDefContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitStr_expr(Str_exprContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitCopy(CopyContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitMacro(MacroContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitSwitch(SwitchContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitRun(RunContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitSwitch_cmd(Switch_cmdContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitSw_name(Sw_nameContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitAstroExprStatement(AstroExprStatementContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitOpt_semi(Opt_semiContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitAstroExpr(AstroExprContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitExpr_semi(Expr_semiContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitBrace_block(Brace_blockContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitParen_expr(Paren_exprContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitFunc_call(Func_callContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitExprRepeatOp(ExprRepeatOpContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitExprForOp(ExprForOpContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitExprQuestOp(ExprQuestOpContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitExprBraceBlockOp(ExprBraceBlockOpContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitExprIfElseOp(ExprIfElseOpContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitExprWhileOp(ExprWhileOpContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitExprDowhileOp(ExprDowhileOpContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitExprAssOp(ExprAssOpContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitExprIfOp(ExprIfOpContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitTermSingle(TermSingleContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitTermParen(TermParenContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitFloat(FloatContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visit(ParseTree pt)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitChildren(RuleNode rn)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitTerminal(TerminalNode tn)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitErrorNode(ErrorNode en)
-{
-    throw new AbortFolding("No trespassing.");
-}
-
-@Override
-public Folded visitConst(ConstContext ctx)
-{
-    throw new AbortFolding("No trespassing.");
 }
 
 }
