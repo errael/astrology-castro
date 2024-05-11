@@ -254,10 +254,7 @@ public Folded visitExprUnOp(ExprUnOpContext ctx)
     case Plus ->  Folded.get(e.lval());
     case Minus -> Folded.get(- e.lval());
     case Tilde -> Folded.get(~ e.lval());
-
-    // Don't handle logical
-    case Not -> Folded.get(ctx.o);
-
+    case Not -> Folded.get(! e.boolval());
     default -> throw new AbortVisiting("unknown UnOp");
     };
 }

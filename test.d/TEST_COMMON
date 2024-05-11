@@ -19,6 +19,10 @@ typeset current_test="this_is_not_empty"
 
 tcastro() {
 
+    #echo java -jar $CASTRO_JAR --form=nl,indent,run_nl,run_indent \
+    #--anon --Ewarn=all ${extra_args[$current_test]} \
+    #    "$@"
+
     java -jar $CASTRO_JAR --form=nl,indent,run_nl,run_indent \
     --anon --Ewarn=all ${extra_args[$current_test]} \
         "$@"

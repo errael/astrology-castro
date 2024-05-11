@@ -13,10 +13,11 @@
 var pp[15] @100;    // [ASSIGN] 
 
 // Space: Macros folding.castro
-// used [(-∞..1), [50..51), [2147483647..+∞)]
-// free [[1..50), [51..2147483647)]
+// used [(-∞..1), [50..52), [2147483647..+∞)]
+// free [[1..50), [52..2147483647)]
 // errors: 0
 macro ma01 @50;    // [ASSIGN] 
+macro ma02 @51;    // [ASSIGN] 
 
 // Space: Switches folding.castro
 // used [(-∞..1), [14..15), [2147483647..+∞)]

@@ -17,6 +17,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import com.google.common.primitives.Ints;
 import gnu.getopt.Getopt;
 import gnu.getopt.LongOpt;
 
@@ -90,6 +91,7 @@ static final String OUT_TEST_EXT = ".test";
 private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 
 private static int optVerbose;
+private static Integer optOptimize = 2;
 
 private static EnumSet<Error> defaultWarn
         = EnumSet.of(FUNC_CASTRO, VAR_RSV, INNER_QUOTE, CONST_AMBIG);
@@ -202,6 +204,12 @@ public static int getVerbose()
     return optVerbose;
 }
 
+@SuppressWarnings("null")
+public static int getOptimize()
+{
+    return optOptimize != null ? optOptimize : 0;
+}
+
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 public static void main(String[] args)
 {
@@ -226,7 +234,7 @@ public static void main(String[] args)
         new LongOpt("console", LongOpt.NO_ARGUMENT, null, 8),
         new LongOpt("version", LongOpt.NO_ARGUMENT, null, 9),
     };
-    Getopt g = new Getopt(cmdName, args, "o:hv", longOpts);
+    Getopt g = new Getopt(cmdName, args, "o:O:hv", longOpts);
     
     EnumSet<OutputOptions> oset = EnumSet.noneOf(OutputOptions.class);
     // Default warnings
@@ -235,6 +243,7 @@ public static void main(String[] args)
     while ((c = g.getopt()) != -1) {
         switch (c) {
         case 'o' -> outName = g.getOptarg();
+        case 'O' -> optOptimize = Ints.tryParse(g.getOptarg());
         case 'h' -> usage();
         case 'v' -> optVerbose++;
         case 2 -> {
@@ -332,6 +341,7 @@ public static void main(String[] args)
     // Note that outName can only be non-null if inputFiles is size 1.
     boolean success = Compile.compile(inputFiles, outName);
 
+    //TODO: could have a lookup interface that is a we're done callback.
     if(optVerbose > 0) {
         FoldConstants.outputStats(lookup(CastroErr.class).pw());
     }

@@ -9,10 +9,10 @@
 
 ; MACRO ma01 @50 
 ~M 50 ' 
-    =a Add 9 @a  
+    =a Add @a 9  
     =b 7  
     =c 15  
-    =d Add 7 @a  
+    =d Add @a 7  
     =e Add 100 @z  
     =f 102  
     =g 26  
@@ -25,4 +25,42 @@
     =c 17  
     =d 217  
     =e -23  
+    3  
+    7  
+    -7  
+    -8  
+    0  
+    1  
+    =x 7  
+    =x -7  
+    =x -8  
+    =x 0  
+    =x 1  
+    9  
+    -9  
+    -10  
+    0  
+    1  
+    =x 9  
+    =x -9  
+    =x -10  
+    =x 0  
+    =x 1  
+'
+
+; MACRO ma02 @51 
+~M 51 ' 
+    =a Inc Add @j @k  
+    =a Dec Add @j @k  
+    =x Add Add Add @a @b @c 6  
+    =a Add @k 5  
+    =a Add Add Sub @k If @m Bool 3 @l -13  
+    =a Add Mul @k 667 9  
+    =a Add @k -2  
+    =a Add Add IfElse Add @d 3 Add @e 5 Add @f 7 @k 9  
+    =a Add Add @k @l 676  
+    =a Add Add @k Mul @l Add @m 603 73  
+    =x Add Add @a @c 11  
+    =x Add Add Add @a And 2 @f @c 9  
+    =x Add Add Add @a And And @f 3842 242 @c 9  
 '

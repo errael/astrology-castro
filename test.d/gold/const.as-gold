@@ -10,7 +10,7 @@
     =d 79  
 '
 ~1 '= 105 123'
-~1 '= 106 Add 120 @a'
+~1 '= 106 Add @a 120'
 
 ; RUN  
     ~1 "= 102 777" 
@@ -23,7 +23,7 @@
     -XXX   
 '
 
-; MACRO ma01 @Add 30 12 
+; MACRO ma01 @42 
 ~M 42 ' 
     @a  
 '
@@ -33,10 +33,10 @@
 
 ; MACRO const_m0 @5 
 ~M 5 ' 
-    Add 3 2  
+    5  
 '
 
-; MACRO const_m1 @Inc 5 
+; MACRO const_m1 @6 
 ~M 6 ' 
-    Add 3 2  
+    5  
 '

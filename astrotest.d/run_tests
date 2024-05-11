@@ -22,6 +22,7 @@ INFRA_FILES="
     castro_constants
     astrolog_constants
     expressions
+    folding
     logical_ops
     macro_functions
     macro_functions_2
@@ -36,15 +37,17 @@ PRINTF_OUTPUT=printf_results
 PRINTF_FILE=cprintf
 
 usage() {
-    echo "$CMD [-h] [--clean]"
+    echo "$CMD [-h] [--clean] [-O level] [-p]"
     echo "    --clean   rm .as, .def, .map files"
-    echo "    -h    output this message"
+    echo "    -h        output this message"
+    echo "    -O level  optimization level; level is a number"
+    echo "    -p        skip printf tests"
 
     exit 1
 }
 
 declare TEMP
-TEMP=$(getopt -o "h" \
+TEMP=$(getopt -o "hpO:" \
     --long 'clean' \
     -n "$CMD" -- "$@")
 if [[ $? -ne 0 ]]; then usage > /dev/stderr; fi
@@ -52,10 +55,15 @@ eval set -- "$TEMP"
 unset TEMP
 
 typeset -i cleanflag
+typeset optim
+typeset -i skip_printf
+
 while true
 do
     case "$1" in
         --clean) cleanflag=1;                       shift   ;;
+        -O)      optim=-O$2;                        shift 2 ;;
+        -p)      skip_printf=1;                     shift   ;;
         -h) usage                                           ;;
         --) shift
             break
@@ -63,6 +71,8 @@ do
         *) echo Internal Error "'$1'"; exit 1   ;;
     esac
 done
+
+CASTRO_FLAGS="$optim"
 
 typeset -i nErrors
 
@@ -95,7 +105,10 @@ typeset -A error_files
 run_all() {
     castro --ver
     run_infra_tests
-    run_printf_tests
+    if ((!skip_printf))
+    then
+        run_printf_tests
+    fi
 }
 
 clean() {
@@ -140,7 +153,7 @@ run_printf_tests() {
 
 run_infra_tests() {
 
-    run_echo castro --mapname=$INFRA_MAP ${infra_files[@]/%/.castro}
+    run_echo castro $CASTRO_FLAGS --mapname=$INFRA_MAP ${infra_files[@]/%/.castro}
 
     date > $INFRA_OUTPUT
     temp=(${infra_files[@]/%/.as})

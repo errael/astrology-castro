@@ -3,11 +3,12 @@ run {
     _Y8 // don't truncate lines
 
     ~1 {
-
+        a;
         Switch(test_case_insensitive);
         Switch(test_castro_constants);
         Switch(test_astrolog_constants);
         Switch(test_expressions);
+        Switch(test_folding);
         Switch(test_logical_ops);
         Switch(test_macro_functions);
         Switch(test_flow_control);

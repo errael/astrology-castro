@@ -19,6 +19,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
 import static com.raelity.astrolog.castro.Util.getLineText;
 import static com.raelity.astrolog.castro.Util.lookup;
+import static com.raelity.astrolog.castro.Util.objectID;
 import static com.raelity.astrolog.castro.Util.tokenLoc;
 
 /**
@@ -32,6 +33,7 @@ private int errors;
 private final String inputFileName;
 
 final Props prefixExpr = new Props("PrefixExpr");
+final static TreeProps<String> cachedPrefixExpr = new TreeProps<>(1000);
 
 public static AstroParseResult get(AstroParser parser, AstroLexer lexer,
                                 CharStream input, ParserRuleContext context,
@@ -102,6 +104,11 @@ public Props getPrefixExprProps()
     return prefixExpr;
 }
 
+public TreeProps<String> getCachedPrefixExprProps()
+{
+    return cachedPrefixExpr;
+}
+
 
 
     /** Props with optional debug output */
@@ -129,7 +136,7 @@ public Props getPrefixExprProps()
     {
         String s = super.removeFrom(node);
         if(Castro.getVerbose() >= 2)
-            err().printf("Remove: %08x %s\n", System.identityHashCode(node), s);
+            err().printf("Remove: %s %s\n", objectID(node), s);
         return s != null ? s : reportNullProp(node, "removeFrom"+tag);
     }
     
@@ -137,13 +144,14 @@ public Props getPrefixExprProps()
     public void put(ParseTree node, String value)
     {
         if(Castro.getVerbose() >= 2)
-            err().printf("Saving: %08x %s %s'%s'\n",
-                         System.identityHashCode(node), value,
+            err().printf("Saving: %s %s %s'%s'\n",
+                         objectID(node), value,
                          getRuleName(getParser(), node, true), node.getText());
         if(value == null) {
             reportNullProp(node, "putTo"+tag);
             Objects.requireNonNull(value, "putTo"+tag);
         }
+        cachedPrefixExpr.put(node, value);
         super.put(node, value);
     }
 

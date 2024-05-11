@@ -4,6 +4,7 @@
 var pp[15] @100;    // [ASSIGN] folding.castro:5
 
 macro ma01 @50;    // [ASSIGN] folding.castro:11
+macro ma02 @51;    // [ASSIGN] folding.castro:64
 
 switch sw01 @14;    // [ASSIGN] folding.castro:7
 
