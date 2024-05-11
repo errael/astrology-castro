@@ -2,22 +2,37 @@
 
 package com.raelity.astrolog.castro;
 
+import java.util.IdentityHashMap;
 import java.util.Map;
 
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
 /**
- *
- * @author err
+ * Taken from ParseTreeProperty<V>.
  */
-public class TreeProps<T> extends ParseTreeProperty<T>
+public class TreeProps<V>
 {
+protected final Map<ParseTree, V> annotations;
+
+public V get(ParseTree node) { return annotations.get(node); }
+public void put(ParseTree node, V value) { annotations.put(node, value); }
+public V removeFrom(ParseTree node) { return annotations.remove(node); }
+
+public TreeProps()
+{
+    annotations = new IdentityHashMap<>();
+}
+
+public TreeProps(int capacity)
+{
+    annotations = new IdentityHashMap<>(capacity);
+}
+
 public int size()
 {
     return annotations.size();
 }
-public Map<ParseTree,T> getMap()
+public Map<ParseTree,V> getMap()
 {
     return annotations;
 }

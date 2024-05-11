@@ -35,6 +35,7 @@ import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Function;
 import com.raelity.astrolog.castro.tables.Ops;
 import com.raelity.astrolog.castro.tables.Ops.Flow;
+import com.raelity.astrolog.castro.visitors.BinaryOpOptim;
 
 import static com.raelity.astrolog.castro.Constants.constant;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
@@ -254,27 +255,22 @@ String genFuncCallOp(ExprFuncContext ctx, String _funcName, List<String> args)
 @Override
 String genUnOp(ExprUnOpContext ctx, Token opToken, String expr)
 {
-    // TODO: optim: if "- const", generate "-const"
     sb.setLength(0);
-    boolean fAppExpr = true;
-    int opType = opToken.getType();
-    switch(opType) {
-    case Minus -> {
-        Integer constExpr = fold2Int(ctx.e);
-        if(constExpr == null)
+    Integer constExpr = fold2Int(ctx);
+    if(constExpr != null)
+        sb.append(constExpr).append(' ');
+    else {
+        int opType = opToken.getType();
+        switch(opType) {
+        case Minus -> {
             sb.append("Neg ");
-        else {
-            // use a negative constant, not "Neg"
-            fAppExpr = false;
-            sb.append(- constExpr).append(' ');
         }
-    }
-    case Tilde, Not -> sb.append(astroCode(opType)).append(' ');
-    case Plus -> { break; }
-    default -> sb.append("#getUnOp_InternalError");
-    }
-    if(fAppExpr)
+        case Tilde, Not -> sb.append(astroCode(opType)).append(' ');
+        case Plus -> { break; }
+        default -> sb.append("#getUnOp_InternalError");
+        }
         sb.append(expr);
+    }
     return sb.toString();
 }
 
@@ -299,6 +295,9 @@ private String wrapBool(String some_var)
 @Override
 String genBinOp(ExprBinOpContext ctx, Token opToken, String lhs, String rhs)
 {
+    String s = BinaryOpOptim.optimize(ctx);
+    if(s != null)
+        return s;
     sb.setLength(0);
     Integer i = null;
     int op = opToken.getType();

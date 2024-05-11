@@ -27,7 +27,7 @@
     = 103 Or @103 @z  
     = Add 100 Add @b @c Or Var Add 100 Add @b @c @z  
     = Add 100 Add @b 3 Or Var Add 100 Add @b 3 @z  
-    = Add 100 Add 3 @b Or Var Add 100 Add 3 @b @z  
+    = Add 100 Add @b 3 Or Var Add 100 Add @b 3 @z  
 '
 
 ; MACRO assign_op
@@ -98,7 +98,7 @@
 ~M 13 ' 
     =a -7  
     =a Add @b -11  
-    =a Add Add @b -7 @c  
+    =a Add Add @b @c -7  
     =a -7  
     =a 11  
     =z 110  

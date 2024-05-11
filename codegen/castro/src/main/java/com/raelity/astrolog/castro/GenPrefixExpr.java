@@ -14,6 +14,7 @@ import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Function;
+import com.raelity.astrolog.castro.visitors.BinaryOpOptim;
 
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
 import static com.raelity.antlr.ParseTreeUtil.hasErrorNode;
@@ -232,12 +233,23 @@ public void exitExprQuestOp(ExprQuestOpContext ctx)
 }
 
 @Override
+public void enterExprBinOp(ExprBinOpContext ctx)
+{
+    BinaryOpOptim.check(ctx);
+}
+
+@Override
 public void exitExprBinOp(ExprBinOpContext ctx)
 {
+    // BinOp may be astroExpr, make sure folding is checked.
+    Integer folded = fold2Int(ctx);
+
     String l = optimExprPrefixRem(ctx.l, "BinOp l");
     String r = optimExprPrefixRem(ctx.r, "BinOp r");
 
-    String s = genBinOp(ctx, ctx.o, l, r);
+    String s = folded != null
+               ? folded.toString() + " "
+               : genBinOp(ctx, ctx.o, l, r);
     apr.prefixExpr.put(ctx, s);
 }
 

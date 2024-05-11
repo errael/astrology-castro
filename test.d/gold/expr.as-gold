@@ -18,7 +18,7 @@
     Var @r  
     3  
     Add @a @b  
-    Add 13 11  
+    24  
     Not @a  
     Not Add @a @b  
     Add Not @a @b  

@@ -2,6 +2,8 @@
 
 package com.raelity.astrolog.castro;
 
+import java.util.Objects;
+
 /**
  * Options used when generating output.
  */
@@ -29,7 +31,7 @@ private OutputOptions(String optname)
 public static OutputOptions parse(String name)
 {
     for(OutputOptions oo : OutputOptions.values()) {
-        if(oo.optname.equals(name))
+        if(Objects.equals(oo.optname, name))
             return oo;
     }
     return null;

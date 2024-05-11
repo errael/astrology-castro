@@ -44,7 +44,7 @@ usage() {
 
 declare TEMP
 #TEMP=$(getopt -o "w:s"
-TEMP=$(getopt -o "hl" \
+TEMP=$(getopt -o "hlO:" \
     --long 'clean' \
     -n "$CMD" -- "$@")
 if [[ $? -ne 0 ]]; then usage > /dev/stderr; fi
@@ -53,11 +53,14 @@ unset TEMP
 
 typeset -i cleanflag
 typeset -i lflag
+typeset optim
+
 while true
 do
     case "$1" in
         -l) lflag=1;                                shift   ;;
         --clean) cleanflag=1;                       shift   ;;
+        -O)      optim=-O$2;                          shift 2 ;;
         -h) usage                                           ;;
         --) shift
             break
@@ -65,6 +68,8 @@ do
         *) echo Internal Error "'$1'"; exit 1   ;;
     esac
 done
+
+CASTRO_FLAGS="$optim"
 
 if ((lflag))
 then
@@ -120,7 +125,7 @@ run_test() {
     fi
 
     echo === running $t
-    tcastro  $current_test.castro 2> $current_test.stderr
+    tcastro  $CASTRO_FLAGS $current_test.castro 2> $current_test.stderr
     check_result
 }
 

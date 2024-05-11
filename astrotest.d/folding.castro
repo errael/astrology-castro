@@ -1,0 +1,57 @@
+/*
+ * Constant folding.
+ */
+
+layout memory { base 500; limit 550; }
+layout macro { base 500; limit 550; }
+layout switch { base 500; limit 550; }
+
+switch test_folding {
+    ~1 {
+        Switch(test_folding1);
+    }
+}
+
+switch test_folding1 {
+    SetString test_name[0] "test_folding1"
+
+    SetString test_name[1] ": k - (2 - 3) + 4"
+    ~1 { k = 6; result = k - (2 - 3) + 4; expect = 11; macro(check); }
+
+    SetString test_name[1] ": expr-1"
+    ~1 { k = 3; l = 4; m = 5; result = k - (m && 3) + l - 7 -6;
+            expect = -7; macro(check); }
+
+    SetString test_name[1] ": expr-2"
+    ~1 { k = 3; result = k * (31 + (301 + 302) + 33) + 4 + 5;
+            expect = 2010; macro(check); }
+
+    SetString test_name[1] ": expr-3"
+    ~1 { k = 3; result = k - 2 * 3 + 4;
+            expect = 1; macro(check); }
+
+    SetString test_name[1] ": expr-4"
+    ~1 { k = 3; d = 4; e = 5; f = 6;
+            result = 2 + (d + 2 + 1 ? e + 3 + 2 : f + 4 + 3) + 3 + k + 4 ;
+            expect = 22; macro(check); }
+
+    SetString test_name[1] ": expr-5"
+    ~1 { k = 3; l = 4; result = k + (l + 31 + (301 + 302) + 33) + 4 + 5;
+            expect = 683; macro(check); }
+
+    SetString test_name[1] ": expr-6"
+    ~1 { k = 3; l = 4; m = 5; result = k + (31 + l * (m + 301 + 302) + 33) + 4 + 5;
+            expect = 2508; macro(check); }
+
+    SetString test_name[1] ": expr-7"
+    ~1 { k = 3; c = 4; result = k + 2 + (0xf02 & 0x0f2) + 3 + c + 4;
+            expect = 18; macro(check); }
+
+    SetString test_name[1] ": expr-8"
+    ~1 { k = 3; f = 4; c = 5; result = k + 2 + (0xf02 & 0x0f2 & f) + 3 + c + 4;
+            expect = 17; macro(check); }
+
+    SetString test_name[1] ": expr-9"
+    ~1 { k = 3; f = 4; c = 5; result = k + 2 + (f & 0xf02 & 0x0f2) + 3 + c + 4;
+            expect = 17; macro(check); }
+}
