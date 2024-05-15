@@ -7,20 +7,22 @@
 // Space: Switches. Layout: null
 
 // Space: Registers inc-dec.castro
-// used [(-∞..27), [200..204), [2147483647..+∞)]
-// free [[27..200), [204..2147483647)]
+// declared [200..204) 
+// used     (-∞..27) [200..204) [2147483647..+∞) 
+// free     [27..200) [204..2147483647) 
 // errors: 0
 var pp[4] @200;    // [ASSIGN] 
 
 // Space: Macros inc-dec.castro
-// used [(-∞..3), [2147483647..+∞)]
-// free [[3..2147483647)]
+// declared [1..3) 
+// used     (-∞..3) [2147483647..+∞) 
+// free     [3..2147483647) 
 // errors: 0
 macro Dec @1;    // [ALLOC] 
 macro Inc @2;    // [ALLOC] 
 
 // Space: Switches inc-dec.castro
-// used [(-∞..1), [2147483647..+∞)]
-// free [[1..2147483647)]
+// used     (-∞..1) [2147483647..+∞) 
+// free     [1..2147483647) 
 // errors: 0
 

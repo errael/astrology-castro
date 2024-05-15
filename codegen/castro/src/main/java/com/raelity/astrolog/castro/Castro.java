@@ -114,19 +114,6 @@ public static String getVersionString()
     return version;
 }
 
-//public static int compileTarget = 760;
-public static int compileTarget = 770;
-
-public static String getAstrologVersionString()
-{
-    return compileTarget >= 770 ? "7.70" : "7.60";
-}
-
-public static String getCompactAstrologVersionString()
-{
-    return getAstrologVersionString().replace(".", "");
-}
-
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 private static void version()
 {
@@ -155,13 +142,22 @@ static void usage(String note)
         System.err.printf("%s: %s\n", cmdName, note);
     String defaultW = defaultWarn.stream().map((e) -> e.toString())
             .collect(Collectors.joining(" "));
+
+                //infile may be '-' for stdin.
+
     String usage = """
             Usage: {cmdName} [-h] [several-options] [-o outfile] infile+
-                infile may be '-' for stdin.
                 if outfile not specified, it is derived from infile.
                 -o outfile      allowed if exactly one infile, '-' is stdout
                 --mapname=mapname     Map file name is <mapname>.map.
                                         Default is derived from first infile.
+                -O level        Optimization leve, -O0 is no optimization.
+                --astrolog version      Astrolog version to target.
+                                        For example "760" or "770".
+                --addrsort      In "*.map", "*.def" sort by addr, else by name.
+                --anonymous     no dates/versions in output files (golden test files)
+                --version       version
+                -h      output this message
                 --Ewarn=ename   Make the specified error a warning.
                                 Multiple uses is additive.
                                 Can do no-ename to turn warning to error.
@@ -170,7 +166,8 @@ static void usage(String note)
                                 Order is important when using all/none.
                                 Use --Ewarn=junk for a list.
                                 Default: {defaultWarn}.
-                --formatoutput=opt1,... # comma separated list of:
+                The remaining options are for debug.
+                --formatoutput=opt1,... # (for debug) comma separated list of:
                         min             - no extra/blank lines
                         qflip           - quote flip default inner/outer
                         bslash          - split into new-line/backslash lines
@@ -182,9 +179,6 @@ static void usage(String note)
                     Default is no options; switch/macro/run on a single line
                     which is compatible with all Astrolog versions.
                     "min"/"qflip" usable with any Astrolog version.
-                --anonymous     no dates/versions in output files (for test golden)
-                --version       version
-                -h      output this message
 
                 The following options are primarily for debug. --gui is also fun to see
                 and may provide insight. It shows how the program is parsed. Only uses
@@ -192,7 +186,7 @@ static void usage(String note)
                 --gui           show AST in GUI
                 --console       show the tokens and AST in the console
                 --test  output prefix parse data
-                -v      output more info
+                -v      output debug info, each use increases the output
             """.replace("{cmdName}", cmdName).replace("{defaultWarn}", defaultW);
     System.err.println(usage);
     System.err.println(listEwarnOptions());
@@ -208,6 +202,39 @@ public static int getVerbose()
 public static int getOptimize()
 {
     return optOptimize != null ? optOptimize : 0;
+}
+
+private static boolean isAddrSort;
+public static boolean isAddrSort()
+{
+    return isAddrSort;
+}
+
+private static int compileTarget = 770;
+
+private static Integer parseCompileTargetOption(String opt)
+{
+    
+    Integer target = Ints.tryParse(opt);
+    return switch(target) {
+    case 770, 760 -> target;
+    case null, default -> null;
+    };
+}
+
+public static int getAstrologVersion()
+{
+    return compileTarget;
+}
+
+public static String getAstrologVersionString()
+{
+    return String.format("%d.%d", compileTarget/100, compileTarget%100);
+}
+
+public static String getCompactAstrologVersionString()
+{
+    return String.format("%d", compileTarget);
 }
 
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
@@ -233,6 +260,8 @@ public static void main(String[] args)
         new LongOpt("gui", LongOpt.NO_ARGUMENT, null, 7),
         new LongOpt("console", LongOpt.NO_ARGUMENT, null, 8),
         new LongOpt("version", LongOpt.NO_ARGUMENT, null, 9),
+        new LongOpt("astrolog", LongOpt.REQUIRED_ARGUMENT, null, 10),
+        new LongOpt("addrsort", LongOpt.NO_ARGUMENT, null, 11),
     };
     Getopt g = new Getopt(cmdName, args, "o:O:hv", longOpts);
     
@@ -289,6 +318,15 @@ public static void main(String[] args)
         case 7 -> gui = true;
         case 8 -> console = true;
         case 9 -> version();
+        case 10 -> {
+            Integer target = parseCompileTargetOption(g.getOptarg());
+            if(target != null)
+                compileTarget = target;
+            else
+                System.err.printf("'%s' unknown Astrolog target, using '%d'\n",
+                                  g.getOptarg(), compileTarget);
+        }
+        case 11 -> isAddrSort = true;
         default -> {
             usage();
         }

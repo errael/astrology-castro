@@ -7,18 +7,19 @@
 // Space: Switches. Layout: null
 
 // Space: Registers errors-6.castro
-// used [(-∞..27), [2147483647..+∞)]
-// free [[27..2147483647)]
+// used     (-∞..27) [2147483647..+∞) 
+// free     [27..2147483647) 
 // errors: 0
 
 // Space: Macros errors-6.castro
-// used [(-∞..2), [2147483647..+∞)]
-// free [[2..2147483647)]
+// declared [1..2) 
+// used     (-∞..2) [2147483647..+∞) 
+// free     [2..2147483647) 
 // errors: 0
 macro ma @1;    // [ALLOC] 
 
 // Space: Switches errors-6.castro
-// used [(-∞..1), [2147483647..+∞)]
-// free [[1..2147483647)]
+// used     (-∞..1) [2147483647..+∞) 
+// free     [1..2147483647) 
 // errors: 0
 

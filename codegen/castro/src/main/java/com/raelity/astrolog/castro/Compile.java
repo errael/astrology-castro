@@ -42,6 +42,7 @@ import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 
 import static com.raelity.astrolog.castro.Castro.MAP_EXT;
+import static com.raelity.astrolog.castro.Castro.isAddrSort;
 import static com.raelity.astrolog.castro.Constants.ConstantFlag.SRC_USER;
 import static com.raelity.astrolog.castro.Constants.FK_F0_KEY_CODE;
 import static com.raelity.astrolog.castro.Error.*;
@@ -371,11 +372,17 @@ private static boolean createMap()
         Macros macros = lookup(MacrosAccum.class).global();
         Switches switches = lookup(SwitchesAccum.class).global();
 
-        registers.dumpVars(out, true, EnumSet.of(BUILTIN), true, false);
+        int nperline = 6;
+        String prefix = "// ";
         out.println();
-        macros.dumpVars(out, true, EnumSet.of(BUILTIN), true, false);
+        registers.dumpDeclaredRanges(out, nperline, prefix, null);
+        registers.dumpVars(out, isAddrSort(), EnumSet.of(BUILTIN), true, false);
         out.println();
-        switches.dumpVars(out, true, EnumSet.of(BUILTIN), true, false);
+        macros.dumpDeclaredRanges(out, nperline, prefix, null);
+        macros.dumpVars(out, isAddrSort(), EnumSet.of(BUILTIN), true, false);
+        out.println();
+        switches.dumpDeclaredRanges(out, nperline, prefix, null);
+        switches.dumpVars(out, isAddrSort(), EnumSet.of(BUILTIN), true, false);
         out.println();
 
         for(Constant info : Constants.toList(EnumSet.of(SRC_USER))) {
@@ -423,11 +430,11 @@ private static void createDef()
 
         // TODO: output options
         //compile.registers.dumpAllocation(castroIO, EnumSet.of(BUILTIN));
-        registers.dumpVars(out, true, EnumSet.of(BUILTIN, DEFINED, EXTERN));
+        registers.dumpVars(out, isAddrSort(), EnumSet.of(BUILTIN, DEFINED, EXTERN));
         out.println();
-        macros.dumpVars(out, true, EnumSet.of(BUILTIN, DEFINED, EXTERN));
+        macros.dumpVars(out, isAddrSort(), EnumSet.of(BUILTIN, DEFINED, EXTERN));
         out.println();
-        switches.dumpVars(out, true, EnumSet.of(BUILTIN, DEFINED, EXTERN));
+        switches.dumpVars(out, isAddrSort(), EnumSet.of(BUILTIN, DEFINED, EXTERN));
         out.println();
     } catch(IOException ex) {
         lookup(AstroParseResult.class).countError();

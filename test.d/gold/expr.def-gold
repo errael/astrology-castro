@@ -7,14 +7,16 @@
 // Space: Switches. Layout: null
 
 // Space: Registers expr.castro
-// used [(-∞..27), [100..150), [2147483647..+∞)]
-// free [[27..100), [150..2147483647)]
+// declared [100..150) 
+// used     (-∞..27) [100..150) [2147483647..+∞) 
+// free     [27..100) [150..2147483647) 
 // errors: 0
 var pp[50] @100;    // [ASSIGN] 
 
 // Space: Macros expr.castro
-// used [(-∞..10), [20..21), [2147483647..+∞)]
-// free [[10..20), [21..2147483647)]
+// declared [1..10) [20..21) 
+// used     (-∞..10) [20..21) [2147483647..+∞) 
+// free     [10..20) [21..2147483647) 
 // errors: 0
 macro test_assignment @1;    // [ALLOC] 
 macro test_block @2;    // [ALLOC] 
@@ -28,7 +30,7 @@ macro test_quest_colon @9;    // [ALLOC]
 macro test_constants @20;    // [ASSIGN] 
 
 // Space: Switches expr.castro
-// used [(-∞..1), [2147483647..+∞)]
-// free [[1..2147483647)]
+// used     (-∞..1) [2147483647..+∞) 
+// free     [1..2147483647) 
 // errors: 0
 

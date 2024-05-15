@@ -37,6 +37,7 @@ import com.raelity.astrolog.castro.tables.Ops;
 import com.raelity.astrolog.castro.tables.Ops.Flow;
 import com.raelity.astrolog.castro.visitors.BinaryOpOptim;
 
+import static com.raelity.astrolog.castro.Castro.getAstrologVersion;
 import static com.raelity.astrolog.castro.Constants.constant;
 import static com.raelity.astrolog.castro.Util.isBuiltinVar;
 import static com.raelity.astrolog.castro.Util.lookup;
@@ -287,7 +288,7 @@ String genQuestColonOp(ExprQuestOpContext ctx,
 
 private String wrapBool(String some_var)
 {
-    return Castro.compileTarget >= 770
+    return getAstrologVersion()>= 770
            ? "Bool " + some_var.strip() + " "
            : "Neq "  + some_var.strip() + " 0 ";
 }

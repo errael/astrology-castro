@@ -7,8 +7,9 @@
 // Space: Switches. Layout: null
 
 // Space: Registers warnings.castro
-// used [(-∞..28), [30..49), [2147483647..+∞)]
-// free [[28..30), [49..2147483647)]
+// declared [27..28) [35..36) [40..49) 
+// used     (-∞..28) [30..49) [2147483647..+∞) 
+// free     [28..30) [49..2147483647) 
 // errors: 0
 var qq @27;    // [ALLOC] 
 var rr @35;    // [ASSIGN] 
@@ -16,8 +17,9 @@ var arr[5] @40;    // [ALLOC]
 var pp[4] @45;    // [ALLOC] 
 
 // Space: Macros warnings.castro
-// used [(-∞..8), [2147483647..+∞)]
-// free [[8..2147483647)]
+// declared [1..8) 
+// used     (-∞..8) [2147483647..+∞) 
+// free     [8..2147483647) 
 // errors: 0
 macro array_oob @1;    // [ALLOC] 
 macro constant_ambig @2;    // [ALLOC] 
@@ -28,8 +30,9 @@ macro octal_const @6;    // [ALLOC]
 macro var_rsv @7;    // [ALLOC] 
 
 // Space: Switches warnings.castro
-// used [(-∞..2), [2147483647..+∞)]
-// free [[2..2147483647)]
+// declared [1..2) 
+// used     (-∞..2) [2147483647..+∞) 
+// free     [2..2147483647) 
 // errors: 0
 switch inner_quote @1;    // [ALLOC] 
 

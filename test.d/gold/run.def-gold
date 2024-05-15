@@ -7,19 +7,20 @@
 // Space: Switches. Layout: null
 
 // Space: Registers run.castro
-// used [(-∞..29), [2147483647..+∞)]
-// free [[29..2147483647)]
+// declared [27..29) 
+// used     (-∞..29) [2147483647..+∞) 
+// free     [29..2147483647) 
 // errors: 0
 var v1 @27;    // [ALLOC] 
 var v2 @28;    // [ALLOC] 
 
 // Space: Macros run.castro
-// used [(-∞..1), [2147483647..+∞)]
-// free [[1..2147483647)]
+// used     (-∞..1) [2147483647..+∞) 
+// free     [1..2147483647) 
 // errors: 0
 
 // Space: Switches run.castro
-// used [(-∞..1), [2147483647..+∞)]
-// free [[1..2147483647)]
+// used     (-∞..1) [2147483647..+∞) 
+// free     [1..2147483647) 
 // errors: 0
 
