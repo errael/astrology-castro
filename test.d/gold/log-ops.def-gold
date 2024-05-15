@@ -7,18 +7,19 @@
 // Space: Switches. Layout: null
 
 // Space: Registers log-ops.castro
-// used [(-∞..27), [2147483647..+∞)]
-// free [[27..2147483647)]
+// used     (-∞..27) [2147483647..+∞) 
+// free     [27..2147483647) 
 // errors: 0
 
 // Space: Macros log-ops.castro
-// used [(-∞..2), [2147483647..+∞)]
-// free [[2..2147483647)]
+// declared [1..2) 
+// used     (-∞..2) [2147483647..+∞) 
+// free     [2..2147483647) 
 // errors: 0
 macro LogOps @1;    // [ALLOC] 
 
 // Space: Switches log-ops.castro
-// used [(-∞..1), [2147483647..+∞)]
-// free [[1..2147483647)]
+// used     (-∞..1) [2147483647..+∞) 
+// free     [1..2147483647) 
 // errors: 0
 

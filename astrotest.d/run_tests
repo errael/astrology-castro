@@ -8,6 +8,8 @@ DIR=${0%/*}
 
 set -e
 
+typeset -i EXPECTED_PASS_COUNT=243
+
 ASTROLOG=/junk/install/astrolog.d/base/astrolog
 
 astrolog() {
@@ -40,7 +42,7 @@ usage() {
     echo "$CMD [-h] [--clean] [-O level] [-p]"
     echo "    --clean   rm .as, .def, .map files"
     echo "    -h        output this message"
-    echo "    -O level  optimization level; level is a number"
+    echo "    -O level  optimization level; -O0 for minimal optimization"
     echo "    -p        skip printf tests"
 
     exit 1
@@ -169,6 +171,10 @@ run_infra_tests() {
         ((nErrors += i))
         #((nErrors += $(grep FAIL $INFRA_OUTPUT | wc -l) ))
     fi
+
+    local -i pass_count=$(grep PASS $INFRA_OUTPUT | wc -l)
+    report_errors $((EXPECTED_PASS_COUNT - pass_count)) \
+                    "Expected $EXPECTED_PASS_COUNT PASS, got $pass_count"
 }
 
 Main

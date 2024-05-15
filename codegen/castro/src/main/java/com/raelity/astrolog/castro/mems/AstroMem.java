@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
@@ -216,7 +217,26 @@ public RangeSet<Integer> getLayoutReserve()
 
 public Map<Range<Integer>, Var> getAllocationMap()
 {
-    return Collections.unmodifiableMap(layout.asMapOfRanges());
+    return getFilteredAllocationMap(null, null);
+}
+
+public Map<Range<Integer>, Var> getFilteredAllocationMap(
+        EnumSet<VarState> include, EnumSet<VarState> exclude)
+{
+    // optimize a common case
+    if(include == null && exclude == null)
+        return Collections.unmodifiableMap(layout.asMapOfRanges());
+
+    EnumSet<VarState> incl = include != null
+            ? include : EnumSet.allOf(VarState.class);
+    EnumSet<VarState> excl = exclude != null
+            ? exclude : EnumSet.noneOf(VarState.class);
+    return layout.asMapOfRanges().entrySet().stream()
+                    .filter((entry)
+                            -> intersects(entry.getValue().getState(), incl)
+                                && !intersects(entry.getValue().getState(), excl))
+                    .collect(Collectors.toUnmodifiableMap(
+                            Entry::getKey, Entry::getValue));
 }
 
 /** @return variable for name or null if no such variable */
@@ -535,9 +555,15 @@ public void dumpVars(PrintWriter out, boolean byAddr,
     RangeSet<Integer> used = TreeRangeSet.create(allocationMap.keySet());
     RangeSet<Integer> free = used.complement();
 
-    if(spaceHeader)
-        out.printf("// Space: %s %s\n// used %s\n// free %s\n// errors: %d\n",
-                   memSpaceName, fileName, used, free, varsInError.size());
+    if(spaceHeader) {
+        out.printf("// Space: %s %s\n", memSpaceName, fileName);
+        int nperline = 6;
+        String prefix2 =                  "//          ";
+        dumpDeclaredRanges(out, nperline, "// declared ", prefix2);
+        dumpRanges(out, used, nperline,   "// used     ", prefix2);
+        dumpRanges(out, free, nperline,   "// free     ", prefix2);
+        out.printf("// errors: %d\n", varsInError.size());
+    }
 
     List<Var> varList = Lists.newArrayList(iterator());
     if(byAddr)
@@ -545,6 +571,33 @@ public void dumpVars(PrintWriter out, boolean byAddr,
     else
         Collections.sort(varList);
     dumpVars(out, varList.iterator(), skip, includeFileName);
+}
+
+public void dumpDeclaredRanges(PrintWriter out, int nperline,
+                               String prefix, String prefix2)
+{
+    TreeRangeSet<Integer> declarations
+            = TreeRangeSet.create(getFilteredAllocationMap(
+                    Var.declared, Var.notUserVar).keySet());
+    dumpRanges(out, declarations, nperline, prefix, prefix2);
+}
+
+public void dumpRanges(PrintWriter out, RangeSet<Integer> allocations,
+                       int nperline, String prefix, String prefix2)
+{
+    ArrayList<Range<Integer>> ranges = new ArrayList<>(allocations.asRanges());
+
+    // grab "nperline" ranges at a time and output them.
+    boolean needPrefix = true;
+    while(!ranges.isEmpty()) {
+        List<Range<Integer>> linelist = ranges.subList(
+                0, nperline <= ranges.size() ? nperline : ranges.size());
+        out.print(needPrefix || prefix2 == null ? prefix : prefix2);
+        needPrefix = false;
+        linelist.forEach(range -> out.printf("%s ", range));
+        out.println();
+        linelist.clear();
+    }
 }
 
 public void dumpErrors(PrintWriter out)
@@ -703,6 +756,12 @@ public void dumpLayout(PrintWriter out)
     /** Var not specified in the compilation unit. */
     private static final EnumSet<VarState>
             externalSpecify = EnumSet.of(BUILTIN, DEFINED, EXTERN);
+    /** Var declared in the compilation unit. */
+    public static final EnumSet<VarState>
+            declared = EnumSet.of(ASSIGN, ALLOC);
+    /** Var not declared by the user in the compilation unit */
+    public static final EnumSet<VarState>
+            notUserVar = EnumSet.of(BUILTIN, DEFINED, EXTERN, INTERNAL, LIMIT);
 
     /** The declared name */
     public String getName()

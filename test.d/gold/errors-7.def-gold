@@ -7,8 +7,9 @@
 // Space: Switches. Layout: null
 
 // Space: Registers errors-7.castro
-// used [(-∞..42), [2147483647..+∞)]
-// free [[42..2147483647)]
+// declared [27..42) 
+// used     (-∞..42) [2147483647..+∞) 
+// free     [42..2147483647) 
 // errors: 1
 var arr[10] @27;    // [ALLOC] 
 var macFun1_arg @37;    // [ALLOC] 
@@ -18,8 +19,9 @@ var macFun2B_arg1 @40;    // [ALLOC]
 var macFun2B_arg2 @41;    // [ALLOC] 
 
 // Space: Macros errors-7.castro
-// used [(-∞..5), [2147483647..+∞)]
-// free [[5..2147483647)]
+// declared [1..5) 
+// used     (-∞..5) [2147483647..+∞) 
+// free     [5..2147483647) 
 // errors: 0
 macro func_unk @1;    // [ALLOC] 
 macro macFun1 @2;    // [ALLOC] 
@@ -27,7 +29,7 @@ macro macFun2 @3;    // [ALLOC]
 macro macFun2B @4;    // [ALLOC] 
 
 // Space: Switches errors-7.castro
-// used [(-∞..1), [2147483647..+∞)]
-// free [[1..2147483647)]
+// used     (-∞..1) [2147483647..+∞) 
+// free     [1..2147483647) 
 // errors: 0
 

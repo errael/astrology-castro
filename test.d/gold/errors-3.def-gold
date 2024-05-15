@@ -7,18 +7,19 @@
 // Space: Switches. Layout: null
 
 // Space: Registers errors-3.castro
-// used [(-∞..32), [2147483647..+∞)]
-// free [[32..2147483647)]
+// declared [27..32) 
+// used     (-∞..32) [2147483647..+∞) 
+// free     [32..2147483647) 
 // errors: 0
 var cprintf_save_area[5] @27;    // [ALLOC] 
 
 // Space: Macros errors-3.castro
-// used [(-∞..1), [2147483647..+∞)]
-// free [[1..2147483647)]
+// used     (-∞..1) [2147483647..+∞) 
+// free     [1..2147483647) 
 // errors: 0
 
 // Space: Switches errors-3.castro
-// used [(-∞..1), [2147483647..+∞)]
-// free [[1..2147483647)]
+// used     (-∞..1) [2147483647..+∞) 
+// free     [1..2147483647) 
 // errors: 0
 

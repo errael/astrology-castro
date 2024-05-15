@@ -116,6 +116,8 @@ Macro functions use globals for function parameters. There is no stack; no recur
 
 ####    variable differences
 
+- All variables `var` and contants `const` are part of a global namespace;
+  there are no local variables.
 - Variable names are case insensitive.
 - Single char variable names 'a' to 'z' are pre-declared.
   AstroExpression hooks use as much as %u ... %z.
@@ -242,7 +244,7 @@ run { ~1 {
 - `do` _expr_ `while (`_expr_`)`
 - `for(` _var_ `=` _expr_ `;` _expr_ `)` _expr_
 - _expr_ `?` _expr_ `:` _expr_
-- `{` _one or more expr separated by semi-colon_ `}`
+- `{` _one or more expr terminated by a semi-colon_ `}`
 
 Note that everything is an expression, including the flow control statements themselves.
 
@@ -303,6 +305,8 @@ var cprintf_save_area[10];  // save area for cprintf temps, up to 10.
 ###     run
 The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the `run`'s switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
 
+**Note:** A `switch` or `macro` must already be defined when invoked from a `run` statement; if not, undefined behavior.
+
 ###     copy
 The `copy{LITERALLY_COPIED_TO_OUTPUT}` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround. All whitespace, including newlines, is copied as is. Use '\\}' to include a '}' in the output. This is needed because some things don't parse correctly, and I can be lazy, for example
 
@@ -310,11 +314,15 @@ The `copy{LITERALLY_COPIED_TO_OUTPUT}` statement literally copies text to the ou
 copy { -zl 121W57'26.9 37N17'28.2 ; Default location      [longitude and latitude] }
 ```
 
+In a run statement, the `-zl` params do not parse correctly.
+
 It also provide a way to redefine a macro/switch.
 
 ###     Constants
 
-Constants are defined like `const <name> {<expr>};` where `<expr>` is an expression made up only of integer constants. Constants must be defined before they are used; system wide constants can be defined in a single file, and that file is the first in compilation order.
+All contants are part of the global namespace. So, for example, configuration constants can be defined in one file, and used in other files. Constants can often times be used before they are defined; exceptions are for the size of an array or to specify an address assignment using `@` (an error is given).
+
+Constants are defined like `const <name> {<expr>};` where `<expr>` is an expression made up only of integer constants. Program wide constants can be defined in a single file; and putting that file first in compilation order avoids some issues. Constants take up no `AstroExpression` VM storage, they exist only in the `castro` compiler.
 
 ```
 const const_name1 {10};
@@ -322,6 +330,8 @@ const const_name2 {const_name1 + 23};
 ```
 
 ###     Variables
+
+All variables are part of the global namespace, see [Constants](#Constants).
 
 Variable declarations take on one of the following forms
 ```
@@ -474,7 +484,7 @@ var some_strings[] { "string1", "string2", "string3" };
 
 ### castro functions
 
-Some functions are part of the `castro` language.
+Some functions are part of the `castro` language. They are treated as constants.
 
 See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
 
@@ -486,17 +496,17 @@ See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
 | Switch2KeyCode | Sw2KC | Sw2KC(switchName) | see ~XQ hook. arg range 1 - 48 |
 | SizeOf       | ----- | SizeOf(varname) | the number of locations used by the variable |
 
-Astrolog associates switch commands at adresses 1 - 48 with function keys
+By default `Astrolog` associates switch commands at adresses 1 - 48 with function keys
 ```
-// 'a' keypress is mapped to execute func_key_demo
-switch func_key_demo { ... }
+// 'a' keypress is mapped to execute func_key_demo at slot for Shift-F1
+switch func_key_demo @S_FK_F0 + 1 { ... }
 run { ~XQ { if (z == KeyC("a")) z = Sw2KC(func_key_demo); } }
 ```
 
 Alternatively
 
 ```
-run { ~XQ { if (z == KeyC("a")) { Switch(func_key_demo); z = -1; } } }
+run { ~XQ { if (z == KeyC("a")) { Switch(func_key_demo); z = KeyCode(' '); } } }
 ```
 
 ### constants
@@ -554,4 +564,7 @@ See [output of `castro -h`](https://github.com/errael/astrology-castro/wiki/cast
 ```
 - Generate a `.xref` output file which lists vars with where they are used.
 - Handle parsing inside a `switch`/`run` better so fewer words require quoting.
+- After pass1 build a dependency graph for undefined constants, try to resolve.
+- Implement some stack functions in a user library.
+- Implement stack frames and local variables and recursion.
 

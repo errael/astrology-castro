@@ -7,8 +7,9 @@
 // Space: Switches. Layout: null
 
 // Space: Registers const.castro
-// used [(-∞..109), [112..114), [124..138), [201..+∞)]
-// free [[109..112), [114..124), [138..201)]
+// declared [101..109) 
+// used     (-∞..109) [112..114) [124..138) [201..+∞) 
+// free     [109..112) [114..124) [138..201) 
 // errors: 0
 var var_sizeof_a @101;    // [ALLOC] 
 var v_foo[3] @102;    // [ASSIGN] 
@@ -17,8 +18,9 @@ var var_sizeof_b @107;    // [ALLOC]
 var var_sizeof_c @108;    // [ALLOC] 
 
 // Space: Macros const.castro
-// used [(-∞..2), [5..7), [42..43), [2147483647..+∞)]
-// free [[2..5), [7..42), [43..2147483647)]
+// declared [1..2) [5..7) [42..43) 
+// used     (-∞..2) [5..7) [42..43) [2147483647..+∞) 
+// free     [2..5) [7..42) [43..2147483647) 
 // errors: 0
 macro ma00 @1;    // [ALLOC] 
 macro const_m0 @5;    // [ASSIGN] 
@@ -26,8 +28,9 @@ macro const_m1 @6;    // [ASSIGN]
 macro ma01 @42;    // [ASSIGN] 
 
 // Space: Switches const.castro
-// used [(-∞..1), [30..31), [2147483647..+∞)]
-// free [[1..30), [31..2147483647)]
+// declared [30..31) 
+// used     (-∞..1) [30..31) [2147483647..+∞) 
+// free     [1..30) [31..2147483647) 
 // errors: 0
 switch sw01 @30;    // [ASSIGN] 
 

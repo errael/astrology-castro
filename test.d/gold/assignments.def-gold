@@ -7,14 +7,16 @@
 // Space: Switches. Layout: null
 
 // Space: Registers assignments.castro
-// used [(-∞..27), [100..120), [2147483647..+∞)]
-// free [[27..100), [120..2147483647)]
+// declared [100..120) 
+// used     (-∞..27) [100..120) [2147483647..+∞) 
+// free     [27..100) [120..2147483647) 
 // errors: 0
 var pp[20] @100;    // [ASSIGN] 
 
 // Space: Macros assignments.castro
-// used [(-∞..14), [2147483647..+∞)]
-// free [[14..2147483647)]
+// declared [1..14) 
+// used     (-∞..14) [2147483647..+∞) 
+// free     [14..2147483647) 
 // errors: 0
 macro assign_array @1;    // [ALLOC] 
 macro assign_op @2;    // [ALLOC] 
@@ -31,7 +33,7 @@ macro t4 @12;    // [ALLOC]
 macro t5 @13;    // [ALLOC] 
 
 // Space: Switches assignments.castro
-// used [(-∞..1), [2147483647..+∞)]
-// free [[1..2147483647)]
+// used     (-∞..1) [2147483647..+∞) 
+// free     [1..2147483647) 
 // errors: 0
 
