@@ -11,6 +11,7 @@ import java.util.Objects;
 
 import org.antlr.v4.runtime.Token;
 
+import com.raelity.astrolog.castro.Castro;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.tables.Function.AstrologFunction;
@@ -20,6 +21,7 @@ import com.raelity.astrolog.castro.tables.Function.UserFunction;
 import com.raelity.astrolog.castro.tables.Function.MacroFunction;
 import com.raelity.astrolog.castro.tables.Function.SwitchFunction;
 
+import static com.raelity.astrolog.castro.Castro.getAstrologVersion;
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.lc;
 import static com.raelity.astrolog.castro.Util.reportError;
@@ -180,7 +182,12 @@ private Functions() {
     this.funcsModifiableMap = new HashMap<>(800);
     this.funcs = Collections.unmodifiableMap(funcsModifiableMap);
     this.aliasFuncs = new HashMap<>();
-    new AstrologFunctions(this).createEntries();
+
+    AstrologFunctions astrologFunctions = switch((Integer)getAstrologVersion()) {
+    case Integer i when i < 770 ->  new AstrologFunctions_760(this);
+    default ->                      new AstrologFunctions_770(this);
+    };
+    astrologFunctions.createEntries();
 
     // TODO: Replace Macro()/Switch()
     replaceWith(new MacroFunction());
