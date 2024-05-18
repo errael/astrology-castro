@@ -33,12 +33,18 @@ import org.antlr.v4.runtime.TokenSource;
 import com.raelity.astrolog.castro.AstroParseResult;
 import com.raelity.astrolog.castro.Castro.MemAccum;
 import com.raelity.astrolog.castro.CastroIO;
+import com.raelity.astrolog.castro.antlr.AstroParser.BaseContstraintContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.LayoutContext;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.lib.collect.ValueHashMap;
 import com.raelity.lib.collect.ValueMap;
 
+import static com.raelity.astrolog.castro.Castro.getAstrologVersion;
+import static com.raelity.astrolog.castro.Constants.FK_LAST_SLOT;
+import static com.raelity.astrolog.castro.Error.SWITCH_BASE;
 import static com.raelity.astrolog.castro.Util.lc;
 import static com.raelity.astrolog.castro.Util.lookup;
+import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState;
 import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 import static com.raelity.lib.collect.Util.intersection;
@@ -134,7 +140,7 @@ public AstroMem(String name, int min, int max, MemAccum accum)
     }
 }
 
-/** Take the variables from this and add them to the gloabal defined pool.
+/** Take the variables from this and add them to the global defined pool.
  * Typically done at the end of pass 1 for a file. The next file's pass1
  * copies these into it's memory pool to check against them.
  */
@@ -206,6 +212,27 @@ public Layout getNewLayout()
     } else
         lr = new Layout();
     return lr;
+}
+
+public void checkNewLayout(LayoutContext ctx)
+{
+    if(this instanceof Switches && getAstrologVersion() >= 770) {
+        if(layoutRestrictions == null)
+            layoutRestrictions = new Layout(this);
+        int base = layoutRestrictions.base;
+        // Note: if ctx null, then either already adjusted
+        //       or no layout base was specified; can't be an error.
+        if(base >= 0 && base <= FK_LAST_SLOT) {
+            // The base was set, get the constraint
+            BaseContstraintContext baseCtx
+                    = (BaseContstraintContext)ctx.constraint().stream()
+                            .filter(c -> c instanceof BaseContstraintContext)
+                            .findFirst().get();
+            reportError(SWITCH_BASE, baseCtx, "layout switch base '%d' overlaps function keys, adjusting", base);
+        }
+        // Make sure allocation starts after function keys
+        layoutRestrictions.base = Math.max(FK_LAST_SLOT + 1, base);
+    }
 }
 
 public RangeSet<Integer> getLayoutReserve()
@@ -280,7 +307,7 @@ public Iterator<Var> getErrorVars()
 /**
  * Starting from pre-allocated variables, allocate memory for any variable
  * without an assigned memory location.
- * Before allocation the layoutRestrictions, if any, are applied.
+ * Before allocation, the layoutRestrictions, if any, are applied.
  * <p>
  Create a set of allocated ranges, its complement is free memory;
  first fit to allocate from free memory.
@@ -556,7 +583,7 @@ public void dumpVars(PrintWriter out, boolean byAddr,
     RangeSet<Integer> free = used.complement();
 
     if(spaceHeader) {
-        out.printf("// Space: %s %s\n", memSpaceName, fileName);
+        out.printf("// Space: %s. File: %s\n", memSpaceName, fileName);
         int nperline = 6;
         String prefix2 =                  "//          ";
         dumpDeclaredRanges(out, nperline, "// declared ", prefix2);
@@ -621,7 +648,7 @@ abstract void dumpVar(PrintWriter out, Var var, boolean includeFileName);
 
 public void dumpLayout(PrintWriter out)
 {
-    out.printf("// Space: %s. Layout: %s\n", memSpaceName, layoutRestrictions);
+    out.printf("// Space: %s layout: %s\n", memSpaceName, layoutRestrictions);
 }
 
     private class VarIter implements Iterator<Var>

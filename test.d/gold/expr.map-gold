@@ -9,12 +9,12 @@ var pp[50] @100;    // [ASSIGN] expr.castro:38
 macro test_assignment @1;    // [ALLOC] expr.castro:43
 macro test_block @2;    // [ALLOC] expr.castro:81
 macro test_complex_expressions @3;    // [ALLOC] expr.castro:135
+macro test_constants @20;    // [ASSIGN] expr.castro:8
 macro test_control_expressions @4;    // [ALLOC] expr.castro:120
 macro test_function @5;    // [ALLOC] expr.castro:62
 macro test_if_else @6;    // [ALLOC] expr.castro:88
 macro test_isolated_value @7;    // [ALLOC] expr.castro:18
 macro test_multiple_control_expressions @8;    // [ALLOC] expr.castro:157
 macro test_quest_colon @9;    // [ALLOC] expr.castro:108
-macro test_constants @20;    // [ASSIGN] expr.castro:8
 
 

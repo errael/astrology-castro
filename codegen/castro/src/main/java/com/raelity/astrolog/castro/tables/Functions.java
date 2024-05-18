@@ -12,6 +12,7 @@ import java.util.Objects;
 import org.antlr.v4.runtime.Token;
 
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.tables.Function.AstrologFunction;
 import com.raelity.astrolog.castro.tables.Function.FunctionUsage;
 import com.raelity.astrolog.castro.tables.Function.UnknownFunction;
@@ -22,6 +23,7 @@ import com.raelity.astrolog.castro.tables.Function.SwitchFunction;
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.lc;
 import static com.raelity.astrolog.castro.Util.reportError;
+import static com.raelity.astrolog.castro.Util.sizeArgs;
 
 /**
  * Manage the various types of functions.
@@ -39,19 +41,19 @@ public static final String FUNC_ID_MACRO = "macro";
 public static record FunctionConstValue(boolean isConst, int constVal, int displayVal){};
 public static FunctionConstValue NOT_CONST_VALUE = new FunctionConstValue(false, 0, 0);
 
-static void reportFuncNargError(Object ctx_or_token,
-                                        String name, int expect, int result)
+static void reportFuncNargError(Func_callContext ctx, Function f)
 {
-    reportError(FUNC_NARG, ctx_or_token,
+    reportError(FUNC_NARG, ctx,
                 "function '%s' argument count, expect %d not %d",
-                name, expect, result);
+                f.name(), f.narg(), sizeArgs(ctx));
 }
 
+// Like reportFuncNargError, but can not be converted to warning
 static void reportUserFuncNargError(Object ctx_or_token,
                                             String name, int expect, int result)
 {
     reportError(ctx_or_token,
-                "\"%s\" expects %d arguments for macro function call not %d",
+                "macro function '%s' argument count, expect %d not %d",
                 name, expect, result);
 }
 

@@ -40,6 +40,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.VarDefContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.VarContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
+import com.raelity.astrolog.castro.mems.AstroMem.Var.VarState;
 import com.raelity.astrolog.castro.mems.Layout;
 import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
@@ -56,6 +57,7 @@ import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.visitors.FoldConstants.reportFold2Int;
 import static com.raelity.astrolog.castro.Util.isReportDupSym;
 import static com.raelity.astrolog.castro.Util.replaceLookup;
+import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.EXTERN;
 
 
 /** Pass1, handle constant definitions, variable declarations, layout,
@@ -212,14 +214,15 @@ public void exitVar(VarContext ctx)
         declareVar(ctx.v);
 }
 
-private void declareSwithOrMacro(AstroMem mem, ExprContext ctx, Token id)
+private void declareSwithOrMacro(AstroMem mem, ExprContext ctx,
+                                 Token id, VarState... a_state)
 {
     int addr;
     if(ctx == null || hasErrorNode(ctx))
         addr = -1;
     else
         addr = reportFold2Int(ctx, -1);
-    Var var = mem.declare(id, 1, addr);
+    Var var = mem.declare(id, 1, addr, a_state);
     checkReport(var);
 };
 
@@ -227,10 +230,12 @@ private void declareSwithOrMacro(AstroMem mem, ExprContext ctx, Token id)
 public void exitMacro(MacroContext ctx)
 {
     Function f = Functions.get(ctx.id.getText());
-    // If a macro is declared with arguments,
-    // then it must have a unique function name.
+    // If a macro is declared with arguments then create a user function.
+    // If the user function has been referenced before this declaration,
+    // then it show up as "isUnkown()".
     if(ctx.has_paren == null || f.isInvalid() || f.isUnknown()) {
         if(ctx.has_paren != null) {
+            // It has a '(', collect the args and create the function.
             List<String> args = ctx.args.stream()
                     .filter((token) -> {
                         // Declare this argument variable; discard if error.
@@ -260,13 +265,13 @@ public void exitSwitch(SwitchContext ctx)
 @Override
 public void exitAssign_switch_addr(Assign_switch_addrContext ctx)
 {
-    declareSwithOrMacro(switches, ctx.addr, ctx.id);
+    declareSwithOrMacro(switches, ctx.addr, ctx.id, EXTERN);
 }
 
 @Override
 public void exitAssign_macro_addr(Assign_macro_addrContext ctx)
 {
-    declareSwithOrMacro(macros, ctx.addr, ctx.id);
+    declareSwithOrMacro(macros, ctx.addr, ctx.id, EXTERN);
 }
 
 @Override
@@ -283,6 +288,8 @@ public void enterLayout(LayoutContext ctx)
 @Override
 public void exitLayout(LayoutContext ctx)
 {
+    if(workingLayout != null && workingLayout.getMem() != null)
+        workingLayout.getMem().checkNewLayout(ctx);
     workingLayout = null;
 }
 

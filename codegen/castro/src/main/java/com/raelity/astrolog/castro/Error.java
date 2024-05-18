@@ -17,6 +17,7 @@ VAR_RSV("var-rsv",            "assign variable to reserved area"),
 ARRAY_OOB("array-oob",        "array index out of bounds"),
 INNER_QUOTE("inner-quote",    "inner quote in string stripped"),
 CONST_AMBIG("const-ambig",    "constant id is ambiguous"),
+SWITCH_BASE("switch-base",    "switch base adjusted to after function keys"),
 // ONLY_WARN("only-warn",        ""),
 
 ///// MIXED_QUOTES("mixed-quotes"),   // mixed quotes in command

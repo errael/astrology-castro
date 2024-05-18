@@ -55,6 +55,8 @@ private static final NameVal[] castroConsts = new NameVal[] {
     new NameVal("S_FK_F0_KC", FK_F0_KEY_CODE + 1 * NFK),
     new NameVal("C_FK_F0_KC", FK_F0_KEY_CODE + 2 * NFK),
     new NameVal("A_FK_F0_KC", FK_F0_KEY_CODE + 3 * NFK),
+
+    new NameVal("FK_NKEY", NFK),
 };
 
 private static Constants INSTANCE;
@@ -116,13 +118,13 @@ public static Integer numericConstant(Token token)
            : match.flags.contains(NUMERIC) ? match.ival : null;
 }
 
-public static Constant constantInfo(Token token)
+static Constant constantInfo(Token token)
 {
     return get().findName(token, false);
 }
 
 /** @return a alpha sorted list of constants which have any of specified flags */
-public static List<Constant> toList(EnumSet<ConstantFlag> flags)
+static List<Constant> toList(EnumSet<ConstantFlag> flags)
 {
     return get().constants.entrySet().stream()
             .filter(e -> intersects(flags, e.getValue().flags))

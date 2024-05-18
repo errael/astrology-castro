@@ -15,6 +15,7 @@ import org.antlr.v4.runtime.Token;
 import com.raelity.astrolog.castro.Pass3;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Str_exprContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.astrolog.castro.mems.Macros;
@@ -25,6 +26,7 @@ import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.macroSwitchFuncArgs;
 import static com.raelity.astrolog.castro.Util.reportError;
+import static com.raelity.astrolog.castro.Util.sizeArgs;
 import static com.raelity.astrolog.castro.tables.Functions.reportFuncNargError;
 import static com.raelity.astrolog.castro.tables.Functions.reportUserFuncNargError;
 
@@ -101,17 +103,29 @@ public AstroMem targetMemSpace()
     return null;
 }
 
+/** By default, it's an error if there's a string argument */
+public boolean checkReportArgTypes(Func_callContext ctx)
+{
+    if(!ctx.sargs.isEmpty()) {
+        reportError(ctx, "'%s' does not take string arguments", ctx.id.getText());
+        return false;
+    }
+    return true;
+}
+
 /**
- * Check for correct number of args.
+ * Check for correct number of args and types.
  * This impl assumes expr args; see override in StringFunction,
  * for string args.
- * @return true if nargs is OK, else false if bad num args.
+ * @return true if nargs is OK, else false if wrong num args or types.
  */
 public boolean checkReportArgs(Func_callContext ctx)
 {
-    if(ctx.args.size() != narg()) {
-            reportFuncNargError(ctx, ctx.id.getText(), narg(),
-                                                                 ctx.args.size());
+    // by default, strings not allowed
+    if(!checkReportArgTypes(ctx))
+        return false;
+    if(sizeArgs(ctx) != narg()) {
+        reportFuncNargError(ctx, this);
         return false;
     }
     return true;
@@ -165,7 +179,7 @@ public boolean equals(Object obj)
 
     /////////////////////////////////////////////////////////////////////////
     //
-    // Serveal "Function" subclasses
+    // Several "Function" subclasses
     //
 
     abstract public static class StringArgsFunction extends Function
@@ -174,17 +188,26 @@ public boolean equals(Object obj)
     {
         super(funcName, narg);
     }
-
+    
     @Override
-    public boolean checkReportArgs(Func_callContext ctx)
+    public boolean checkReportArgTypes(Func_callContext ctx)
     {
-        if(ctx.strs.size() != narg()) {
-            reportFuncNargError(ctx, ctx.id.getText(), narg(), ctx.strs.size());
-            return false;
-        }
-        return true;
+        boolean someError = false;
+        if(!ctx.args.isEmpty())
+            someError = true;
+        if(!someError)
+            // Not all <expr>, it's mixed. Make sure all strings.
+            for(Str_exprContext arg : ctx.sargs) {
+                if(arg.s == null) {
+                    someError = true;
+                    break;
+                }
+            }
+        if(!someError)
+            return true;
+        reportError(ctx, "'%s' only takes string arguments", ctx.id.getText());
+        return false;
     }
-
     } /////////// class StringArgsFunction
 
     /* ************************************************************* */
@@ -258,8 +281,10 @@ public boolean equals(Object obj)
     @Override
     public boolean checkReportArgs(Func_callContext ctx)
     {
+        if(!checkReportArgTypes(ctx))
+            return false;
         if(ctx.args.size() != narg()) {
-
+            // TODO: Pass function, not all the other stuff
             reportUserFuncNargError(ctx, ctx.id.getText(), narg(), ctx.args.size());
             return false;
         }
