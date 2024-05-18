@@ -264,6 +264,27 @@ public static boolean macroSwitchFuncArgs(Func_callContext ctx, AstroMem memSpac
     return true;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
+// There are two types of func call arg lists; one that has only <expr>
+// and the other that has some strings.
+
+
+/**
+ * Return the number of function arguments.
+ * Complicated because there are two styles of arguments,
+ * pure expressions and mixed expressions and strings.
+ */
+// NOTE: if no/empty function arguments, then args has priority.
+public static int sizeArgs(Func_callContext ctx)
+{
+    return Math.max(ctx.args.size(), ctx.sargs.size());
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+
 //private static XPath xpathConstInt;
 ///** @return IntegerConstext if pt is expr that's an integer constant, else null */
 ////public static Integer expr2constInt(ParseTree pt)

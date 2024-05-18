@@ -10,6 +10,5 @@ var pp @32;    // [ALLOC] errors-2.castro:8
 macro constant_errors @1;    // [ALLOC] errors-2.castro:13
 macro ma1 @2;    // [ALLOC] errors-2.castro:25
 
-// [50..51) 
-switch sw1 @50;    // [ASSIGN] errors-2.castro:10
+switch sw1 @50;    // [EXTERN] errors-2.castro:10
 

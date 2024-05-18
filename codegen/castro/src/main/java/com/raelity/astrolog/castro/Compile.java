@@ -9,12 +9,14 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.ListIterator;
 
 import com.google.common.collect.RangeSet;
 
 import org.antlr.v4.runtime.Token;
 
 import com.raelity.astrolog.castro.Castro.CastroErr;
+import com.raelity.astrolog.castro.Castro.CastroHelperName;
 import com.raelity.astrolog.castro.Castro.CastroLineMaps;
 import com.raelity.astrolog.castro.Castro.CastroMapName;
 import com.raelity.astrolog.castro.Castro.MacrosAccum;
@@ -25,6 +27,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Str_exprContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.OutOfMemory;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
@@ -41,7 +44,9 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 
+import static com.raelity.astrolog.castro.Castro.INTERNAL_HELPER;
 import static com.raelity.astrolog.castro.Castro.MAP_EXT;
+import static com.raelity.astrolog.castro.Castro.getAstrologVersion;
 import static com.raelity.astrolog.castro.Castro.isAddrSort;
 import static com.raelity.astrolog.castro.Constants.ConstantFlag.SRC_USER;
 import static com.raelity.astrolog.castro.Constants.FK_F0_KEY_CODE;
@@ -83,7 +88,11 @@ public static boolean isAllocFrozen()
     return allocFrozen;
 }
 
-/** @return false if there is an error */
+/**
+ * Take control of inputFiles list.
+ * 
+ * @return false if there is an error
+ */
 static boolean compile(List<String> inputFiles, String outName)
 {
     addCastroFunctions();
@@ -101,8 +110,26 @@ static boolean compile(List<String> inputFiles, String outName)
     // and record declarations. Create the LineMaps.
     //
 
+    // Add a place holder for internal helpers castro file.
+    inputFiles.add(null);
+
     parsePass = true;
-    for(String inputFile : inputFiles) {
+    for(ListIterator<String> it = inputFiles.listIterator(); it.hasNext();) {
+        // If last item in the list, this is the helper castro file.
+        // Either create the file if needed and plug it back in,
+        // or delete the null and exit the loop;
+
+        String inputFile = it.next();
+        if(!it.hasNext()) {
+            assert inputFile == null;
+            if(hasInternalHelperFile()) {
+                closeInternalHelperFile();
+                it.set(inputFile = internalHelperPath.toString());
+            } else {
+                it.remove();
+                break;
+            }
+        }
 
         CastroIO castroIO = new CastroIO(inputFile, outName, false);
         if(castroIO.getErrorMsg() != null)
@@ -112,6 +139,9 @@ static boolean compile(List<String> inputFiles, String outName)
             continue;
         }
 
+        // castroMap can only be null first time through loop.
+        // So if it hasn't been set, castroMap gets the same
+        // basename as the first file in the list.
         CastroMapName castroMap = lookup(CastroMapName.class);
         if(castroMap == null)
             addLookup(new CastroMapName(castroIO.baseName()));
@@ -129,10 +159,12 @@ static boolean compile(List<String> inputFiles, String outName)
 
         parseOneFile();
         
-        // Copy this pass' variables to defined variables;
+        // Let the mem space make any final adjustments after pass1
+        // and then copy this pass' variables to defined variables;
         // some may not have addresses. The next file checks its
         // names and addresses against the accumulated defines.
         for(AstroMem mem : lookupAll(AstroMem.class)) {
+            mem.checkNewLayout(null); // May have been called during pass1 parse.
             mem.addToDefined();
         }
         
@@ -353,6 +385,100 @@ private static void debugDumpAllvars(List<FileData> fData, boolean includeDefine
     }
 }
 
+// With 770's unlimited number of switch. We can create some helper switches,
+// like for cprintf. The helper can only be created during the parsePass.
+
+private static void defineInternalStatement(String statement)
+{
+    if(!parsePass)
+        throw new IllegalStateException();
+    if(statement.isEmpty())
+        return;
+    if(!createInternalHelperFile())
+        return;
+    try {
+        internalHelperWriter.append(statement);
+    } catch(Exception ex00) {
+        if(ex00 instanceof IOException ex)
+            reportHelperIOError(ex, internalHelperPath);
+        else
+            throw ex00;
+    }
+}
+
+private static PrintWriter internalHelperWriter;
+private static Path internalHelperPath;
+private static boolean internalHelperError;
+
+/** The internal helper file has the same base name as the map file
+ * and is found in the same directory as the map file. */
+private static boolean createInternalHelperFile()
+{
+    if(internalHelperWriter != null)
+        return true;
+    if(workingFileData.isEmpty())
+        return false;
+    CastroIO castroIO = workingFileData.get(0).castroIO();
+    if(castroIO.inPath() == null)
+        return false;
+    // If the helper name option was set, then use that for the basename,
+    // otherwise use the map for the basename. (which might be first file).
+    String name = null;
+    CastroHelperName castroHelperName = lookup(CastroHelperName.class);
+    if(castroHelperName != null)
+        name = castroHelperName.name();
+    if(name == null)
+        name = lookup(CastroMapName.class).mapName();
+    //String name = lookup(CastroMapName.class).mapName();
+    Path path = castroIO.inPath().resolveSibling(name + INTERNAL_HELPER);
+    PrintWriter out;
+    try {
+        out = new PrintWriter(Files.newBufferedWriter(path, WRITE, TRUNCATE_EXISTING, CREATE));
+    } catch(IOException ex) {
+        reportHelperIOError(ex, path);
+        return false;
+    }
+    internalHelperPath = path;
+    internalHelperWriter = out;
+    return true;
+}
+
+private static void closeInternalHelperFile()
+{
+    try {
+        internalHelperWriter.close();
+    } catch(Exception ex00) {
+        if(ex00 instanceof IOException ex)
+            reportHelperIOError(ex, internalHelperPath);
+        else
+            throw ex00;
+    }
+    internalHelperWriter = null;
+}
+
+private static void reportHelperIOError(IOException ex, Path path)
+{
+    if(internalHelperError)
+        return;
+    internalHelperError = true;
+    reportIOError(ex, path);
+}
+
+private static void reportIOError(IOException ex, Path path)
+{
+    // TODO: FOR NOW count the error in the first file's apr.
+    workingFileData.get(0).castroIO.getApr().countError();
+    //lookup(AstroParseResult.class).countError();
+    lookup(CastroErr.class).pw().printf("Error: '%s' Problem writing %s\n",
+                                            ex.getClass().getSimpleName(), path);
+    
+}
+
+private static boolean hasInternalHelperFile()
+{
+    return internalHelperPath != null;
+}
+
 /** The .map file comes from global mem spaces.
  * There are situations where no file is output, that is not an error.
  * @return true if no error
@@ -394,11 +520,7 @@ private static boolean createMap()
         }
 
     } catch(IOException ex) {
-        // TODO: FOR NOW count the error in the first file's apr.
-        workingFileData.get(0).castroIO.getApr().countError();
-        //lookup(AstroParseResult.class).countError();
-        lookup(CastroErr.class).pw().printf("Error: '%s' Problem writing %s\n",
-                                            ex.getClass().getSimpleName(), defPath);
+        reportIOError(ex, defPath);
         return false;
     }
     return true;
@@ -469,6 +591,8 @@ private static void addCastroFunctions()
     Functions.addFunction(new KeyCode(), "KeyC");
     Functions.addFunction(new Switch2KeyCode(), "Sw2KC");
     Functions.addFunction(new SizeOf());
+    if(getAstrologVersion() >= 770) // only enable with unlimited switches
+        Functions.addFunction(new MacroCprintf());
 }
 
     /* ************************************************************* */
@@ -485,8 +609,8 @@ private static void addCastroFunctions()
     {
         boolean isError = true;
         // There's one arg, should have three characters like "a"
-        Token charCodeToken = ctx.fc.strs.get(0);
-        String charCodeString = ctx.fc.strs.get(0).getText();
+        Token charCodeToken = ctx.fc.sargs.get(0).s;
+        String charCodeString = charCodeToken.getText();
         if(charCodeString.length() < 3)
             reportError(charCodeToken, "empty string");
         else if(charCodeString.length() > 3)
@@ -512,7 +636,7 @@ private static void addCastroFunctions()
         return true;
     }
 
-    } // KeyCode
+    } /////////// KeyCode
 
     /* ************************************************************* */
     private static class Switch2KeyCode extends Function
@@ -559,7 +683,7 @@ private static void addCastroFunctions()
         return sb;
     }
 
-    } // Switch2KeyCode
+    } /////////// Switch2KeyCode
 
     /* ************************************************************* */
     /** Generate the address of given macro. */
@@ -567,7 +691,7 @@ private static void addCastroFunctions()
     {
     private MacroAddress() { super("MacroAddress"); }
     @Override public AstroMem targetMemSpace() { return lookup(Macros.class); }
-    }
+    } /////////// MacroAddress
 
     /* ************************************************************* */
     /** Generate the address of given switch. */
@@ -575,7 +699,7 @@ private static void addCastroFunctions()
     {
     private SwitchAddress() { super("SwitchAddress"); }
     @Override public AstroMem targetMemSpace() { return lookup(Switches.class); }
-    }
+    } /////////// SwitchAddress
 
     /* ************************************************************* */
 
@@ -620,14 +744,12 @@ private static void addCastroFunctions()
         return sb;
     }
 
-    }
+    } /////////// SwitchMacroAddress
 
     /* ************************************************************* */
 
     /**
-     * Add some code to verify that context is constant.
-     *
-     * <br>TODO: remove the checking code?
+     * SizeOf
      */
     private static class SizeOf extends Function
     {
@@ -667,6 +789,100 @@ private static void addCastroFunctions()
         return size;
     }
 
-    }
+    } /////////// SizeOf
+
+    /* ************************************************************* */
+
+    private static String MACRO_CPRINTF_BASE_NAME = "castroInternalCprintf_";
+    private record MacroCprintfProp(String switchName) {}
+    private static TreeProps<MacroCprintfProp> macroCprintfProps = new TreeProps<>();
+
+    /**
+     * Cprintf function for use in a macro.
+     */
+    private static class MacroCprintf extends Function
+    {
+        public MacroCprintf()
+        {
+            super("cprintf", -1);
+        }
+        
+        @Override
+        public boolean checkReportArgTypes(Func_callContext ctx)
+        {
+            if(sizeArgs(ctx) == 0 || !ctx.sargs.isEmpty())
+                return true;
+            reportError(ctx, "'%s' no string in arguments", ctx.id.getText());
+            return false;
+
+        }
+
+        @Override
+        public boolean checkReportArgs(Func_callContext ctx)
+        {
+            if(sizeArgs(ctx) == 0) {
+                reportError(ctx, "'%s' requires at least one argument", ctx.id.getText());
+                return false;
+            }
+            if(!checkReportArgTypes(ctx))
+                return false;
+            List<Str_exprContext> sargs = ctx.sargs;
+            if(sargs.get(0).s == null) {
+                reportError(ctx, "'%s' format must be a string", ctx.id.getText());
+                return false;
+            }
+            // Split the values from the format.
+            List<Str_exprContext> fArgs = sargs.subList(1, sargs.size());
+            // Only the 1st arg may be a string, the rest must be e, not s.
+            for(Str_exprContext arg : fArgs) {
+                if(arg.s != null) {
+                    reportError(ctx, "'%s': %s literal strings not allowed as arg",
+                                     ctx.id.getText(), arg.s.getText());
+                    return false;
+                }
+            }
+            if(macroCprintfProps.getMap().containsKey(ctx))
+                throw new IllegalStateException();
+            // The names unique part of the name is encounter order
+            MacroCprintfProp prop = new MacroCprintfProp(
+                    MACRO_CPRINTF_BASE_NAME + (macroCprintfProps.size() + 1));
+            macroCprintfProps.put(ctx, prop);
+
+            // Assemble a switch statement cprintf helper for the macro cprintf.
+            StringBuilder sb = new StringBuilder("switch ")
+                    .append(prop.switchName).append(" {\n")
+                    .append("    cprintf ")
+                    .append(sargs.get(0).getText())     // the format string
+                    .append(' ');
+             
+
+            if(fArgs.isEmpty()) {
+                sb.append('\n');
+            } else {
+                sb.append("{~ ");
+                for(Str_exprContext arg : fArgs)
+                    sb.append(arg.e.getText()).append("; ");    // each expr
+                sb.append("}\n");
+            }
+            sb.append("}\n");
+            defineInternalStatement(sb.toString());
+            return true;
+        }
+
+        @Override
+        public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
+                                         List<String> args)
+        {
+            MacroCprintfProp props = macroCprintfProps.get(ctx.fc);
+            Var var = lookup(Switches.class).getVar(props.switchName);
+            if(var == null) {
+                reportError(ctx, "'%s': '%s' is not defined, INTERNAL ERROR",
+                                 ctx.getText(), props.switchName);
+                return sb.append("#internalCprintfError");
+            }
+            return sb.append("Switch ").append(var.getAddr()).append(' ');
+        }
+
+    } /////////// MacroCprintf
 
 }

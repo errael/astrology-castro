@@ -71,7 +71,7 @@ For more examples, there is
 
 `castro` works with existing `command switch` files and their declared switch/macro/variables.
 
-`castro` has a [layout directive](#layout) which constrains the addresses which it automatically allocates to specified areas; in addition, it is possible to assign addresses. In order to reference items _defined in an existing command switch file_, use
+`castro` has a [layout directive](#layout) which constrains automatically allocated addresses to specified areas; in addition, it is possible to assign addresses. In order to reference items _defined in an existing command switch file_ (like an extern), use
 ```
 switch a_switch @33;     // in a non castro file there's: -M0 33 "..."
 macro a_macro @50;       // in a non castro file there's: ~M 50 "..."
@@ -204,11 +204,11 @@ These are the top level statements
 ```
 layout memory {
     base 101;
-    limit 111;
-    reserve 104, 106:108;
+    limit 111;                  // 111 exclusive
+    reserve 104, 106:108;       // 108 inclusive
 }
 ```
-The values in layout may be specified with constant expressions.
+The values in layout are specified with constant expressions.
 
 This directive allows allocation of addresses between 101 inclusive and 111 exclusive; but not addresses 104, 106, 107, 108. If an _out of memory_ error occurs look at the `.def` output file for more information.
 
@@ -520,8 +520,8 @@ User constants are define as `const const_name {~10 + 1};`.
 
 #### astrolog constants
 
-Identifiers that start with `M_`, `O_`, `A_`, `H_`, `S_`, `K_`, `W_`, `Z_`
-are AstrologConstants.<br>
+**Identifiers that start with `M_`, `O_`, `A_`, `H_`, `S_`, `K_`, `W_`, `Z_`
+are AstrologConstants.**<br>
 See [Astrolog Constants](https://github.com/errael/astrology-castro/wiki/astrolog-constants) for the constants in tabular form.
 
 The entire constant name is not needed,

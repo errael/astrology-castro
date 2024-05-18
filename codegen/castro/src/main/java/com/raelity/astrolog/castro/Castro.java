@@ -54,6 +54,7 @@ private static CastroErr err = new CastroErr(new PrintWriter(System.err, true));
 
 public static record CastroErr(PrintWriter pw){};
 public static record CastroMapName(String mapName){};
+public static record CastroHelperName(String name){};
 public static record CastroOutputOptions(EnumSet<OutputOptions> outputOpts) {
     public CastroOutputOptions(EnumSet<OutputOptions> outputOpts)
         { this.outputOpts = EnumSet.copyOf(outputOpts); }
@@ -87,6 +88,7 @@ static final String OUT_EXT = ".as";
 static final String DEF_EXT = ".def";
 static final String MAP_EXT = ".map";
 static final String OUT_TEST_EXT = ".test";
+static final String INTERNAL_HELPER = ".helper" + IN_EXT;
 
 private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 
@@ -94,7 +96,8 @@ private static int optVerbose;
 private static Integer optOptimize = 2;
 
 private static EnumSet<Error> defaultWarn
-        = EnumSet.of(FUNC_CASTRO, VAR_RSV, INNER_QUOTE, CONST_AMBIG);
+        = EnumSet.of(FUNC_CASTRO, VAR_RSV, INNER_QUOTE,
+                     CONST_AMBIG, SWITCH_BASE);
 
 public static String getVersionString()
 {
@@ -140,7 +143,8 @@ static void usage(String note)
 {
     if(note != null)
         System.err.printf("%s: %s\n", cmdName, note);
-    String defaultW = defaultWarn.stream().map((e) -> e.toString())
+    String defaultW = defaultWarn.stream()
+            .map(e -> e.toString())
             .collect(Collectors.joining(" "));
 
                 //infile may be '-' for stdin.
@@ -151,6 +155,8 @@ static void usage(String note)
                 -o outfile      allowed if exactly one infile, '-' is stdout
                 --mapname=mapname     Map file name is <mapname>.map.
                                         Default is derived from first infile.
+                --helpername=name     File name is <name>.helper.castro
+                                        Default is derived from map name.
                 -O level        Optimization leve, -O0 is no optimization.
                 --astrolog version      Astrolog version to target.
                                         For example "760" or "770".
@@ -243,6 +249,7 @@ public static void main(String[] args)
     boolean optTest = false;
     String outName = null;
     String mapName = null;
+    String helperName = null;
 
     boolean console = false;
     boolean gui = false;
@@ -262,6 +269,7 @@ public static void main(String[] args)
         new LongOpt("version", LongOpt.NO_ARGUMENT, null, 9),
         new LongOpt("astrolog", LongOpt.REQUIRED_ARGUMENT, null, 10),
         new LongOpt("addrsort", LongOpt.NO_ARGUMENT, null, 11),
+        new LongOpt("helpername", LongOpt.REQUIRED_ARGUMENT, null, 12),
     };
     Getopt g = new Getopt(cmdName, args, "o:O:hv", longOpts);
     
@@ -327,6 +335,7 @@ public static void main(String[] args)
                                   g.getOptarg(), compileTarget);
         }
         case 11 -> isAddrSort = true;
+        case 12 -> helperName = g.getOptarg();
         default -> {
             usage();
         }
@@ -353,6 +362,8 @@ public static void main(String[] args)
     addLookup(new CastroWarningOptions(warnset));
     if(mapName != null)
         addLookup(new CastroMapName(mapName));
+    if(helperName != null)
+        addLookup(new CastroHelperName(helperName));
 
     if(gui || console) {
         show(inputFiles.get(0), gui, console);
