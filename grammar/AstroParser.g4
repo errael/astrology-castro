@@ -23,10 +23,10 @@ layout_region
     ;
 
 constraint
-    : 'base' i=expr                      #baseContstraint
-    // | 'stack' i=expr                  #stackContstraint
-    | 'limit' i=expr                     #limitContstraint
-    | 'reserve' rsv_loc (',' rsv_loc)*      #reserveContstraint
+    : 'base' i=expr                      #baseConstraint
+    // | 'stack' i=expr                  #stackConstraint
+    | 'limit' i=expr                     #limitConstraint
+    | 'reserve' rsv_loc (',' rsv_loc)*      #reserveConstraint
     ;
 
 rsv_loc

@@ -33,7 +33,7 @@ import org.antlr.v4.runtime.TokenSource;
 import com.raelity.astrolog.castro.AstroParseResult;
 import com.raelity.astrolog.castro.Castro.MemAccum;
 import com.raelity.astrolog.castro.CastroIO;
-import com.raelity.astrolog.castro.antlr.AstroParser.BaseContstraintContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.BaseConstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LayoutContext;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
 import com.raelity.lib.collect.ValueHashMap;
@@ -224,9 +224,9 @@ public void checkNewLayout(LayoutContext ctx)
         //       or no layout base was specified; can't be an error.
         if(base >= 0 && base <= FK_LAST_SLOT) {
             // The base was set, get the constraint
-            BaseContstraintContext baseCtx
-                    = (BaseContstraintContext)ctx.constraint().stream()
-                            .filter(c -> c instanceof BaseContstraintContext)
+            BaseConstraintContext baseCtx
+                    = (BaseConstraintContext)ctx.constraint().stream()
+                            .filter(c -> c instanceof BaseConstraintContext)
                             .findFirst().get();
             reportError(SWITCH_BASE, baseCtx, "layout switch base '%d' overlaps function keys, adjusting", base);
         }

@@ -22,7 +22,7 @@ import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.Assign_macro_addrContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Assign_switch_addrContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.BaseContstraintContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.BaseConstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ConstContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ConstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
@@ -30,7 +30,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LayoutContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Layout_regionContext;
-import com.raelity.astrolog.castro.antlr.AstroParser.LimitContstraintContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.LimitConstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Rsv_locContext;
@@ -331,7 +331,7 @@ private int checkReportSimpleConstraint(ConstraintContext ctx,
 }
 
 @Override
-public void exitBaseContstraint(BaseContstraintContext ctx)
+public void exitBaseConstraint(BaseConstraintContext ctx)
 {
     int newVal = checkReportSimpleConstraint(ctx, ctx.i, workingLayout.base);
     if(newVal >= 0)
@@ -339,7 +339,7 @@ public void exitBaseContstraint(BaseContstraintContext ctx)
 }
 
 @Override
-public void exitLimitContstraint(LimitContstraintContext ctx)
+public void exitLimitConstraint(LimitConstraintContext ctx)
 {
     int newVal = checkReportSimpleConstraint(ctx, ctx.i, workingLayout.limit);
     if(newVal >= 0)

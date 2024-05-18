@@ -37,19 +37,19 @@ public class Visitor<T> implements AstroParserVisitor<T>
     }
 
     @Override
-    public T visitBaseContstraint(BaseContstraintContext ctx)
+    public T visitBaseConstraint(BaseConstraintContext ctx)
     {
         throw new AbortVisiting();
     }
 
     @Override
-    public T visitLimitContstraint(LimitContstraintContext ctx)
+    public T visitLimitConstraint(LimitConstraintContext ctx)
     {
         throw new AbortVisiting();
     }
 
     @Override
-    public T visitReserveContstraint(ReserveContstraintContext ctx)
+    public T visitReserveConstraint(ReserveConstraintContext ctx)
     {
         throw new AbortVisiting();
     }
