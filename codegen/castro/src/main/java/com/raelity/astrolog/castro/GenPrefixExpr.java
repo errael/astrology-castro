@@ -81,6 +81,8 @@ abstract String genBinOp(ExprBinOpContext ctx,
                          Token opToken, String lhs, String rhs);
 abstract String genAssOp(ExprAssOpContext ctx,
                          Token opToken, String lhs, String rhs);
+abstract String genMacroStringAss(ExprStringAssContext ctx,
+                                  String lhs, String rhs);
 
 abstract String genLval(LvalMemContext ctx);
 abstract String genLval(LvalIndirectContext ctx);
@@ -261,6 +263,16 @@ public void exitExprAssOp(ExprAssOpContext ctx)
     String e = optimExprPrefixRem(ctx.e, "AssOp");
 
     String s = genAssOp(ctx, ctx.ao, l, e);
+    apr.prefixExpr.put(ctx, s);
+}
+
+@Override
+public void exitExprStringAss(ExprStringAssContext ctx)
+{
+    String l = apr.prefixExpr.removeFrom(ctx.l);
+    String str = ctx.s.getText();
+
+    String s = genMacroStringAss(ctx, l, str);
     apr.prefixExpr.put(ctx, s);
 }
 

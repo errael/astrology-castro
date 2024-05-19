@@ -11,26 +11,26 @@
 // used     (-∞..109) [112..114) [124..138) [201..+∞) 
 // free     [109..112) [114..124) [138..201) 
 // errors: 0
-var v_bar[2] @105;    // [ALLOC] 
-var v_foo[3] @102;    // [ASSIGN] 
-var var_sizeof_a @101;    // [ALLOC] 
-var var_sizeof_b @107;    // [ALLOC] 
-var var_sizeof_c @108;    // [ALLOC] 
+var v_bar[2]     @105; // [ALLOC]
+var v_foo[3]     @102; // [ASSIGN]
+var var_sizeof_a @101; // [ALLOC]
+var var_sizeof_b @107; // [ALLOC]
+var var_sizeof_c @108; // [ALLOC]
 
 // Space: Macros. File: const.castro
 // declared [1..2) [5..7) [42..43) 
 // used     (-∞..2) [5..7) [42..43) [2147483647..+∞) 
 // free     [2..5) [7..42) [43..2147483647) 
 // errors: 0
-macro const_m0 @5;    // [ASSIGN] 
-macro const_m1 @6;    // [ASSIGN] 
-macro ma00 @1;    // [ALLOC] 
-macro ma01 @42;    // [ASSIGN] 
+macro const_m0 @5; // [ASSIGN]
+macro const_m1 @6; // [ASSIGN]
+macro ma00     @1; // [ALLOC]
+macro ma01    @42; // [ASSIGN]
 
 // Space: Switches. File: const.castro
 // declared [30..31) 
 // used     (-∞..49) [2147483647..+∞) 
 // free     [49..2147483647) 
 // errors: 0
-switch sw01 @30;    // [ASSIGN] 
+switch sw01 @30; // [ASSIGN]
 

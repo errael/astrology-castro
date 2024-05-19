@@ -11,26 +11,26 @@
 // used     (-∞..27) [100..120) [2147483647..+∞) 
 // free     [27..100) [120..2147483647) 
 // errors: 0
-var pp[20] @100;    // [ASSIGN] 
+var pp[20] @100; // [ASSIGN]
 
 // Space: Macros. File: assignments.castro
 // declared [1..14) 
 // used     (-∞..14) [2147483647..+∞) 
 // free     [14..2147483647) 
 // errors: 0
-macro assign_array @1;    // [ALLOC] 
-macro assign_op @2;    // [ALLOC] 
-macro assign_op_extra_1 @3;    // [ALLOC] 
-macro assign_op_extra_2 @4;    // [ALLOC] 
-macro assign_op_extra_3 @5;    // [ALLOC] 
-macro assign_op_extra_4 @6;    // [ALLOC] 
-macro lval_read @7;    // [ALLOC] 
-macro lval_write @8;    // [ALLOC] 
-macro t1 @9;    // [ALLOC] 
-macro t2 @10;    // [ALLOC] 
-macro t3 @11;    // [ALLOC] 
-macro t4 @12;    // [ALLOC] 
-macro t5 @13;    // [ALLOC] 
+macro assign_array      @1; // [ALLOC]
+macro assign_op         @2; // [ALLOC]
+macro assign_op_extra_1 @3; // [ALLOC]
+macro assign_op_extra_2 @4; // [ALLOC]
+macro assign_op_extra_3 @5; // [ALLOC]
+macro assign_op_extra_4 @6; // [ALLOC]
+macro lval_read         @7; // [ALLOC]
+macro lval_write        @8; // [ALLOC]
+macro t1                @9; // [ALLOC]
+macro t2               @10; // [ALLOC]
+macro t3               @11; // [ALLOC]
+macro t4               @12; // [ALLOC]
+macro t5               @13; // [ALLOC]
 
 // Space: Switches. File: assignments.castro
 // used     (-∞..49) [2147483647..+∞) 

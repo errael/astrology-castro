@@ -21,7 +21,7 @@
 // used     (-∞..51) [2147483647..+∞) 
 // free     [51..2147483647) 
 // errors: 0
-switch one @49;    // [ALLOC] 
-switch xxx @37;    // [ASSIGN] 
-switch yyy @50;    // [ALLOC] 
+switch one @49; // [ALLOC]
+switch xxx @37; // [ASSIGN]
+switch yyy @50; // [ALLOC]
 

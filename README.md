@@ -42,9 +42,10 @@ which generates
 
 This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpression` basics. See [discussions](https://github.com/errael/astrology-castro/discussions) for musings on possible extensions.
 
-castro 0.9.1 introduces macro functions. From the previous example the macro can be defined as follows and the years are provided _when the macro is invoked_. **NOTE: There is no stack**; in the example, yearA and yearB are global variables, **beware of recusion**. Macro functions are syntactic sugar.
+castro 0.9.x introduces macro functions. From the previous example the macro can be defined as follows and the years are provided _when the macro is invoked_. **NOTE: There is no stack**; in the example, yearA and yearB are global variables, **beware of recusion**. Macro functions are syntactic sugar.
 ```
 macro progressByYears(yearA, yearB) {           // declares globals yearA/yearB
+    cprintf("Progressed aspects between years %d and %d\n", yearA, yearB);
     Switch(progressedAspectsBetweenYearsAB);
 }
 
@@ -94,7 +95,10 @@ macro ma_01 @yyy_base + 7 { ... }   // assign to macro addr 57
 
 ###      Differences from "C"
 
-`castro` has a weird looking printf, see [castro printf](#castro-printf). And examples [cprintf.castro](examples.d/cprintf.castro) for a description that compiles and runs.
+In a `switch` or `run` statement, `castro` has a weird looking cprintf output
+command, see [castro printf](#castro-printf). And examples
+[cprintf.castro](examples.d/cprintf.castro) for a description that compiles and
+runs. In a `macro` statement, `cprintf` looks "normal".
 
 ####    macro function
 
@@ -127,7 +131,7 @@ Macro functions use globals for function parameters. There is no stack; no recur
 - A variable is integer or float depending on usage. `Astrolog` truncates as needed.
 - A variable declaration may assign the variable or array to a specific location; append `@integer`, for example `var foo @100;` and `var bar[10] @200;`; this assigns `foo` to location 100 and array `bar` starts at location 200.
 
-##      Running castro
+##      Running the `castro` compiler
 
 Requires jre-11 or later. The released jar is executable, use a script named castro like
 ```
@@ -141,7 +145,7 @@ Running castro like `castro file_name -o -` is convenient to see the compiler ou
 the console. The `--fo=min` option might be handy.
 
 Running `castro`  on a file produces 3 output files. For example, if there's `foo.castro` then executing `castro foo.castro` creates
-- `foo.as` can be executed by `Astrolog` with `-i foo.as`
+- `foo.as` can be executed with `astrolog -i foo.as`
 - `foo.def` has details of allocation
 - `foo.map` has a summary of allocation;
    includes the file and line number where each item is defined
@@ -152,18 +156,19 @@ When multiple files are compiled together, the `.map` base file name defaults to
 
 ### Working with multiple files.
 
-Compiling multiple files together is the simplest way to resolve symbolic references between files. Examine [astrotest.d](astrotest.d) which is compiled and then run on astrolog. In that directory do `./run_tests`, or do
+Compiling multiple files together resolves symbolic references between files. Examine [astrotest.d](astrotest.d) which is compiled and then run on astrolog. In that directory there's `./run_tests`, or do
 ```
-castro --mapname=testing expressions.castro flow_control.castro test_infra.castro main.castro
-astrolog -i expressions.as -i flow_control.as -i test_infra.as -i main.as
+castro --mapname=testing expressions.castro test_infra.castro main.castro
+astrolog -i testing.helper.as -i expressions.as -i test_infra.as -i main.as
 ```
+And see [helper.castro](#the-helpercastro-file) to understand the
+`testing.helper.as` file in the above example.
 
 main.castro is simply
 ```
 run {
     ~1 {
         Switch(test_expressions);
-        Switch(test_flow_control);
     }
 }
 ```
@@ -173,10 +178,53 @@ var test_name[2] @102;    // [ALLOC] test_infra.castro
 var cond @200;    // [ALLOC] flow_control.castro
 ```
 note that each line has the file name in which the variable is declared.
-**Warning**: Astrlog 7.6.0 limits switch address to 48, some tests won't run.
-Remove the `layout switch` directives to improve results.
+**Warning**: `Astrlog` 760 limits switch address to 48, some tests won't run.
+Use `Astrolog` 770 to run the tests.
 
 After moving definitions and code around in a file and re-compiling there is no change in the allocated addresses. If nothing is added, removed or renamed, or resized (only variables have a size) then their address does not change no matter the order of their declaration.
+
+### The `helper.castro` file
+
+The `helper.castro` file may have 4 types of statements
+- load compiled files in order, e.g. `-i file1 -i file2`<br/>
+  This is not present if the `--nostartup` option is used.
+- declare `cprintf_save_area`<br/>
+  This is not present if already defined or if there are no output statements.
+- string assignment switch statements for macros<br/>
+  When something like `some_var = "string value;"`.
+- print switch statements for macros<br/>
+  When something like `cprintf("FOO");"`.
+
+To support `cprintf()`, `print()` or string assignment in a `macro`, some helper
+switch statements are automatically generated and placed in a
+`helper.castro` file; the basename of the file is the same as the map file
+basename. When compilation completes there is a `basename.helper.as` file.
+
+For example, with `foo.castro` and `bar.castro` do
+```
+castro foo.castro bar.castro
+astrolog -i foo.helper.as
+```
+The basename of the `helper.castro` file is same as the `map` file, so
+```
+castro --mapname=test foo.castro bar.castro
+astrolog -i test.helper.as
+```
+
+If the `--nostartup` option is used, and there are `macro` output statements, then
+```
+castro --nostartup foo.castro bar.castro
+astrolog -i foo.helper.as -i foo.as -i bar.as
+```
+
+Note that when there is no `macro` output or string assignment
+and the `--nostartup` is used, then
+a `helper.castro` file is **not generated**.
+```
+castro --nostartup foo.castro bar.castro
+astrolog -i foo.as -i bar.as
+```
+
 
 ### Warnings instead of Errors
 Some errors that `castro` reports, may in fact not be errors depending on the targeted version of `Astrolog` or because the "programmer knows what they're doing". There are command line options to treat specified errors as options; try `castro -h`.
@@ -212,6 +260,9 @@ The values in layout are specified with constant expressions.
 
 This directive allows allocation of addresses between 101 inclusive and 111 exclusive; but not addresses 104, 106, 107, 108. If an _out of memory_ error occurs look at the `.def` output file for more information.
 
+**Note:** For `Astrolog` 770 the switch base is always at least 49; that's after the function key
+slots.
+
 ###     macro
 The `macro` statement defines an `AstroExpression macro` using `~M`; it contains expressions with function calls. See [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); there are a wide variety of function calls. The value of `Macro(some_macro)` is the value of the last statement/expr in some_macro as defined by `Astrolog`.
 
@@ -224,14 +275,14 @@ A macro function definition looks like
 macro macFunName(...) { ... }
 ```
 
-A macro function definition is indicated by `()` after the macro name. There are zero or more parameters within the '()'. Each parameter becomes a named global. Macro function calls may nest only if the macro has one parameter. Different macros may nest. For example.
+A macro function definition is indicated by `()` after the macro name. There are zero or more parameters within the '()'. **Each parameter becomes a named global**. Macro function calls may nest only if the macro has one parameter. Different macros may nest. For example.
 ```
 macro macFun1(macFun1_arg) { ... }
 macro macFun2(macFun2_arg1, macFun2_arg2) { ... }
 macro macFun2B(macFun2B_arg1, macFun2B_arg2) { ... }
 run { ~1 {
     macFun1(manFun1(x)); // OK - can nest if only one parameter
-    macFun2(manFun2(x, y), x); // ERROR - two parameters can not nest
+    macFun2(manFun2(x, y), x); // ERROR - macros with two parameters can not nest
     macFun2(manFun2B(x, y), manFun2B(u, v)); // OK - different macros
 } }
 ```
@@ -280,11 +331,21 @@ switch nameId @12 {
 ```
 All `Astrolog` commands that start with `~`, except `~0`, `_~0`, take an `AstroExpression` as an argument; it is delineated with `{` and `}`. An `AstroExpression` can be used as an argument to a `command switch macro`; it is delineated by `{~` and `}`. `SetString` is used to assign strings. `~2`, `~20`, `~M` commands are not directly supported.
 
-Note that `@12` assigns 12 to the switch address which binds it to **F12**; see [Function key slots](https://github.com/errael/astrology-castro/wiki/castro-constants#function-key-slots). If a switch address is not assigned, it will be allocated; use [layout](layout) to specify the allocation range. `Astrolog` versions after v7.60 support `command switch macro` numbers outside of the function key range.
+Note that `@12` assigns 12 to the switch address which binds it to **F12**; see [Function key slots](https://github.com/errael/astrology-castro/wiki/castro-constants#function-key-slots). If a switch address is not assigned, it will be allocated; use [layout](layout) to specify the allocation range. `Astrolog` versions _after_ 760 support `command switch macro` numbers outside of the function key range.
 
 ####    castro printf
 
-`cprintf` has two similar forms; one for switch and one for macro. The macro form is available since Astrolog-770. The macro form uses helper switch statements to do the actual output. When the macro form is used, a helper file is produced that defines switch statements; **remember to do `-i some_name.helper.as` when running the program**. Note: a switch statement is generated for each macro `cprintf()` statement; see `castro -h`, `--helpername=` for naming details and default.
+Both the functions `cprintf` and `printf` are available. The difference is what `Astrolog` switch
+command is used.
+
+| `castro` function | `astrolog` command | note |
+| :--------: | :-----: | ---- |
+| `cprintf`  | `-YYT`  | Popup formatted text string in current context.
+| `printf`   | `-YYt`  | Output formatted text string in current context.
+
+There are two forms of each; one for switch and one for macro.
+
+The macro form is available since `Astrolog` 770. The macro form uses helper switch statements to do the actual output. When the macro form is used, a helper file is produced that defines switch statements; **remember to do `-i some_pgm.helper.as -i some_pgm.as` when running the program**, it must be included before it is used. Note: a switch statement is generated for each macro `cprintf()` statement; see `castro -h`, `--helpername=` for naming details and default.
 
 Switch form
 ```
@@ -309,7 +370,10 @@ Example: `cprintf("v1 %d, v2 %d", 3 + 4, 7 + 4)`
 var cprintf_save_area[10];  // save area for cprintf temps, up to 10.
 ```
 
-**Warning**: cprintf uses the lower memory locations for the cprintf arguments, up to 10: `%a`, `%b`, `%c`, ..., `%i`, `%j`, by default these are changed. Declare `cprintf_save_area` to avoid interference.
+**Warning**: cprintf uses the lower memory locations for the cprintf arguments,
+up to 10: `%a`, `%b`, `%c`, ..., `%i`, `%j`, by default these are changed.
+Use the `helper.file` or declare `cprintf_save_area` to avoid them
+getting trashed.
 
 ###     run
 The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the `run`'s switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
@@ -329,7 +393,7 @@ It also provide a way to redefine a macro/switch.
 
 ###     Constants
 
-All contants are part of the global namespace. So, for example, configuration constants can be defined in one file, and used in other files. Constants can often times be used before they are defined; exceptions are for the size of an array or to specify an address assignment using `@` (an error is given).
+All contants are part of the global namespace. So, for example, configuration constants can be defined in one file, and used in other files. Constants can often times be used before they are defined; exceptions are for the size of an array or to specify an address assignment using `@`.
 
 Constants are defined like `const <name> {<expr>};` where `<expr>` is an expression made up only of integer constants. Program wide constants can be defined in a single file; and putting that file first in compilation order avoids some issues. Constants take up no `AstroExpression` VM storage, they exist only in the `castro` compiler.
 
@@ -358,7 +422,7 @@ var var_name6 @addr_base + 1;   // address can be a constant expression
 var var_name7[some_size+3] @addr_base + 2;
 ```
 
-#####   Initializing numeric variables
+####   Initializing numeric variables
 
 Note that forward references in initialization expressions will use whatever value happens to be there.
 
@@ -371,12 +435,24 @@ var var_array2[4] { a+b, c+d };  // 4 element array, initialize first two elemen
 Builtin variables are initialized like other variables; but their **address can not be assigned**.
 
 
-#####   Initializing string variables
+####   Initializing string variables
 
 Initialize variables with strings in variable declarations like:
 ```
+var some_string { "string" };
 var some_strings[] { "string1", "string2", "string3" };
 ```
+#####   Macro string initialization
+
+Assign string programatically in `macro {...}` like:
+```
+var var0;
+macro someMacro {
+    var0 = "string";
+}
+```
+
+#####   Switch string initialization
 
 Set strings programatically in `switch {...}` or `run {...}` like:
 ```
@@ -390,7 +466,7 @@ switch someSwitch {
 ```
 Use `SetString`, `setstring`, `AssignString`, `assignstring`, `SetStrings`, `setstrings`, `AssignStrings`, or `assignstrings`.
 
-##### The same variable can reference both a number and a string
+#### The same variable can reference both a number and a string
 
 Given this file: **share.castro**
 ```
@@ -455,7 +531,6 @@ share[1]: one - 1
 
 And see [Flow Control Statements](#flow-control-statements) used in macro.<br>
 The last expression of a macro is the _return_ value.<br>
-Use `&arr + expr` because &arr[expr] isn't implemented.
 
 ```
 macro macroName { aspect = 7; orb = 2; } // returns 2
@@ -546,9 +621,13 @@ There are constants for dealing with keyboard input.
 See [castro Constants](https://github.com/errael/astrology-castro/wiki/castro-constants) for the constants in tabular form and some examples.
 
 
-### cprintf
+### cprintf & printf
+
+See [castro printf](#castro-printf) for details.
+
 See [cprintf](astrotest.d/cprintf.castro) for example usage.
 
+For a file, **testprint.castro**
 ```
 var cprintf_save_area[10];  // save area for cprintf temps, up to 10.
 
@@ -557,7 +636,22 @@ switch cpr {
     SetString str "a string"
     cprintf "%d %s\n" {~ x + y; &str; }
 }
+
+macro mcpr {
+    str = "different string";
+    cprintf("%d %s\n", x + y, &str) }
+}
 ```
+and run it like
+```
+astrolog -i testprint.helper.as -i testprint.as
+```
+Note that `testprint.helper.as` must be included before anything it contains is
+executed. The helper file contains no direct execution commands. For example,
+it can be last as long as none of it's helper switch statements are executed,
+directly or indirectly, from the top level, through `run` or `copy` in any
+`*.as` file. _Safest to always have it first_.
+See [helper.castro](#the-helpercastro-file) for detail.
 
 ### castro help output
 

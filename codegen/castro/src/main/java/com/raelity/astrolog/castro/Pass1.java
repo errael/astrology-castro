@@ -17,6 +17,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import com.raelity.astrolog.castro.Castro.CastroLineMaps;
+import com.raelity.astrolog.castro.Castro.CastroPrintUsage;
 import com.raelity.astrolog.castro.LineMap.WriteableLineMap;
 import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser;
@@ -27,6 +28,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.ConstContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ConstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprStringAssContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LayoutContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Layout_regionContext;
@@ -34,8 +36,10 @@ import com.raelity.astrolog.castro.antlr.AstroParser.LimitConstraintContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.MacroContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Rsv_locContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.RunContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Str_exprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.SwitchContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.VarDefContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.VarContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
@@ -260,6 +264,23 @@ public void exitMacro(MacroContext ctx)
 public void exitSwitch(SwitchContext ctx)
 {
     declareSwithOrMacro(switches, ctx.addr, ctx.id);
+    checkPrintUsage(ctx.sc);
+}
+
+@Override
+public void exitRun(RunContext ctx)
+{
+    checkPrintUsage(ctx.sc);
+}
+
+/** HACK: need to know in pass1 if print so can generate cprintf_save_area. */
+private void checkPrintUsage(List<Switch_cmdContext> ctxs)
+{
+    for(Switch_cmdContext ctx : ctxs) {
+        String text = ctx.getText();
+        if(text.equals("cprintf") || text.equals("printf"))
+            lookup(CastroPrintUsage.class).switchPrint(text);
+    }
 }
 
 @Override
@@ -372,9 +393,16 @@ public void exitExprFunc(ExprFuncContext ctx)
         Functions.addUnkownFunction(fc_ctx.id, fc_ctx.args.size());
         f = Functions.get(fc_ctx.id.getText());
     } else if(f.isUnknown()) {
+        // keep track of reference to this unknown function
         f.addReference(fc_ctx.id, fc_ctx.args.size());
     }
     f.checkReportArgs(fc_ctx);
 }
-    
+
+    @Override
+    public void exitExprStringAss(ExprStringAssContext ctx)
+    {
+        Compile.macroStringAss(ctx);
+    }
+
 }

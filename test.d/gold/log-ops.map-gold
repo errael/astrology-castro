@@ -4,6 +4,6 @@
 
 
 // [1..2) 
-macro LogOps @1;    // [ALLOC] log-ops.castro:2
+macro LogOps @1; // [ALLOC] log-ops.castro:2
 
 

@@ -11,28 +11,28 @@
 // used     (-∞..28) [30..49) [2147483647..+∞) 
 // free     [28..30) [49..2147483647) 
 // errors: 0
-var arr[5] @40;    // [ALLOC] 
-var pp[4] @45;    // [ALLOC] 
-var qq @27;    // [ALLOC] 
-var rr @35;    // [ASSIGN] 
+var arr[5] @40; // [ALLOC]
+var pp[4]  @45; // [ALLOC]
+var qq     @27; // [ALLOC]
+var rr     @35; // [ASSIGN]
 
 // Space: Macros. File: warnings.castro
 // declared [1..8) 
 // used     (-∞..8) [2147483647..+∞) 
 // free     [8..2147483647) 
 // errors: 0
-macro array_oob @1;    // [ALLOC] 
-macro constant_ambig @2;    // [ALLOC] 
-macro func_castro @3;    // [ALLOC] 
-macro func_narg @4;    // [ALLOC] 
-macro func_unk @5;    // [ALLOC] 
-macro octal_const @6;    // [ALLOC] 
-macro var_rsv @7;    // [ALLOC] 
+macro array_oob      @1; // [ALLOC]
+macro constant_ambig @2; // [ALLOC]
+macro func_castro    @3; // [ALLOC]
+macro func_narg      @4; // [ALLOC]
+macro func_unk       @5; // [ALLOC]
+macro octal_const    @6; // [ALLOC]
+macro var_rsv        @7; // [ALLOC]
 
 // Space: Switches. File: warnings.castro
 // declared [49..50) 
 // used     (-∞..50) [2147483647..+∞) 
 // free     [50..2147483647) 
 // errors: 0
-switch inner_quote @49;    // [ALLOC] 
+switch inner_quote @49; // [ALLOC]
 

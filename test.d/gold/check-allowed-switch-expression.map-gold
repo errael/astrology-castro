@@ -5,5 +5,5 @@
 
 
 // [49..50) 
-switch CheckAllowedExpression @49;    // [ALLOC] check-allowed-switch-expression.castro:1
+switch CheckAllowedExpression @49; // [ALLOC] check-allowed-switch-expression.castro:1
 

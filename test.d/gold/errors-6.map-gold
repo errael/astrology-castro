@@ -4,6 +4,6 @@
 
 
 // [1..2) 
-macro ma @1;    // [ALLOC] errors-6.castro:5
+macro ma @1; // [ALLOC] errors-6.castro:5
 
 

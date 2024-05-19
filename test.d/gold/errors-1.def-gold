@@ -11,18 +11,18 @@
 // used     (-∞..34) [2147483647..+∞) 
 // free     [34..2147483647) 
 // errors: 1
-var arr[3] @27;    // [ALLOC] 
-var arr2 @30;    // [ALLOC] 
-var arr3[2] @31;    // [ALLOC] 
-var v1 @33;    // [ALLOC] 
+var arr[3]  @27; // [ALLOC]
+var arr2    @30; // [ALLOC]
+var arr3[2] @31; // [ALLOC]
+var v1      @33; // [ALLOC]
 
 // Space: Macros. File: errors-1.castro
 // declared [1..3) 
 // used     (-∞..3) [2147483647..+∞) 
 // free     [3..2147483647) 
 // errors: 0
-macro constant_errors @1;    // [ALLOC] 
-macro constant_errors_2 @2;    // [ALLOC] 
+macro constant_errors   @1; // [ALLOC]
+macro constant_errors_2 @2; // [ALLOC]
 
 // Space: Switches. File: errors-1.castro
 // used     (-∞..49) [2147483647..+∞) 

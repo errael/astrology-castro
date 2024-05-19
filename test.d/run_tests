@@ -22,6 +22,7 @@ TESTS="
     unary-ops
     log-ops
     macro_functions
+    macro-ops
     warnings
     errors-1
     errors-2
@@ -32,6 +33,10 @@ TESTS="
     errors-7
     errors-oom
 "
+
+# not used
+#declare -A helper_tests=([macro-ops]=1)
+#if ((helper_tests[$xxx])); then ...
 
 usage() {
     echo "$CMD [-l] [-h] [--clean] [files]*"
@@ -69,7 +74,7 @@ do
     esac
 done
 
-CASTRO_FLAGS="$optim"
+CASTRO_FLAGS="$optim --nostartup"
 
 if ((lflag))
 then
@@ -120,7 +125,9 @@ run_test() {
     if ((cleanflag))
     then
         rm -f $current_test.as $current_test.def $current_test.map \
-            $current_test.stderr $current_test.test
+            $current_test.stderr $current_test.test \
+            $current_test.helper.as $current_test.helper.def \
+            $current_test.helper.castro
         return
     fi
 
@@ -132,6 +139,14 @@ run_test() {
 check_result() {
     check_one as
     check_one def
+    if [[ -e $current_test.helper.castro || -e gold/$current_test.helper.castro-gold
+        || -e $current_test.helper.as || -e gold/$current_test.helper.as-gold
+        || -e $current_test.helper.def || -e gold/$current_test.helper.def-gold ]]
+    then
+        check_one helper.castro
+        check_one helper.as
+        check_one helper.def
+    fi
     # out of memory test does not produce a map file.
     # Only check map if there's a map somewhere for this test
     if [[ -e $current_test.map || -e gold/$current_test.map-gold ]]

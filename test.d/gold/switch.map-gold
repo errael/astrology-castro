@@ -5,7 +5,7 @@
 
 
 // [37..38) [49..51) 
-switch one @49;    // [ALLOC] switch.castro:61
-switch xxx @37;    // [ASSIGN] switch.castro:32
-switch yyy @50;    // [ALLOC] switch.castro:8
+switch one @49; // [ALLOC]  switch.castro:61
+switch xxx @37; // [ASSIGN] switch.castro:32
+switch yyy @50; // [ALLOC]  switch.castro:8
 

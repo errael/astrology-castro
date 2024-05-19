@@ -8,8 +8,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 
 import com.google.common.collect.RangeSet;
 
@@ -19,13 +21,16 @@ import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroHelperName;
 import com.raelity.astrolog.castro.Castro.CastroLineMaps;
 import com.raelity.astrolog.castro.Castro.CastroMapName;
+import com.raelity.astrolog.castro.Castro.CastroPrintUsage;
 import com.raelity.astrolog.castro.Castro.MacrosAccum;
 import com.raelity.astrolog.castro.Castro.RegistersAccum;
 import com.raelity.astrolog.castro.Castro.SwitchesAccum;
 import com.raelity.astrolog.castro.Constants.Constant;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprStringAssContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Str_exprContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
@@ -44,7 +49,6 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 
-import static com.raelity.astrolog.castro.Castro.INTERNAL_HELPER;
 import static com.raelity.astrolog.castro.Castro.MAP_EXT;
 import static com.raelity.astrolog.castro.Castro.getAstrologVersion;
 import static com.raelity.astrolog.castro.Castro.isAddrSort;
@@ -56,6 +60,9 @@ import static com.raelity.astrolog.castro.mems.AstroMem.Var.VarState.*;
 import static com.raelity.astrolog.castro.Constants.FK_FIRST_SLOT;
 import static com.raelity.astrolog.castro.Constants.FK_LAST_SLOT;
 import static com.raelity.astrolog.castro.tables.Functions.NOT_CONST_VALUE;
+import static com.raelity.astrolog.castro.Castro.HELPER_EXT;
+import static com.raelity.astrolog.castro.Castro.IN_EXT;
+import static com.raelity.astrolog.castro.Castro.VAR_CPRINTF_SAVE;
 
 /**
  * Run the passes. <br>
@@ -110,10 +117,13 @@ static boolean compile(List<String> inputFiles, String outName)
     // and record declarations. Create the LineMaps.
     //
 
-    // Add a place holder for internal helpers castro file.
-    inputFiles.add(null);
-
     parsePass = true;
+    startupFiles = new ArrayList<>(inputFiles);
+
+    // Add a place holder for internal helpers castro file.
+    if(!inputFiles.isEmpty())
+        inputFiles.add(null);
+
     for(ListIterator<String> it = inputFiles.listIterator(); it.hasNext();) {
         // If last item in the list, this is the helper castro file.
         // Either create the file if needed and plug it back in,
@@ -122,9 +132,11 @@ static boolean compile(List<String> inputFiles, String outName)
         String inputFile = it.next();
         if(!it.hasNext()) {
             assert inputFile == null;
-            if(hasInternalHelperFile()) {
-                closeInternalHelperFile();
-                it.set(inputFile = internalHelperPath.toString());
+            createPrintSaveArea();
+            createHelperStartup();  // Must be last thing in the file
+            if(hasHelperFile()) {
+                closeHelperFile();
+                it.set(inputFile = helperPath.toString());
             } else {
                 it.remove();
                 break;
@@ -388,33 +400,39 @@ private static void debugDumpAllvars(List<FileData> fData, boolean includeDefine
 // With 770's unlimited number of switch. We can create some helper switches,
 // like for cprintf. The helper can only be created during the parsePass.
 
-private static void defineInternalStatement(String statement)
+private static void defineHelperStatement(String statement)
 {
     if(!parsePass)
         throw new IllegalStateException();
-    if(statement.isEmpty())
+    if(getAstrologVersion() < 770
+        || statement.isEmpty()
+        || !createHelperFile())
         return;
-    if(!createInternalHelperFile())
-        return;
+    createPrintSaveArea();
     try {
-        internalHelperWriter.append(statement);
+        helperWriter.append(statement);
     } catch(Exception ex00) {
         if(ex00 instanceof IOException ex)
-            reportHelperIOError(ex, internalHelperPath);
+            reportHelperIOError(ex, helperPath);
         else
             throw ex00;
     }
 }
 
-private static PrintWriter internalHelperWriter;
-private static Path internalHelperPath;
-private static boolean internalHelperError;
-
-/** The internal helper file has the same base name as the map file
- * and is found in the same directory as the map file. */
-private static boolean createInternalHelperFile()
+private static boolean hasHelperFile()
 {
-    if(internalHelperWriter != null)
+    return helperPath != null;
+}
+
+private static PrintWriter helperWriter;
+private static Path helperPath;
+private static boolean helperError;
+
+/** The helper file has the same base name as the map file
+ * and is found in the same directory as the map file. */
+private static boolean createHelperFile()
+{
+    if(hasHelperFile())
         return true;
     if(workingFileData.isEmpty())
         return false;
@@ -430,7 +448,7 @@ private static boolean createInternalHelperFile()
     if(name == null)
         name = lookup(CastroMapName.class).mapName();
     //String name = lookup(CastroMapName.class).mapName();
-    Path path = castroIO.inPath().resolveSibling(name + INTERNAL_HELPER);
+    Path path = castroIO.inPath().resolveSibling(name + HELPER_EXT);
     PrintWriter out;
     try {
         out = new PrintWriter(Files.newBufferedWriter(path, WRITE, TRUNCATE_EXISTING, CREATE));
@@ -438,29 +456,31 @@ private static boolean createInternalHelperFile()
         reportHelperIOError(ex, path);
         return false;
     }
-    internalHelperPath = path;
-    internalHelperWriter = out;
+    helperPath = path;
+    helperWriter = out;
     return true;
 }
 
-private static void closeInternalHelperFile()
+private static void closeHelperFile()
 {
+    if(!hasHelperFile())
+        return;
     try {
-        internalHelperWriter.close();
+        helperWriter.close();
     } catch(Exception ex00) {
         if(ex00 instanceof IOException ex)
-            reportHelperIOError(ex, internalHelperPath);
+            reportHelperIOError(ex, helperPath);
         else
             throw ex00;
     }
-    internalHelperWriter = null;
+    helperWriter = null;
 }
 
 private static void reportHelperIOError(IOException ex, Path path)
 {
-    if(internalHelperError)
+    if(helperError)
         return;
-    internalHelperError = true;
+    helperError = true;
     reportIOError(ex, path);
 }
 
@@ -472,11 +492,6 @@ private static void reportIOError(IOException ex, Path path)
     lookup(CastroErr.class).pw().printf("Error: '%s' Problem writing %s\n",
                                             ex.getClass().getSimpleName(), path);
     
-}
-
-private static boolean hasInternalHelperFile()
-{
-    return internalHelperPath != null;
 }
 
 /** The .map file comes from global mem spaces.
@@ -583,6 +598,91 @@ private static void applyLayoutsAndAllocate()
         mem.allocate();
     }
 }
+//////////////////////////////////////////////////////////////////////
+//
+// Helper code generation for macro string assignment.
+// and see "class MacroCprintf extends Function" below
+//
+
+private record MacroSetStringProp(String switchName) {}
+private static TreeProps<MacroSetStringProp> macroSetStringProps = new TreeProps<>();
+
+static void macroStringAss(ExprStringAssContext ctx)
+{
+    if(ctx.l instanceof LvalIndirectContext)
+        reportError(ctx, "'%s' not allowed for string assignment", ctx.l.getText());
+
+    // The names unique part of the name is encounter order.
+    // Derived from the number of entries in the map.
+    MacroSetStringProp prop = new MacroSetStringProp(
+            MACRO_SETSTR_BASE_NAME + (macroSetStringProps.size() + 1));
+    macroSetStringProps.put(ctx, prop);
+
+    // Assemble a switch statement cprintf helper for the macro string assign.
+    @SuppressWarnings("ReplaceStringBufferByString")
+    StringBuilder sb = new StringBuilder("switch ")
+            .append(prop.switchName).append(" {\n")
+            .append("    SetString ")
+            .append(ctx.l.getText()).append(' ')        // variable
+            .append(ctx.s.getText()).append("\n}\n");   // value
+    defineHelperStatement(sb.toString());
+}
+
+static String genMacroStringAss(ExprStringAssContext ctx, String lhs, String rhs)
+{
+    MacroSetStringProp props = macroSetStringProps.get(ctx);
+    Var var = lookup(Switches.class).getVar(props.switchName);
+    if(var == null) {
+        reportError(ctx, "'%s': '%s' is not defined, INTERNAL ERROR",
+                                 ctx.getText(), props.switchName);
+        return "#internalMacroStringAssError";
+    }
+    return "Switch " + var.getAddr() + ' ';
+}
+
+private static List<String> startupFiles;
+/**
+ * Add startup commands to helper, "-i f1.as -i f2.as ...";
+ * this goes at the end of the helper file
+ */
+private static void createHelperStartup()
+{
+
+    if(startupFiles == null)
+        return;
+    if(Castro.isNostartup())
+        return;
+    StringBuilder sb = new StringBuilder();
+    sb.append("run {\n");
+    for(String fn : startupFiles) {
+        if(fn == null)
+            continue;
+        if(fn.endsWith(IN_EXT))
+            fn = fn.substring(0, fn.length() - IN_EXT.length());
+        sb.append("    -i \"").append(fn).append(".as\"").append('\n');
+    }
+    sb.append("}\n");
+    defineHelperStatement(sb.toString());
+    startupFiles = null;
+}
+
+private static boolean createdCprintfSaveArea;
+private static void createPrintSaveArea()
+{
+    if(createdCprintfSaveArea || !lookup(CastroPrintUsage.class).didPrint())
+        return;
+    createdCprintfSaveArea = true;
+    // If there's already save area, then don't create another one.
+    Var var = lookup(Registers.class).getVar(VAR_CPRINTF_SAVE);
+    if(var != null)
+        return;
+    defineHelperStatement("var cprintf_save_area[10];\n");
+}
+
+//////////////////////////////////////////////////////////////////////
+//
+// castro functions
+//
 
 private static void addCastroFunctions()
 {
@@ -591,8 +691,10 @@ private static void addCastroFunctions()
     Functions.addFunction(new KeyCode(), "KeyC");
     Functions.addFunction(new Switch2KeyCode(), "Sw2KC");
     Functions.addFunction(new SizeOf());
-    if(getAstrologVersion() >= 770) // only enable with unlimited switches
+    if(getAstrologVersion() >= 770) { // only enable with unlimited switches
+        Functions.addFunction(new MacroPrintf());
         Functions.addFunction(new MacroCprintf());
+    }
 }
 
     /* ************************************************************* */
@@ -793,18 +895,77 @@ private static void addCastroFunctions()
 
     /* ************************************************************* */
 
-    private static String MACRO_CPRINTF_BASE_NAME = "castroInternalCprintf_";
-    private record MacroCprintfProp(String switchName) {}
-    private static TreeProps<MacroCprintfProp> macroCprintfProps = new TreeProps<>();
+    private static String MACRO_PRINT_BASE_NAME = "castroHelperPrint_";
+    private static String MACRO_SETSTR_BASE_NAME = "castroHelperString_";
+
+    /** More than one context can share a macrocPrintProp. */
+    private static TreeProps<MacroPrintProp> macroPrintProps = new TreeProps<>();
+    private record MacroPrintProp(String switchName) {}
 
     /**
-     * Cprintf function for use in a macro.
+     * Map fmt to switchName for sharing; distinguish cprintf/printf.
+     * The key looks like "message:cprintf" or "message:printf".
+     * For print statements that are string only, ie only a format string,
+     * can share the generated switch.
+     * <p>
+     * Note, maybe later share if arguments are also the same.
      */
-    private static class MacroCprintf extends Function
+    private static Map<String, MacroPrintProp> sharePrint = new HashMap<>();
+    private static String sharePrintKey(Function func, Func_callContext ctx)
     {
-        public MacroCprintf()
+        String fmt = ctx.sargs.get(0).getText();
+        // strip the quotes, the same format string might use different
+        // quotes in different uses.
+        String without_quotes = fmt.length() < 3
+                                ? "" : fmt.substring(1, fmt.length()-2);
+        return without_quotes + ":" + func.name();
+    }
+    /**
+     * Save a generated print switch that can be reused.
+     * can be used for the specified print statement.
+     */
+    private static void savePrintSwitch(Function func, Func_callContext ctx,
+                                                       MacroPrintProp printProp)
+    {
+        if(ctx.sargs.size() != 1)   // Currently only handle fmt only
+            return;
+        sharePrint.put(sharePrintKey(func, ctx), printProp);
+    }
+    /**
+     * Find a switch that has already been generated tname that
+     * can be used for the specified print statement.
+     */
+    private static MacroPrintProp findPrintSwitch(Function func, Func_callContext ctx)
+    {
+        if(ctx.sargs.size() != 1)   // Currently only handle fmt only
+            return null;
+        return sharePrint.get(sharePrintKey(func, ctx));
+    }
+
+    private static class MacroCprintf extends MacroOutput
+    {
+    public MacroCprintf()
+    {
+        super("cprintf");
+    }
+    }
+
+    private static class MacroPrintf extends MacroOutput
+    {
+    public MacroPrintf()
+    {
+        super("printf");
+    }
+    }
+
+    /**
+     * Output base for cprintf/printf use in a macro.
+     */
+    private abstract static class MacroOutput extends Function
+    {
+        public MacroOutput(String funcName)
         {
-            super("cprintf", -1);
+            super(funcName, -1);
         }
         
         @Override
@@ -841,17 +1002,34 @@ private static void addCastroFunctions()
                     return false;
                 }
             }
-            if(macroCprintfProps.getMap().containsKey(ctx))
+            if(macroPrintProps.getMap().containsKey(ctx))
                 throw new IllegalStateException();
-            // The names unique part of the name is encounter order
-            MacroCprintfProp prop = new MacroCprintfProp(
-                    MACRO_CPRINTF_BASE_NAME + (macroCprintfProps.size() + 1));
-            macroCprintfProps.put(ctx, prop);
+
+            lookup(CastroPrintUsage.class).macroPrint(name());
+
+            // Look for an already generated switch statement that can be used.
+            MacroPrintProp printProp = findPrintSwitch(this, ctx);
+            boolean canShare = printProp != null;
+
+            if(!canShare) {
+                // The names unique part of the name is encounter order.
+                // Derived from the number of entries in the map.
+                printProp = new MacroPrintProp(
+                        MACRO_PRINT_BASE_NAME + (macroPrintProps.size() + 1));
+            }
+            macroPrintProps.put(ctx, printProp);
+            savePrintSwitch(this, ctx, printProp);
+
+            if(canShare)
+                return true;
+
+            assert printProp != null;
 
             // Assemble a switch statement cprintf helper for the macro cprintf.
-            StringBuilder sb = new StringBuilder("switch ")
-                    .append(prop.switchName).append(" {\n")
-                    .append("    cprintf ")
+            StringBuilder sb = new StringBuilder()
+                    .append("switch ")
+                    .append(printProp.switchName).append(" {\n    ")
+                    .append(name()).append(' ')
                     .append(sargs.get(0).getText())     // the format string
                     .append(' ');
              
@@ -865,7 +1043,7 @@ private static void addCastroFunctions()
                 sb.append("}\n");
             }
             sb.append("}\n");
-            defineInternalStatement(sb.toString());
+            defineHelperStatement(sb.toString());
             return true;
         }
 
@@ -873,11 +1051,11 @@ private static void addCastroFunctions()
         public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
                                          List<String> args)
         {
-            MacroCprintfProp props = macroCprintfProps.get(ctx.fc);
-            Var var = lookup(Switches.class).getVar(props.switchName);
+            MacroPrintProp prop = macroPrintProps.get(ctx.fc);
+            Var var = lookup(Switches.class).getVar(prop.switchName);
             if(var == null) {
                 reportError(ctx, "'%s': '%s' is not defined, INTERNAL ERROR",
-                                 ctx.getText(), props.switchName);
+                                 ctx.getText(), prop.switchName);
                 return sb.append("#internalCprintfError");
             }
             return sb.append("Switch ").append(var.getAddr()).append(' ');

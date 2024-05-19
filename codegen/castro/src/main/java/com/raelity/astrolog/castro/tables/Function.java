@@ -103,7 +103,11 @@ public AstroMem targetMemSpace()
     return null;
 }
 
-/** By default, it's an error if there's a string argument */
+/**
+ * By default, it's an error if there's a string argument.
+ * Typically only used from {@code checkReportArgs }.
+ * 
+ */
 public boolean checkReportArgTypes(Func_callContext ctx)
 {
     if(!ctx.sargs.isEmpty()) {
@@ -114,8 +118,9 @@ public boolean checkReportArgTypes(Func_callContext ctx)
 }
 
 /**
- * Check for correct number of args and types.
- * This impl assumes expr args; see override in StringFunction,
+ * Check for correct number of args and types;
+ * only called during pass1.
+ * This impl assumes expr args only; see override in StringFunction,
  * for string args.
  * @return true if nargs is OK, else false if wrong num args or types.
  */

@@ -4,11 +4,11 @@
 
 
 // [1..7) 
-macro Block1 @1;    // [ALLOC] blocks.castro:2
-macro Block2 @2;    // [ALLOC] blocks.castro:5
-macro Block3 @3;    // [ALLOC] blocks.castro:8
-macro Block4 @4;    // [ALLOC] blocks.castro:11
-macro Block5 @5;    // [ALLOC] blocks.castro:14
-macro BlockMany @6;    // [ALLOC] blocks.castro:17
+macro Block1    @1; // [ALLOC] blocks.castro:2
+macro Block2    @2; // [ALLOC] blocks.castro:5
+macro Block3    @3; // [ALLOC] blocks.castro:8
+macro Block4    @4; // [ALLOC] blocks.castro:11
+macro Block5    @5; // [ALLOC] blocks.castro:14
+macro BlockMany @6; // [ALLOC] blocks.castro:17
 
 

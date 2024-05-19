@@ -19,6 +19,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser.ExprIfElseOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprIfOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprQuestOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprRepeatOpContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprStringAssContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprUnOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprWhileOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.FloatContext;
@@ -438,6 +439,12 @@ String genAssOp(ExprAssOpContext ctx, Token opToken, String lhs, String _rhs)
         }
     }
     return sb.toString();
+}
+
+@Override
+String genMacroStringAss(ExprStringAssContext ctx, String lhs, String rhs)
+{
+    return Compile.genMacroStringAss(ctx, lhs, rhs);
 }
 
 private String lvalReadVar(String lvalName)
