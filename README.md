@@ -284,6 +284,9 @@ Note that `@12` assigns 12 to the switch address which binds it to **F12**; see 
 
 ####    castro printf
 
+`cprintf` has two similar forms; one for switch and one for macro. The macro form is available since Astrolog-770. The macro form uses helper switch statements to do the actual output. When the macro form is used, a helper file is produced that defines switch statements; **remember to do `-i some_name.helper.as` when running the program**. Note: a switch statement is generated for each macro `cprintf()` statement; see `castro -h`, `--helpername=` for naming details and default.
+
+Switch form
 ```
     cprintf <format_string> {~ <arguments> }
 
@@ -294,6 +297,12 @@ Note that `@12` assigns 12 to the switch address which binds it to **F12**; see 
     var cprintf_save_area[10]; - Define this for cprintf to save/restore variables.
 ```
 Example: `cprintf "v1 %d, v2 %d" {~ 3 + 4; 7 + 4; }`
+
+Macro form is like a varargs function call. The parameters are as described for switch form.
+```
+    cprintf("format_string", expr1, expr2, ...);
+```
+Example: `cprintf("v1 %d, v2 %d", 3 + 4, 7 + 4)`
 
 `cprintf` optionally does a **save/restore of the variables** it uses. It does this by looking for an array variable named `cprintf_save_area` and using it if found. _Nested use of cprintf will not restore reliably_.
 ```
