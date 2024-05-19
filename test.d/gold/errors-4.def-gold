@@ -11,7 +11,7 @@
 // used     (-∞..403) [420..440) [2147483647..+∞) 
 // free     [403..420) [440..2147483647) 
 // errors: 0
-var arr[3] @400;    // [ALLOC] 
+var arr[3] @400; // [ALLOC]
 
 // Space: Macros. File: errors-4.castro
 // used     (-∞..400) [2147483647..+∞) 

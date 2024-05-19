@@ -11,23 +11,23 @@
 // used     (-∞..27) [100..150) [2147483647..+∞) 
 // free     [27..100) [150..2147483647) 
 // errors: 0
-var pp[50] @100;    // [ASSIGN] 
+var pp[50] @100; // [ASSIGN]
 
 // Space: Macros. File: expr.castro
 // declared [1..10) [20..21) 
 // used     (-∞..10) [20..21) [2147483647..+∞) 
 // free     [10..20) [21..2147483647) 
 // errors: 0
-macro test_assignment @1;    // [ALLOC] 
-macro test_block @2;    // [ALLOC] 
-macro test_complex_expressions @3;    // [ALLOC] 
-macro test_constants @20;    // [ASSIGN] 
-macro test_control_expressions @4;    // [ALLOC] 
-macro test_function @5;    // [ALLOC] 
-macro test_if_else @6;    // [ALLOC] 
-macro test_isolated_value @7;    // [ALLOC] 
-macro test_multiple_control_expressions @8;    // [ALLOC] 
-macro test_quest_colon @9;    // [ALLOC] 
+macro test_assignment                   @1; // [ALLOC]
+macro test_block                        @2; // [ALLOC]
+macro test_complex_expressions          @3; // [ALLOC]
+macro test_constants                   @20; // [ASSIGN]
+macro test_control_expressions          @4; // [ALLOC]
+macro test_function                     @5; // [ALLOC]
+macro test_if_else                      @6; // [ALLOC]
+macro test_isolated_value               @7; // [ALLOC]
+macro test_multiple_control_expressions @8; // [ALLOC]
+macro test_quest_colon                  @9; // [ALLOC]
 
 // Space: Switches. File: expr.castro
 // used     (-∞..49) [2147483647..+∞) 

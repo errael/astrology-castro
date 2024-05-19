@@ -11,20 +11,20 @@
 // used     (-∞..27) [100..115) [2147483647..+∞) 
 // free     [27..100) [115..2147483647) 
 // errors: 0
-var pp[15] @100;    // [ASSIGN] 
+var pp[15] @100; // [ASSIGN]
 
 // Space: Macros. File: folding.castro
 // declared [50..52) 
 // used     (-∞..1) [50..52) [2147483647..+∞) 
 // free     [1..50) [52..2147483647) 
 // errors: 0
-macro ma01 @50;    // [ASSIGN] 
-macro ma02 @51;    // [ASSIGN] 
+macro ma01 @50; // [ASSIGN]
+macro ma02 @51; // [ASSIGN]
 
 // Space: Switches. File: folding.castro
 // declared [14..15) 
 // used     (-∞..49) [2147483647..+∞) 
 // free     [49..2147483647) 
 // errors: 0
-switch sw01 @14;    // [ASSIGN] 
+switch sw01 @14; // [ASSIGN]
 

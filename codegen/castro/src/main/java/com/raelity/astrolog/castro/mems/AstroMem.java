@@ -115,6 +115,8 @@ int nLimit; // use to label limit ranges (may be disjoint)
 // probably don't need/want this. Maybe some kind of allocation lock?
 private boolean lockMemory;
 
+StringBuilder sbTmp = new StringBuilder();
+
 public AstroMem(String name, int min, int max, MemAccum accum)
 {
     if(accum != null) {
@@ -633,18 +635,58 @@ public void dumpErrors(PrintWriter out)
     dumpVars(out, getErrorVars(), EnumSet.noneOf(VarState.class), true);
 }
 
+record DumpDecl(String var, String addr){};
+private record dumpForm(DumpDecl decl, String state, String fname){};
 private void dumpVars(PrintWriter out, Iterator<Var> it,
                       EnumSet<VarState> skip, boolean includeFileName) {
+    List<dumpForm> dumpVars = new ArrayList<>(50);
+    int width_decl = 0;
+    int width_state = 0;
+    int width_fname = 0;
     for(; it.hasNext();) {
         Var var = it.next();
         if(intersects(var.getState(), skip))
             continue;
-        dumpVar(out, var, includeFileName);
+        DumpDecl decl = dumpVarDecl(var);
+        String state = "// " + var.getState();
+        String fname = null;
+        if(includeFileName) {
+            fname = var.getFileName() + ":" + var.getId().getLine();
+            if(fname.length() > width_fname)
+                width_fname = fname.length();
+        }
+        if(decl.var.length() + decl.addr.length() > width_decl)
+            width_decl = decl.var.length() + decl.addr.length();
+        if(state.length() > width_state)
+            width_state = state.length();
+
+        dumpVars.add(new dumpForm(decl, state, fname));
+    }
+
+    // var varx    @1234 // [ ALLOC ]
+    // var varbiggerx @1 // [ ALLOC ]
+    String fmt = null;
+    if(includeFileName)
+        fmt = "%s%-"+width_state+"s %s\n";
+    width_decl++; // space between var and address
+    for(dumpForm dumpVar : dumpVars) {
+        // TODO: jdk-21 has sb.repeat.
+        sbTmp.setLength(0);
+        sbTmp.append(dumpVar.decl.var)
+                .append(" ".repeat(width_decl - dumpVar.decl.var.length()
+                        - dumpVar.decl.addr.length()))
+                .append(dumpVar.decl.addr).append(' ');
+        if(includeFileName)
+            out.printf(fmt, sbTmp.toString(), dumpVar.state, dumpVar.fname);
+        else {
+            out.print(sbTmp.toString());
+            out.println(dumpVar.state);
+        }
     }
     out.flush();
 }
 
-abstract void dumpVar(PrintWriter out, Var var, boolean includeFileName);
+abstract DumpDecl dumpVarDecl(Var var);
 
 public void dumpLayout(PrintWriter out)
 {

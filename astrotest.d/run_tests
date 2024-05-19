@@ -118,7 +118,10 @@ clean() {
     rm -f $INFRA_MAP.map $INFRA_OUTPUT
 
     rm -f $PRINTF_FILE.as $PRINTF_FILE.def $PRINTF_FILE.map
+    rm -f $PRINTF_FILE.as $PRINTF_FILE.def $PRINTF_FILE.map
+    rm -f $PRINTF_FILE.helper.castro $PRINTF_FILE.helper.as $PRINTF_FILE.helper.def
     rm -f $PRINTF_OUTPUT $PRINTF_OUTPUT-2 $PRINTF_OUTPUT-3
+    rm -f $INFRA_MAP.helper.castro
 }
 
 run_echo() {
@@ -141,7 +144,8 @@ run_printf_tests() {
     run_echo castro $PRINTF_FILE.castro
 
     date > $PRINTF_OUTPUT
-    run_echo astrolog -i $PRINTF_FILE.as >> $PRINTF_OUTPUT
+    # Note: The main program in included by the helper.
+    run_echo astrolog -i $PRINTF_FILE.helper.as >> $PRINTF_OUTPUT
     date >> $PRINTF_OUTPUT
 
     grep PRINT $PRINTF_OUTPUT | tee $PRINTF_OUTPUT-2

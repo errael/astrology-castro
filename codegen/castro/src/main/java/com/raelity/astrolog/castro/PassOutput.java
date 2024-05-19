@@ -29,15 +29,16 @@ import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
 
 import static com.raelity.antlr.ParseTreeUtil.getOriginalText;
+import static com.raelity.astrolog.castro.Castro.VAR_CPRINTF_SAVE;
 import static com.raelity.astrolog.castro.Error.*;
 import static com.raelity.astrolog.castro.GenPrefixExpr.switchCommandExpressions;
 import static com.raelity.astrolog.castro.OutputOptions.*;
 import static com.raelity.astrolog.castro.Util.cleanString;
 import static com.raelity.astrolog.castro.Util.collectAssignStrings;
+import static com.raelity.astrolog.castro.Util.lc;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.reportError;
 import static com.raelity.astrolog.castro.Util.writeRegister;
-import static com.raelity.astrolog.castro.mems.Registers.VAR_CPRINTF_SAVE;
 import static com.raelity.astrolog.castro.visitors.FoldConstants.fold2Int;
 
 /**
@@ -333,9 +334,13 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
 
     // check/fixup for special castro functions
     for(int pIdx = 0; pIdx < lsc.size(); pIdx++) {
-        if(lsc.get(pIdx).name != null && lsc.get(pIdx).getText().equalsIgnoreCase("cprintf"))
+        String cmdName = lsc.get(pIdx).getText();
+        if(lsc.get(pIdx).name != null
+                && (cmdName.equalsIgnoreCase("printf")
+                    || cmdName.equalsIgnoreCase("cprintf"))) {
             hackPrintf(quote, lsc.subList(pIdx, lsc.size()),
                        cmdPart.subList(pIdx, cmdPart.size()));
+        }
     }
 
     for(String s : cmdPart) {
@@ -353,15 +358,17 @@ private void collectSwitchCmds(StringBuilder sb, char quote,
  * The list args are typically sublists.
  * <p>
  * There must be at least 2 elements, the third is optional: <br>
- * 0 - cprintf <br>
+ * 0 - printf <br>
  * 1 - format string <br>
  * 2 - optional expression array
  */
 private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cmdPart)
 {
+    String cmdName = lc(lsc.get(0).getText());
     if(lsc.size() < 2    // must be room for "formatstr, exprs are optional
             || lsc.get(1).string == null) {
-        reportError(lsc.get(0), "cprintf must be followed by a format string");
+        reportError(lsc.get(0), "'%s' must be followed by a format string",
+                    cmdName);
         return;
     }
     // The expr_arg is optional, since "printf 'foo'" should work.
@@ -370,7 +377,7 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
     if(lsc.size() >= 3 && lsc.get(2).expr_arg != null)
         eArgs = switchCommandExpressions.get(lsc.get(2));
 
-    // Convert the format string to something -YYT understands
+    // Convert the format string to something -YYt/-YYT understands
     // and count the number of args in the format string while doing it.
     StringBuilder sb_tmp = new StringBuilder();
     String fmt = lsc.get(1).string.getText();
@@ -405,20 +412,20 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
         }
         }
         if(fmtArgs > 10) {
-            reportError(lsc.get(1), "'%d' too many cprintf arguments, limit 10",
-                                    fmtArgs);
+            reportError(lsc.get(1), "'%d' too many '%s' arguments, limit 10",
+                                    fmtArgs, cmdName);
             return;
         }
     }
     if(fmtArgs  > 0 && eArgs.isEmpty()) {
         reportError(lsc.get(1),
-                    "cprintf format string, '%s', needs arguments in '{~ }'", fmt);
+                    "'%s' format string, '%s', needs arguments in '{~ }'", cmdName, fmt);
         return;
     }
 
     if(fmtArgs != eArgs.size()) {
-        reportError(lsc.get(1), "cprintf arg count mismatch: fmt %d, expr %d",
-                                fmtArgs, eArgs.size());
+        reportError(lsc.get(1), "'%s' arg count mismatch: fmt %d, expr %d",
+                                cmdName, fmtArgs, eArgs.size());
         return;
     }
     sb_tmp.append(' ');
@@ -435,8 +442,8 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
         if(save_area != null) {
             if(fmtArgs > save_area.getSize())
             {
-                reportError(lsc.get(0), "too many cprintf args '%d' for %s",
-                            fmtArgs, VAR_CPRINTF_SAVE);
+                reportError(lsc.get(0), "too many '%s' args '%d' for %s",
+                            cmdName, fmtArgs, VAR_CPRINTF_SAVE);
                 save_area = null;
             } else {
                 int addr = save_area.getAddr();
@@ -461,7 +468,8 @@ private void hackPrintf(char quote, List<Switch_cmdContext> lsc, List<String> cm
 
     // execute the output
     sb_tmp.setLength(0);
-    sb_tmp.append("-YYT ").append(quote).append(yytFormatString);
+    sb_tmp.append(cmdName.equals("printf") ? "-YYt" : "-YYT").append(' ')
+            .append(quote).append(yytFormatString);
     removeTrailingBlanks(sb_tmp).append(quote);
 
     cmdPart.set(1, sb_tmp.toString());

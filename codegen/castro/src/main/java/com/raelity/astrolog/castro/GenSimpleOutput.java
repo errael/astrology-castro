@@ -310,6 +310,16 @@ void generateAndOutputExprs()
     }
 
     @Override
+    String genMacroStringAss(ExprStringAssContext ctx, String lhs, String rhs)
+    {
+        sb.setLength(0);
+        sb.append('=').append(' ')
+                .append(lhs).append(' ')
+                .append(rhs).append(' ');
+        return sb.toString();
+    }
+
+    @Override
     String genLval(LvalMemContext ctx)
     {
         return ctx.Identifier().getText();

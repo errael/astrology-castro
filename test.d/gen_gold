@@ -26,20 +26,31 @@ run_all() {
 }
 
 gen() {
-    tcastro $current_test.castro 2> $current_test.stderr
+    tcastro --nostartup $current_test.castro 2> $current_test.stderr
     make_gold
 }
 
 make_gold() {
-    mv $current_test.as gold/$current_test.as-gold
-    mv $current_test.def gold/$current_test.def-gold
+    mv_gold as def
+    if [[ -e $current_test.helper.castro ]]
+    then
+        mv_gold helper.castro helper.as helper.def
+    fi
     if [[ -e $current_test.map ]]
     then
-        mv $current_test.map gold/$current_test.map-gold
+        mv_gold map
     else
         echo "    NOTE: no $current_test.map file"
     fi
-    mv $current_test.stderr gold/$current_test.stderr-gold
+    mv_gold stderr
+}
+
+mv_gold() {
+    local ext
+    for ext in $*
+    do
+        mv $current_test.$ext gold/$current_test.$ext-gold
+    done
 }
 
 Main "$@"

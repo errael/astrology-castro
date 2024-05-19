@@ -6,20 +6,22 @@
 // Space: Macros layout: null
 // Space: Switches layout: Layout{base=49, limit=-1, reserve=[]}
 
-// Space: Registers. File: run.castro
+// Space: Registers. File: macro-ops.castro
 // declared [27..29) 
 // used     (-∞..29) [2147483647..+∞) 
 // free     [29..2147483647) 
 // errors: 0
-var v1 @27; // [ALLOC]
-var v2 @28; // [ALLOC]
+var varx @27; // [ALLOC]
+var vary @28; // [ALLOC]
 
-// Space: Macros. File: run.castro
-// used     (-∞..1) [2147483647..+∞) 
-// free     [1..2147483647) 
+// Space: Macros. File: macro-ops.castro
+// declared [1..2) 
+// used     (-∞..2) [2147483647..+∞) 
+// free     [2..2147483647) 
 // errors: 0
+macro m00 @1; // [ALLOC]
 
-// Space: Switches. File: run.castro
+// Space: Switches. File: macro-ops.castro
 // used     (-∞..49) [2147483647..+∞) 
 // free     [49..2147483647) 
 // errors: 0

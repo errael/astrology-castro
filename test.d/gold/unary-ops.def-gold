@@ -16,7 +16,7 @@
 // used     (-∞..2) [2147483647..+∞) 
 // free     [2..2147483647) 
 // errors: 0
-macro UnOps @1;    // [ALLOC] 
+macro UnOps @1; // [ALLOC]
 
 // Space: Switches. File: unary-ops.castro
 // used     (-∞..49) [2147483647..+∞) 

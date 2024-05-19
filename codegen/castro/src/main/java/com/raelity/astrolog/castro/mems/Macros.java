@@ -2,7 +2,6 @@
 
 package com.raelity.astrolog.castro.mems;
 
-import java.io.PrintWriter;
 
 import com.raelity.astrolog.castro.Castro.MacrosAccum;
 
@@ -21,16 +20,8 @@ public Macros()
 }
 
 @Override
-void dumpVar(PrintWriter out, Var var, boolean includeFileName)
+DumpDecl dumpVarDecl(Var var)
 {
-    String f = "";
-    String lino = "";
-    if(includeFileName) {
-        f = var.getFileName();
-        lino = ":" + var.getId().getLine();
-    }
-    out.printf("macro %s @%d;    // %s %s%s\n", var.getName(),
-               var.getAddr(), var.getState(), f, lino);
+    return new DumpDecl("macro "+var.getName(), "@"+var.getAddr()+';');
 }
-
 }

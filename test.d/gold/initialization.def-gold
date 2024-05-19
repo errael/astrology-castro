@@ -12,16 +12,16 @@
 //          [2147483647..+∞) 
 // free     [40..100) [103..200) [203..250) [255..500) [501..600) [610..2147483647) 
 // errors: 0
-var yy @27;    // [ALLOC] 
-var yy1[3] @100;    // [ASSIGN] 
-var yy2[3] @200;    // [ASSIGN] 
-var yy2a[5] @250;    // [ASSIGN] 
-var yy5 @500;    // [ASSIGN] 
-var yy6[10] @600;    // [ASSIGN] 
-var zc1 @28;    // [ALLOC] 
-var zc2[3] @29;    // [ALLOC] 
-var zc3[5] @32;    // [ALLOC] 
-var zc4[3] @37;    // [ALLOC] 
+var yy       @27; // [ALLOC]
+var yy1[3]  @100; // [ASSIGN]
+var yy2[3]  @200; // [ASSIGN]
+var yy2a[5] @250; // [ASSIGN]
+var yy5     @500; // [ASSIGN]
+var yy6[10] @600; // [ASSIGN]
+var zc1      @28; // [ALLOC]
+var zc2[3]   @29; // [ALLOC]
+var zc3[5]   @32; // [ALLOC]
+var zc4[3]   @37; // [ALLOC]
 
 // Space: Macros. File: initialization.castro
 // used     (-∞..1) [2147483647..+∞) 
@@ -33,5 +33,5 @@ var zc4[3] @37;    // [ALLOC]
 // used     (-∞..49) [100..101) [2147483647..+∞) 
 // free     [49..100) [101..2147483647) 
 // errors: 0
-switch foo @100;    // [ASSIGN] 
+switch foo @100; // [ASSIGN]
 

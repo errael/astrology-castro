@@ -1,0 +1,28 @@
+switch castroHelperString_1 {
+    SetString varx "varx string"
+}
+switch castroHelperString_2 {
+    SetString vary "vary string"
+}
+var cprintf_save_area[10];
+switch castroHelperPrint_1 {
+    cprintf "x = %d, y = %d\n" {~ x; y; }
+}
+switch castroHelperPrint_2 {
+    cprintf "val1 = %d, val1 = %d\n" {~ a+b; c+d; }
+}
+switch castroHelperPrint_3 {
+    cprintf "varx = %s, vary = %s\n" {~ &varx; &vary; }
+}
+switch castroHelperPrint_4 {
+    cprintf "\n" 
+}
+switch castroHelperPrint_6 {
+    printf "\n" 
+}
+switch castroHelperPrint_8 {
+    printf "%s\n" {~ x; }
+}
+switch castroHelperPrint_9 {
+    printf '%s\n' {~ x; }
+}

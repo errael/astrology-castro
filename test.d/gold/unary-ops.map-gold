@@ -4,6 +4,6 @@
 
 
 // [1..2) 
-macro UnOps @1;    // [ALLOC] unary-ops.castro:2
+macro UnOps @1; // [ALLOC] unary-ops.castro:2
 
 

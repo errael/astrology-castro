@@ -1,0 +1,20 @@
+/*
+ * In a macro, cprintf, string assign.
+ */
+
+var varx;
+var vary;
+macro m00 {
+    varx = "varx string";
+    vary = "vary string";
+    cprintf("x = %d, y = %d\n", x, y);
+    cprintf("val1 = %d, val1 = %d\n", a + b, c + d);
+    cprintf("varx = %s, vary = %s\n", &varx, &vary);
+    cprintf("\n");
+    cprintf('\n');
+    printf("\n");
+    printf('\n');
+
+    printf("%s\n", x);
+    printf('%s\n', x);
+}

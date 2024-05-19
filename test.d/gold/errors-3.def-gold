@@ -11,7 +11,7 @@
 // used     (-∞..32) [2147483647..+∞) 
 // free     [32..2147483647) 
 // errors: 0
-var cprintf_save_area[5] @27;    // [ALLOC] 
+var cprintf_save_area[5] @27; // [ALLOC]
 
 // Space: Macros. File: errors-3.castro
 // used     (-∞..1) [2147483647..+∞) 

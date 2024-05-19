@@ -11,8 +11,8 @@
 // used     (-∞..33) [35..+∞) 
 // free     [33..35) 
 // errors: 0
-var v1[3] @30;    // [ALLOC] 
-var v2[3] @-1;    // [OUT_OF_MEM] 
+var v1[3] @30; // [ALLOC]
+var v2[3] @-1; // [OUT_OF_MEM]
 
 // Space: Macros. File: errors-oom.castro
 // used     (-∞..1) [2147483647..+∞) 

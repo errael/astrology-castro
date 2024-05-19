@@ -52,33 +52,56 @@ public class Castro
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 private static CastroErr err = new CastroErr(new PrintWriter(System.err, true));
 
-public static record CastroErr(PrintWriter pw){};
-public static record CastroMapName(String mapName){};
-public static record CastroHelperName(String name){};
-public static record CastroOutputOptions(EnumSet<OutputOptions> outputOpts) {
+public record CastroErr(PrintWriter pw){};
+public record CastroMapName(String mapName){};
+public record CastroHelperName(String name){};
+public record CastroOutputOptions(EnumSet<OutputOptions> outputOpts) {
     public CastroOutputOptions(EnumSet<OutputOptions> outputOpts)
         { this.outputOpts = EnumSet.copyOf(outputOpts); }
     public EnumSet<OutputOptions> outputOpts()
         { return EnumSet.copyOf(this.outputOpts); }
     };
 /** which errors to treat as warngings */
-public static record CastroWarningOptions(EnumSet<Error> warn) {
+public record CastroWarningOptions(EnumSet<Error> warn) {
     public CastroWarningOptions(EnumSet<Error> warn)
         { this.warn = EnumSet.copyOf(warn); }
     public EnumSet<Error> warn()
         { return EnumSet.copyOf(this.warn); }
-    };
-public static record CastroLineMaps(Map<String,LineMap> lineMaps){};
+};
+public record CastroLineMaps(Map<String,LineMap> lineMaps){};
+
+public record CastroPrintUsage() {
+    private static int nCprintf;
+    private static int nPrintf;
+    private static int nMacroCprintf;
+    private static int nMacroPrintf;
+    public boolean didPrint() { return + nCprintf + nPrintf + nMacroCprintf + nMacroPrintf != 0; }
+    public void switchPrint(String funcName) {
+        if(funcName.charAt(0) == 'c')
+            nCprintf++;
+        else
+            nPrintf++;
+    } 
+    public void macroPrint(String opName) {
+        if(opName.charAt(0) == 'c')
+            nMacroCprintf++;
+        else
+            nMacroPrintf++;
+    } 
+};
+static {
+    addLookup(new CastroPrintUsage());
+}
 
 // Keep track of definitions, externs that are read.
 public static interface MemAccum {AstroMem defined();AstroMem alloc(); AstroMem extern(); AstroMem global();}
-public static record RegistersAccum(Registers defined, Registers alloc,
+public record RegistersAccum(Registers defined, Registers alloc,
                                     Registers extern, Registers global)
         implements MemAccum {};
-public static record MacrosAccum(Macros defined, Macros alloc,
+public record MacrosAccum(Macros defined, Macros alloc,
                                  Macros extern, Macros global) 
         implements MemAccum {};
-public static record SwitchesAccum(Switches defined, Switches alloc,
+public record SwitchesAccum(Switches defined, Switches alloc,
                                    Switches extern, Switches global) 
         implements MemAccum {};
 
@@ -88,7 +111,8 @@ static final String OUT_EXT = ".as";
 static final String DEF_EXT = ".def";
 static final String MAP_EXT = ".map";
 static final String OUT_TEST_EXT = ".test";
-static final String INTERNAL_HELPER = ".helper" + IN_EXT;
+public static final String VAR_CPRINTF_SAVE = "cprintf_save_area";
+static final String HELPER_EXT = ".helper" + IN_EXT;
 
 private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 
@@ -157,6 +181,7 @@ static void usage(String note)
                                         Default is derived from first infile.
                 --helpername=name     File name is <name>.helper.castro
                                         Default is derived from map name.
+                --nostartup     Do not put '-i file1 -i file2...' in helper.
                 -O level        Optimization leve, -O0 is no optimization.
                 --astrolog version      Astrolog version to target.
                                         For example "760" or "770".
@@ -216,6 +241,12 @@ public static boolean isAddrSort()
     return isAddrSort;
 }
 
+private static boolean nostartup;
+public static boolean isNostartup()
+{
+    return nostartup;
+}
+
 private static int compileTarget = 770;
 
 private static Integer parseCompileTargetOption(String opt)
@@ -270,6 +301,7 @@ public static void main(String[] args)
         new LongOpt("astrolog", LongOpt.REQUIRED_ARGUMENT, null, 10),
         new LongOpt("addrsort", LongOpt.NO_ARGUMENT, null, 11),
         new LongOpt("helpername", LongOpt.REQUIRED_ARGUMENT, null, 12),
+        new LongOpt("nostartup", LongOpt.NO_ARGUMENT, null, 13),
     };
     Getopt g = new Getopt(cmdName, args, "o:O:hv", longOpts);
     
@@ -336,6 +368,7 @@ public static void main(String[] args)
         }
         case 11 -> isAddrSort = true;
         case 12 -> helperName = g.getOptarg();
+        case 13 -> nostartup = true;
         default -> {
             usage();
         }

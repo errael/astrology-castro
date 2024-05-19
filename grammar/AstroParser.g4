@@ -188,6 +188,7 @@ expr returns [int fBlock = 0]
     | l=expr o='&&' r=expr                        #exprBinOp
     | l=expr o='||' r=expr                        #exprBinOp
     | <assoc=right> ec=expr '?' et=expr ':' ef=expr     #exprQuestOp
+    | l=lval '=' s=String                         #exprStringAss
     | <assoc=right>
         l=lval ao=( '=' | '+=' | '-=' | '*=' | '/=' | '%='
                             | '<<=' | '>>=' | '&=' | '^=' | '|=' )

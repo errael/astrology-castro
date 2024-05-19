@@ -16,12 +16,12 @@
 // used     (-∞..7) [2147483647..+∞) 
 // free     [7..2147483647) 
 // errors: 0
-macro Block1 @1;    // [ALLOC] 
-macro Block2 @2;    // [ALLOC] 
-macro Block3 @3;    // [ALLOC] 
-macro Block4 @4;    // [ALLOC] 
-macro Block5 @5;    // [ALLOC] 
-macro BlockMany @6;    // [ALLOC] 
+macro Block1    @1; // [ALLOC]
+macro Block2    @2; // [ALLOC]
+macro Block3    @3; // [ALLOC]
+macro Block4    @4; // [ALLOC]
+macro Block5    @5; // [ALLOC]
+macro BlockMany @6; // [ALLOC]
 
 // Space: Switches. File: blocks.castro
 // used     (-∞..49) [2147483647..+∞) 

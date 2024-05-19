@@ -65,9 +65,9 @@ public void tearDown()
     }
 
         @Override
-        void dumpVar(PrintWriter out, Var var, boolean includeFileName)
+        DumpDecl dumpVarDecl(Var var)
         {
-            out.printf("Var dump: %s", var);
+            return new DumpDecl("Var dump "+var.toString(), "@123");
         }
 
     }
