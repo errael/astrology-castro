@@ -95,6 +95,12 @@ import static com.raelity.lib.collect.Util.intersects;
  */
 public abstract class AstroMem implements Iterable<Var>
 {
+// These global layouts are copied from the first file encountered.
+// Any file that does not set it's own layout, inherits from these.
+private static Layout globalRegisterLayout;
+private static Layout globalSwitchLayout;
+private static Layout globalMacroLayout;
+
 private AstroMem defined;
 private AstroMem alloc;
 private MemAccum accum;
@@ -216,24 +222,59 @@ public Layout getNewLayout()
     return lr;
 }
 
-public void checkNewLayout(LayoutContext ctx)
+/**
+ * The layout restrictions set by the developer are never changed,
+ * EXCEPT in this method.
+ * <br> Layouts are inherited if they have not been set.
+ * <br> Insure that the switch base is after the function keys.
+ */
+public void checkLayoutAfterPass1(boolean firstFile)
 {
+    // Record or inherit global layout.
+    if(firstFile) {
+        // Copy the layout for the first file to the globalLayout.
+        switch(this) {
+        case Registers r -> { globalRegisterLayout = layoutRestrictions; }
+        case Switches s -> { globalSwitchLayout = layoutRestrictions; }
+        case Macros m -> { globalMacroLayout = layoutRestrictions;}
+        default -> { }
+        }
+    } else {
+        // For subsequent files, if they have no restriction, then use the global
+        if(layoutRestrictions == null)
+            layoutRestrictions = switch(this) {
+            case Registers r -> globalRegisterLayout;
+            case Switches s -> globalSwitchLayout;
+            case Macros m -> globalMacroLayout;
+            default -> null;
+            };
+    }
+
+    // Insure the switch base is after the function keys.
     if(this instanceof Switches && getAstrologVersion() >= 770) {
         if(layoutRestrictions == null)
             layoutRestrictions = new Layout(this);
         int base = layoutRestrictions.base;
-        // Note: if ctx null, then either already adjusted
-        //       or no layout base was specified; can't be an error.
+        layoutRestrictions.base = Math.max(FK_LAST_SLOT + 1, base);
+    }
+}
+
+/** Check/report if a "layout switch base" overlaps function keys. */
+public void checkReportNewLayout(LayoutContext ctx)
+{
+    if(this instanceof Switches
+            && getAstrologVersion() >= 770
+            && layoutRestrictions != null) {
+        int base = layoutRestrictions.base;
         if(base >= 0 && base <= FK_LAST_SLOT) {
             // The base was set, get the constraint
+            assert ctx != null;
             BaseConstraintContext baseCtx
                     = (BaseConstraintContext)ctx.constraint().stream()
                             .filter(c -> c instanceof BaseConstraintContext)
                             .findFirst().get();
             reportError(SWITCH_BASE, baseCtx, "layout switch base '%d' overlaps function keys, adjusting", base);
         }
-        // Make sure allocation starts after function keys
-        layoutRestrictions.base = Math.max(FK_LAST_SLOT + 1, base);
     }
 }
 
@@ -526,9 +567,11 @@ public void rangeLimit(RangeSet<Integer> reserved)
     fixLimit(ll, "#reserve_limit_range");
 }
 
+/**
+ * Remove the ranges in limit from the available AstroMem.
+ */
 private void fixLimit(RangeSet<Integer> limit, String varBaseName)
 {
-    // remove allocated items from the limit
     limit.removeAll(layout.asMapOfRanges().keySet());
     for(Range<Integer> r : limit.asRanges()) {
         ContiguousSet<Integer> rset = ContiguousSet.create(r, DiscreteDomain.integers());

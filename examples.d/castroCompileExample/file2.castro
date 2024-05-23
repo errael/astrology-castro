@@ -1,0 +1,11 @@
+/*
+ * A function key that invokes the macro defined in file1.
+ */
+
+var second_arg {1};
+var third_arg {22};
+
+/* Function key F3 prints a message */
+switch Key3 @MY_FK_BASE + 3 {
+    ~1 { file1_mac(3, second_arg, third_arg); }
+}

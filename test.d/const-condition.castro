@@ -1,0 +1,23 @@
+/*
+ * Unusual case where "if" condition is constant.
+ */
+
+macro m00 {
+    if(a<b && 5) c;
+}
+
+macro m01 {
+    if(5 - 4) c;
+}
+
+macro m02 {
+    if(5 - 5) c;
+}
+
+macro m03 {
+    if(5 - 4) c else d;
+}
+
+macro m04 {
+    if(5 - 5) c else d;
+}

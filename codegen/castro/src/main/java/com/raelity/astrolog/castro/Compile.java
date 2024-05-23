@@ -129,6 +129,7 @@ static boolean compile(List<String> inputFiles, String outName)
         // Either create the file if needed and plug it back in,
         // or delete the null and exit the loop;
 
+        boolean firstFile = !it.hasPrevious();
         String inputFile = it.next();
         if(!it.hasNext()) {
             assert inputFile == null;
@@ -176,7 +177,7 @@ static boolean compile(List<String> inputFiles, String outName)
         // some may not have addresses. The next file checks its
         // names and addresses against the accumulated defines.
         for(AstroMem mem : lookupAll(AstroMem.class)) {
-            mem.checkNewLayout(null); // May have been called during pass1 parse.
+            mem.checkLayoutAfterPass1(firstFile); // null mean end of pass1
             mem.addToDefined();
         }
         

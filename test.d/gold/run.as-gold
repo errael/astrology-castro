@@ -18,3 +18,13 @@
 ; RUN  
     ~ "= 27 Add @28 @x"  
     ~ "= 28 Add @27 30" 
+
+; RUN 
+
+; SWITCH sw01
+-M0 49 ' 
+'
+
+; MACRO ma01
+~M 1 ' 
+'

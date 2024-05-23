@@ -23,6 +23,7 @@ TESTS="
     log-ops
     macro_functions
     macro-ops
+    const-condition
     warnings
     errors-1
     errors-2

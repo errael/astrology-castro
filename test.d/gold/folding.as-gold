@@ -54,7 +54,7 @@
     =a Dec Add @j @k  
     =x Add Add Add @a @b @c 6  
     =a Add @k 5  
-    =a Add Add Sub @k If @m Bool 3 @l -13  
+    =a Add Add Sub @k If @m 1 @l -13  
     =a Add Mul @k 667 9  
     =a Add @k -2  
     =a Add Add IfElse Add @d 3 Add @e 5 Add @f 7 @k 9  

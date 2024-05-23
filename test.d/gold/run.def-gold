@@ -15,12 +15,16 @@ var v1 @27; // [ALLOC]
 var v2 @28; // [ALLOC]
 
 // Space: Macros. File: run.castro
-// used     (-∞..1) [2147483647..+∞) 
-// free     [1..2147483647) 
+// declared [1..2) 
+// used     (-∞..2) [2147483647..+∞) 
+// free     [2..2147483647) 
 // errors: 0
+macro ma01 @1; // [ALLOC]
 
 // Space: Switches. File: run.castro
-// used     (-∞..49) [2147483647..+∞) 
-// free     [49..2147483647) 
+// declared [49..50) 
+// used     (-∞..50) [2147483647..+∞) 
+// free     [50..2147483647) 
 // errors: 0
+switch sw01 @49; // [ALLOC]
 

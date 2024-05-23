@@ -151,6 +151,18 @@ String genSw_cmdStringAssign(Switch_cmdContext sc_ctx, String name)
 String genIfOp(ExprIfOpContext ctx, String condition, String if_true)
 {
     sb.setLength(0);
+
+    if(Castro.getOptimize() >= 2) {
+        Integer i = fold2Int(ctx.p.e);
+        if(i != null) {
+            if(i != 0)
+                sb.append(if_true);
+            else
+                sb.append("0 ");
+            return sb.toString();
+        }
+    }
+
     sb.append(astroControlOp(Flow.IF)).append(' ')
             .append(condition).append(if_true);
     return sb.toString();
@@ -161,6 +173,18 @@ String genIfElseOp(ExprIfElseOpContext ctx,
                    String condition, String if_true, String if_false)
 {
     sb.setLength(0);
+
+    if(Castro.getOptimize() >= 2) {
+        Integer i = fold2Int(ctx.p.e);
+        if(i != null) {
+            if(i != 0)
+                sb.append(if_true);
+            else
+                sb.append(if_false);
+            return sb.toString();
+        }
+    }
+
     sb.append(astroControlOp(Flow.IF_ELSE)).append(' ')
             .append(condition).append(if_true).append(if_false);
     return sb.toString();
@@ -289,10 +313,20 @@ String genQuestColonOp(ExprQuestOpContext ctx,
     return sb.toString();
 }
 
+/**
+ * Make sure the returned expr is a bool.
+ * Wrapping the expr like "Bool expr" always works;
+ * but check for optimization.
+ */
 private String wrapBool(ExprContext ctx, String stringExpr)
 {
-    if(Castro.getOptimize() >= 2 && isBoolExpr(ctx))
-        return stringExpr;
+    if(Castro.getOptimize() >= 2) {
+        if(isBoolExpr(ctx)) // already bool
+            return stringExpr;
+        Integer i = fold2Int(ctx);
+        if(i != null) // a constant int
+            return i == 0 ? "0 " : "1 ";
+    }
     return getAstrologVersion()>= 770
            ? "Bool " + stringExpr.strip() + " "
            : "Neq "  + stringExpr.strip() + " 0 ";

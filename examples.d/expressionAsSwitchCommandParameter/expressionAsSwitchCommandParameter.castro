@@ -7,14 +7,24 @@
         =R {~
             b = 0;
             for(a = 0; Objs())
-                if(ObjOn(a)) { b = a; a = Objs(); }
-            b;
+                if(ObjOn(a)) {
+                    b = a;          // save first unrestricted object
+                    a = Objs();     // break out of for loop
+                }
+            b;      // result
         }
     }
-// generates
+// generates code identical to code shown in the AstroExpression example.
 //    =R  "~ =b 0  For %a 0 Objs If ObjOn @a Do =b @a =a Objs  @b" 
-// the same as in the example. The AstroExpression could be
-// defined as a macro
+// The parameter to =R is the expression result.
+// Note that this example is inline code; it is executed when the file is
+// loaded by Astrolog. Below are examples to encapsulate and reuse this code.
+
+//--------------
+
+// **Create a macro that can be reused
+
+//The AstroExpression could be defined as a macro
     macro findFirstUnrestrictedObject @300 {
         b=0; for(a=0;Objs()) if(ObjOn(a)) { b = a; a = Objs(); } b;
     }
@@ -22,11 +32,17 @@
     run {
         =R {~ Macro(findFirstUnrestrictedObject); }
     }
-// the two generating
+// these two generating
 //    ~M 300 '=b 0 For %a 0 Objs If ObjOn @a Do =b @a =a Objs @b'
 //    =R  "~ Macro 300" 
+// The castro code could be written using macro functions;
+// a macro function is syntactic sugar, the resulting code is the same.
+//      macro findFirstUnrestrictedObject() @300 {...}
+//      run { =R {~ findFirstUnrestrictedObject(); } }
 
-// The code could be in a switch macro
+// **Create a switch that can be reused
+
+// The code could be encapsulated in a switch
     switch restrictFirstUnrestrictedObject @101 {
         =R {~ b=0; for(a=0;Objs()) if(ObjOn(a)) { b = a; a = Objs(); } b; }
     }
