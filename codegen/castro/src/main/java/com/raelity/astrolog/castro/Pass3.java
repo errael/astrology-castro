@@ -12,6 +12,7 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprAssOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprBinOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprBraceBlockOpContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprDowhileOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprForOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprFuncContext;
@@ -55,6 +56,7 @@ import static com.raelity.astrolog.castro.tables.Ops.astroCode;
 import static com.raelity.astrolog.castro.Util.parseInt;
 import static com.raelity.astrolog.castro.antlr.AstroParser.IntegerConstant;
 import static com.raelity.astrolog.castro.Constants.isConstantName;
+import static com.raelity.astrolog.castro.Util.isBoolExpr;
 import static com.raelity.astrolog.castro.antlr.AstroParser.AndAnd;
 import static com.raelity.astrolog.castro.antlr.AstroParser.OrOr;
 import static com.raelity.astrolog.castro.visitors.FoldConstants.fold2Int;
@@ -287,11 +289,13 @@ String genQuestColonOp(ExprQuestOpContext ctx,
     return sb.toString();
 }
 
-private String wrapBool(String some_var)
+private String wrapBool(ExprContext ctx, String stringExpr)
 {
+    if(Castro.getOptimize() >= 2 && isBoolExpr(ctx))
+        return stringExpr;
     return getAstrologVersion()>= 770
-           ? "Bool " + some_var.strip() + " "
-           : "Neq "  + some_var.strip() + " 0 ";
+           ? "Bool " + stringExpr.strip() + " "
+           : "Neq "  + stringExpr.strip() + " 0 ";
 }
 
 @Override
@@ -314,11 +318,11 @@ String genBinOp(ExprBinOpContext ctx, Token opToken, String lhs, String rhs)
         if(op == AndAnd)
             sb.append(astroControlOp(Flow.IF)).append(' ')
                     .append(lhs)
-                    .append(wrapBool(rhs));
+                    .append(wrapBool(ctx.r, rhs));
         else
             sb.append(astroControlOp(Flow.IF_ELSE)).append(' ')
                     .append(lhs).append("1 ")
-                    .append(wrapBool(rhs));
+                    .append(wrapBool(ctx.r, rhs));
     } else
         sb.append(astroOp(op)).append(' ')
                 .append(lhs).append(rhs);

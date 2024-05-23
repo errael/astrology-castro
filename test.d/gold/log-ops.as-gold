@@ -8,4 +8,7 @@
     If If If @c Bool @d Bool @e Bool @f  
     IfElse @a 1 Bool @b  
     IfElse IfElse IfElse @c 1 Bool @d 1 Bool @e 1 Bool @f  
+    IfElse Lt @a @b 1 If Lt @c @d Lt @e @f  
+    If Lt @a @b Not @c  
+    If Lt @a @b Lt @c @d  
 '

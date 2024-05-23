@@ -4,4 +4,10 @@ macro LogOps {
     c && d && e && f;
     a || b;
     c || d || e || f;
+
+    // check removal of "Bool" after doing "isBoo(expr)"
+    a < b || c < d && e < f;
+    a < b && !c;
+    a < b && c < d;
 }
+
