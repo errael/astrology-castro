@@ -24,7 +24,9 @@ import org.antlr.v4.runtime.tree.xpath.XPath;
 import com.raelity.astrolog.castro.Castro.CastroErr;
 import com.raelity.astrolog.castro.Castro.CastroWarningOptions;
 import com.raelity.astrolog.castro.Constants.Constant;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprBinOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.ExprContext;
+import com.raelity.astrolog.castro.antlr.AstroParser.ExprUnOpContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Func_callContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.LvalMemContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Switch_cmdContext;
@@ -46,6 +48,13 @@ import static com.raelity.astrolog.castro.mems.Macros.MEM_MACROS;
 import static com.raelity.astrolog.castro.mems.Registers.MEM_REGISTERS;
 import static com.raelity.astrolog.castro.mems.Switches.MEM_SWITCHES;
 import static com.raelity.astrolog.castro.Error.INNER_QUOTE;
+import static com.raelity.astrolog.castro.antlr.AstroParser.Less;
+import static com.raelity.astrolog.castro.antlr.AstroParser.LessEqual;
+import static com.raelity.astrolog.castro.antlr.AstroParser.Greater;
+import static com.raelity.astrolog.castro.antlr.AstroParser.GreaterEqual;
+import static com.raelity.astrolog.castro.antlr.AstroParser.AndAnd;
+import static com.raelity.astrolog.castro.antlr.AstroParser.OrOr;
+import static com.raelity.astrolog.castro.antlr.AstroParser.Not;
 
 /**
  *
@@ -199,6 +208,25 @@ public static Func_callContext lvalArg2Func(ParserRuleContext ctx)
             && (getNthParent(ctx, 3) instanceof Func_callContext fc_ctx))
         return fc_ctx;
     return null;
+}
+
+/**
+ * Return true if the expr is a boolean value, for example {@literal "a < b}".
+ */
+public static boolean isBoolExpr(ExprContext ctx)
+{
+    return switch(ctx) {
+    case ExprBinOpContext binOp -> {
+        yield switch(binOp.o.getType()) {
+        case Less, LessEqual, Greater, GreaterEqual, AndAnd, OrOr -> true;
+        default -> false;
+        };
+    }
+    case ExprUnOpContext unOp -> {
+        yield unOp.o.getType() == Not;
+    }
+    default -> false;
+    };
 }
 
 /**
