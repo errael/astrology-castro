@@ -1,0 +1,39 @@
+/*
+ * Define some function key behavior and a macro they use.
+ *
+ * Note the Key* switches are assigned to addresses
+ * that correspond to function keys.
+ */
+
+//
+// Set the default layout restrictions for this group of files.
+// These restrictions are inherited by subsequent files,
+// unless the files specifies its own restrictions.
+//
+// This is only needed to avoid address conflicts with
+// files that might already be loaded.
+//
+// layout memory { base 300; }
+// layout switch { base 300; }
+// layout macro { base 300; }
+
+// F1 is "MY_FK_BASE + 1" when using FK_F0 (FK_F0 is predefined).
+const MY_FK_BASE {FK_F0};
+        // const MY_FK_BASE {S_FK_F0};   // This uses Shift-FKey
+
+/*
+ * Function key prints a message.
+ */
+switch Key1 @MY_FK_BASE + 1 {
+    cprintf "F1 pressed\n"
+}
+
+/* Function key F2 prints a message */
+switch Key2 @MY_FK_BASE + 2 {
+    ~1 { file1_mac(2, second_arg, third_arg); }
+}
+
+macro file1_mac(f1m_param1, f1m_param2, f1m_param3) {
+    cprintf("running file1_mac with params: %d, %d, %d\n",
+            f1m_param1, f1m_param2, f1m_param3);
+}

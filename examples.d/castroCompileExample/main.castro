@@ -1,0 +1,18 @@
+/*
+ * Initialize "third_arg" and provide a Fkey to adjust "second_arg".
+ */
+
+run {
+    ~1 {
+        third_arg = 333;    // Although "third_arg" was initialized in "file2",
+                            // this file loads last, so it wins.
+        file1_mac(0, 0, 0);
+        file1_mac(0, second_arg, third_arg);
+    }
+}
+
+/* Function key F4 prints a message */
+switch Key4 @MY_FK_BASE + 4 {
+    ~1 { second_arg += 1; }
+    cprintf "Incrementing 2nd arg to %d\n" {~ second_arg; }
+}

@@ -23,9 +23,7 @@ astrotest.d/printf_results
 astrotest.d/printf_results-2
 astrotest.d/printf_results-3
 
-examples.d/*.as
-examples.d/*.def
-examples.d/*.map
+examples.d/junk
 
 syntax: glob
 

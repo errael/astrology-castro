@@ -78,7 +78,7 @@ assign_switch_addr : 'switch' id=Identifier '@' addr=expr ';' ;
 macro
     : 'macro' id=Identifier ('@' addr=expr)?
             ( has_paren='(' (args+=Identifier (',' args+=Identifier)*)? ')' )?
-            '{' bs+=astroExprStatement + '}'
+            '{' bs+=astroExprStatement* '}'
     ;
 
 /*
@@ -90,12 +90,12 @@ macro
  */
 
 switch
-    : 'switch' id=Identifier ('@' addr=expr)? '{' sc+=switch_cmd+ '}'
+    : 'switch' id=Identifier ('@' addr=expr)? '{' sc+=switch_cmd* '}'
     ;
 
 /** top level switch commands (not part of switch/macro). */
 run
-    : 'run' '{' sc+=switch_cmd+ '}'
+    : 'run' '{' sc+=switch_cmd* '}'
     ;
 
 switch_cmd

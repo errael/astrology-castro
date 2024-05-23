@@ -310,7 +310,7 @@ public void enterLayout(LayoutContext ctx)
 public void exitLayout(LayoutContext ctx)
 {
     if(workingLayout != null && workingLayout.getMem() != null)
-        workingLayout.getMem().checkNewLayout(ctx);
+        workingLayout.getMem().checkReportNewLayout(ctx);
     workingLayout = null;
 }
 

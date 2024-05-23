@@ -1,11 +1,13 @@
 /*
+ * For Astrolog 7.70
+ *
  * Do 
- *      castro mazegame.castro
+ *      castro mazegame.castro  (or castro mazegame.castro vi.castro)
  *      astrolog -i mazegame.as
  *
- * To use the vi bindings to move around the maze:
- *      castro vi.castro mazegame.castro
- *      astrolog -i vi.as -i mazegame.as
+ * To start mazegame using the vi bindings to move around the maze:
+ *      castro mazegame.castro vi.castro
+ *      astrolog -i mazegame.helper.as
  */
 copy {
 ; This is a port to castro of "mazegame.as" from Astrolog:
@@ -13,14 +15,9 @@ copy {
 ; https://github.com/CruiserOne/Astrolog/blob/master/mazegame.as
 }
 
-const AS770 {0};
-
 /*
- * Astrolog 7.60 start switch allocation at Alt-F1 (last chunk of FKeys).
  * Astrolog 7.70 and later, can allocate switch commands after FKeys.
  */
-const SWITCH_BASE {A_FK_F0 + 1};        // AS760
-//const SWITCH_BASE {A_FK_F0 + 13};     // AS770
 
 const MAZE_MEM {50};
 
@@ -29,8 +26,6 @@ const MAZE_MEM {50};
  * By setting this limit, there's an error if auto alloc runs out of space.
  */
 layout memory { limit MAZE_MEM; }
-
-layout switch { base SWITCH_BASE; }
 
 /** Start macro allocation somewhere random for no reason */
 layout macro { base 55; }
@@ -46,25 +41,41 @@ layout macro { base 55; }
 var maze[2] @MAZE_MEM;
 
 /*
- * Builtin variable usage:
+ * variable usage:
  *
- *      a - left/right current position
+ *      a - left/right current position (some guesses, especially 'e','f','h')
  *      b - up/down current position
- *      c - width/height of maze (maze is square)
+ *      c - width/height, in "blocks", of maze (maze is square)
+ *      d - size of next maze to draw, double to get width height in blocks
+ *      g - counter based on "d" used for create_paths
+ *      f, h - nPixels related to a block size.
+ *      e - f * 2
+ *
+ *      FREE: i,j
  *
  *      k - one-shot flag, clear it to give welcome message
  *      l - one-shot flag, clear it to report time and finished message
+ *
+ *      FREE: m,n,o,p,q,r,s
+ *
+ *      t - time fresh maze is drawn and game play starts
+ *      u - when finished maze, used to calculate how long it took
+ *
+ *      v, w - temps: in pixels, for drawing a block (maybe block center?)
+ *      x, y - temps: block index y/x. Often index in nested for loop scan
  */
 
-var cprintf_save_area[10]; // avoid cprintf changing builtin variables
+var cprintf_save_area[10]; // avoid cprintf changing variables
+
+const SecondsPerDay { 86400 };
 
 /*
  * There are multiple sets of keys for navigation; data in nav_info.
  * This is the index for the current navigation macro and keys message.
  */
-var cur_nav_idx;
+var cur_nav_idx {0};
 
-// Note that number/strings occupy the same location at the same time;
+// Note that number/strings can occupy the same location at the same time;
 // kind of like a struct with a number and a string.
 /*
  * Initialize macro addresses for navigation.
@@ -91,6 +102,7 @@ switch welcome @1 {
     cprintf 'Press F4 to create larger Maze.\n'
     cprintf 'Press F5 to restart current Maze.\n'
     cprintf 'Press F6 to change naviation keys.\n'
+    cprintf 'Press F7 to output internal state. (debug)\n'
 }
 
 // UI function keys
@@ -99,20 +111,26 @@ switch nav_keys @6 {
     cprintf 'Current keys %s.\n' {~ &nav_info[cur_nav_idx]; }
 }
 
-switch new_maze   @2  { -n ~1 { Macro(solid_maze); Macro(create_paths); } }
+switch new_maze   @2  { -n ~1 { solid_maze(); create_paths(); } }
 switch smaller    @3  { ~1 { if (d > 1) d -= 1; Switch(new_maze); } }
 switch larger     @4  { ~1 { if (d < 25) d += 1; Switch(new_maze); } }
 switch restart    @5  { -n ~1 { a = 1; b = 0; k = 0; } }
 
+switch s_info    @7  { ~1 { info(); } }
+
+switch s_cast @48 { ~1 { n = n; } }
+// switch s_cast @48 { }
+
 // The nav keys locations are automatically allocated
-switch left  { ~1 { a -= 1; if (Macro(z_is_wall)) a += 1; } }
-switch right { ~1 { a += 1; if (Macro(z_is_wall)) a -= 1; } }
-switch up    { ~1 { b -= 1; if (Macro(z_is_wall)) b += 1; } }
-switch down  { ~1 { b += 1; if (Macro(z_is_wall)) b -= 1; } }
+macro left()  { a -= 1; if (z_is_wall()) a += 1; cast(); }
+macro right() { a += 1; if (z_is_wall()) a -= 1; cast(); }
+macro up()    { b -= 1; if (z_is_wall()) b += 1; cast(); }
+macro down()  { b += 1; if (z_is_wall()) b -= 1; cast(); }
+
 switch exit_move  { -n -n1 ~1 { l = 0; } }
 
 switch report_done {
-    ~1 { u = Int((JulianT() - t) * 8640000.0); }
+    ~1 { u = Int((JulianT() - t) * (SecondsPerDay * 100)); }
     cprintf 'Congratulations, you made it through the Maze in %d.%d seconds! :)\n\n'
             {~ u / 100; Int(u % 100); }
     cprintf 'Have an a-Maze-ing day! :)\n'
@@ -120,8 +138,7 @@ switch report_done {
 
 switch hourglass { _Wh }
 
-
-macro draw_maze {
+macro draw_maze() {
     DCol(K_Green);
     for (y = 0; c - 1)
         for (x = 0; c - 1) {
@@ -132,29 +149,33 @@ macro draw_maze {
         }
 }
 
-macro solid_maze {
+macro solid_maze() {
     c = d * 2 + 1;
     g = d * d - 1;
     t = k ? JulianT() : Tim();
+    //cprintf("solid_maze: k %d, time %d\n", k, t);
+    cprintf("solid_maze: k %d, time<t> %d, Julian %d, Tim %d\n",
+        k, day_seconds(t), day_seconds(JulianT()), day_seconds(Tim()));
+        //k, day_seconds(t), JulianT(), Tim());
     s = RndSeed(Fract(t * 10000.0) * 10000.0);
     for (y = 0; c - 1)
         for (x = 0; c - 1)
             maze[y * c + x] = 0;
 }
 
-macro create_paths {
+macro create_paths() {
     a = 1; b = 1;
     maze[b * c + a] = 1;
     while (g)
-        Macro(create_paths_A);
+        create_paths_A();
     maze[1] = 1;
     a = c - 2; b = c - 1;
-    Macro(z_is_wall);
+    z_is_wall();
     *z = 1; // path now at this spot
     a = 1; b = 0;
 }
 
-macro create_paths_A {
+macro create_paths_A() {
     r = Rnd(0, 3);
     x = a; y = b;
     if (Odd(r)) {
@@ -163,10 +184,10 @@ macro create_paths_A {
         y += r <= 0 ? 2 : -2;
     }
     if (Tween(x, 0, c - 1) & Tween(y, 0, c - 1))
-        Macro(create_paths_B);
+        create_paths_B();
 }
 
-macro create_paths_B {
+macro create_paths_B() {
     z = &maze[y * c + x];
     if (!*z) { // a wall
         *z = 1; // clear the wall
@@ -182,32 +203,65 @@ macro create_paths_B {
  * SideEffect: z is set to &maze[a,b]
  * Return True if z position is a wall.
  */
-macro z_is_wall {
+macro z_is_wall() {
     if (b >= c)
         Switch(exit_move);
     z = &maze[b < 0 ? 0 : b * c + a];
     !*z;
 }
 
-// TODO: use cascading ?:
-macro nav_wasd {
-    if (z == KeyC('w')) z = Sw2KC(up);      // w --> up
-    if (z == KeyC('a')) z = Sw2KC(left);    // a --> left
-    if (z == KeyC('s')) z = Sw2KC(down);    // s --> down
-    if (z == KeyC('d')) z = Sw2KC(right);   // d --> right
+macro info() {
+    cprintf("xpos(<a>) %d, ypos(<b>) %d, w/h(<c>) %d, (<d>) %d\n",
+            a, b, c, d);
+    cprintf("nPix(<f>) %d, nPix(<h>) %d, f*2(<e>) %d, start time(<t>) %d\n",
+            f, h, e, t);
+
+    v = h + a * e;
+    w = h + b * e;
+    cprintf("Xwx %d, Xwy %d, v %d, w %d\n", _Xwx(), _Xwy(), v, w);
+    cprintf("DDisk (%d,%d)-(%d,%d)\n", v - f, w - f, v + f - 1, w + f - 1);
+}
+
+macro day_seconds(day_time) {
+    // Set "m" to hours, only neeed for julian day.
+    m = day_time > 100 ? fract(day_time) * 24 : day_time;
+    // set to fraction of a day
+    m /= 24;
+    // seconds
+    m *= SecondsPerDay;
+    Int(m);
+    /// // First convert day_time to seconds
+    /// m = day_time % 24;
+    /// Int(Fract(day_time) * SecondsPerDay);
+}
+
+// InteractX
+//       Run macro: "fResize = fCast = fTrue;"
+//       Run ' ': "fRedraw = fTrue;"
+macro cast() {
+    // Run a no-op macro to get the fCast.
+    z = Sw2KC(s_cast);    // z = true ? Sw2KC(s_cast) : KeyCode(' ');
+    // z = 12345678;
+    // z = KeyCode(' ');
+}
+
+macro nav_wasd() {
+         if (z == KeyC('w')) {    up(); }
+    else if (z == KeyC('a')) {  left(); }
+    else if (z == KeyC('s')) {  down(); }
+    else if (z == KeyC('d')) { right(); }
 }
 
 // hjkl are the vi/vim navigation keys
-// TODO: use cascading ?:
-macro nav_vi {
-    if (z == KeyC('k')) z = Sw2KC(up);      // k --> up
-    if (z == KeyC('h')) z = Sw2KC(left);    // h --> left
-    if (z == KeyC('j')) z = Sw2KC(down);    // j --> down
-    if (z == KeyC('l')) z = Sw2KC(right);   // l --> right
+macro nav_vi() {
+         if (z == KeyC('k')) {    up(); }
+    else if (z == KeyC('h')) {  left(); }
+    else if (z == KeyC('j')) {  down(); }
+    else if (z == KeyC('l')) { right(); }
 }
 
 run {
-    ~Q2 {
+    ~Q2 {   // Chart has just been displayed
         f = (Min(_Xwx(), _Xwy()) - 1) / (d * 12) + 1;
         e = f * 2;
         h = (Min(_Xwx(), _Xwy()) - (c - 1) * e) / 2;
@@ -216,11 +270,11 @@ run {
         v = h + a * e;
         w = h + b * e;
         DDisk(v - f, w - f, v + f - 1, w + f - 1);
-        Macro(draw_maze);
+        draw_maze();
     }
 }
 run {
-    ~Q3 {
+    ~Q3 {   // Chart has just been displayed and updated
         if (!k) {
             k = 1;
             Switch(welcome);
@@ -255,7 +309,7 @@ switch setupWinMenu770 {
 
 run {
     ~1 {
-        if(AS770)
+        if(Version() == 7.70)
             Switch(setupWinMenu770)
         else
             Switch(setupWinMenu760);

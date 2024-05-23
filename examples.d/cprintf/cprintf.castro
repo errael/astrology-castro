@@ -13,16 +13,25 @@
  *
  * Compile and try this example with
  *      castro cprintf.castro
- *      astrolog -i cprintf.as
+ *      astrolog -i cprintf.helper.as
  * see output
+ *
  *      Some primes: 11, 19, 3; a string: <Some Random String>. DID IT!
+ *      This has no args.
+ *      
+ *      AND DO THE SAME THING FROM A MACRO
+ *      
+ *      Some primes: 11, 19, 3; a string: <assigned in a macro>. DID IT!
+ *      This has no args.
  */
 
 /*
- * optionally declare cprintf_save_area to so that cprintf does
+ * Note that by using cprintf.helper.as,
+ * cprintf_save_area is defined so that cprintf does
  * save/restore of variables that it usees.
+ * Save/restore could be set up manually with:
+ *      var cprintf_save_area[10];
  */
-var cprintf_save_area[10];
 
 var str1;
 var v1 {11};
@@ -30,10 +39,21 @@ var v2 {8};
 switch cprintf_example {
     setstring str1 "Some Random String"
 
-    cprintf "Some primes: %d, %f, %d; a string: <%s>. DID IT!\n"
+    cprintf "\nSome primes: %d, %f, %d; a string: <%s>. DID IT!\n"
                 {~ v1; v1 + v2; v1 - v2; &str1; }
     cprintf "This has no args.\n"
 }
 
-run { ~1 { Switch(printf_example); } }
+macro macro_cprintf_example() {
+    cprintf("\nAND DO THE SAME THING FROM A MACRO\n\n");
+
+    str1 = "assigned in a macro";
+
+    cprintf("Some primes: %d, %f, %d; a string: <%s>. DID IT!\n",
+                v1, v1 + v2, v1 - v2, &str1);
+    cprintf("This has no args.\n");
+}
+
+run { ~1 { Switch(cprintf_example); } }
+run { ~1 { macro_cprintf_example(); } }
 

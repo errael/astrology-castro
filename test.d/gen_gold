@@ -9,6 +9,39 @@ DIR=${0%/*}
 # Running the tests from their directory, gives nice short names.
 cd $DIR
 
+usage() {
+    echo "$CMD [-O<level>] [-h] [files]*"
+    echo "    -O <level>    opimization level"
+    echo "    -h            output this message"
+
+    exit 1
+}
+
+declare TEMP
+TEMP=$(getopt -o "hO:" \
+    -n "$CMD" -- "$@")
+if [[ $? -ne 0 ]]; then usage > /dev/stderr; fi
+eval set -- "$TEMP"
+unset TEMP
+
+typeset -i cleanflag
+typeset -i lflag
+typeset optim
+
+while true
+do
+    case "$1" in
+        -O)      optim=-O$2;                          shift 2 ;;
+        -h) usage                                           ;;
+        --) shift
+            break
+            ;;
+        *) echo Internal Error "'$1'"; exit 1   ;;
+    esac
+done
+
+CASTRO_FLAGS="$optim --nostartup"
+
 Main() {
     run_all "$@"
 }
@@ -26,7 +59,7 @@ run_all() {
 }
 
 gen() {
-    tcastro --nostartup $current_test.castro 2> $current_test.stderr
+    tcastro $CASTRO_FLAGS $current_test.castro 2> $current_test.stderr
     make_gold
 }
 

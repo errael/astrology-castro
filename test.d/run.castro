@@ -23,3 +23,6 @@ run {
     //ERR// ~ {v3 = v1 + 30;}       // error
 }
 
+run {}
+switch sw01 {}
+macro ma01 {}

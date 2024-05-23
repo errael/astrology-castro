@@ -1,7 +1,7 @@
 /*
  * To start with the vi bindings to move around the maze:
  *      castro mazegame.castro vi.castro
- *      astrolog -i vi.as -i mazegame.as
+ *      astrolog -i mazegame.helper.as
  */
 
 run {

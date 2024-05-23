@@ -3,4 +3,7 @@ To run an example do something like
     castro mazegame.castro
     astrolog -i mazegame.as
 
+Topics  (ADD TO WIKI?)
 
+    command switches can use AstroExpressions [as] parameter
+        switchCommandArgument.castro

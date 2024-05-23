@@ -1,0 +1,7 @@
+This example is used in the projects main README.md:
+    Running the castro compiler.
+
+To compile and run this example:
+    Build:  castro --mapname test file1.castro file2.castro main.castro
+    Run:    astrolog -i test.helper.as
+    Clean:  rm -f *helper* *.as *.def *.map
