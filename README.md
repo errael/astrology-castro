@@ -4,7 +4,7 @@
 Some motivating factors for `castro`
 - familiar expression syntax (avoid writing and maintaining the prefix notation expressions),
 - referring to things by name rather than address.
-- automatic memory allocation
+- automatic memory/address allocation
 
 **There's a cheat sheet**<br>
 For those who like to play around before reading the docs: [cheat sheet](#cheat-sheet).
@@ -15,6 +15,8 @@ See [codegen](codegen).
 See `grammar`/[README](grammar/README.md)
 and `codegen`/[README](codegen/README.md).
 -->
+
+---
 
 Here's a simple example. Note that the switch, macro and variable definitions could be in 3
 different files. As in `Astrolog`, function names are case insensitive;
@@ -207,7 +209,8 @@ basename. When compilation completes there is a `basename.helper.as` file.
 
 The `helper.castro` file may have 4 types of statements
 - load compiled files in order, e.g. `-i file1 -i file2`<br/>
-  This is not present if the `--nostartup` option is used.
+  This is not present if the `--nohelperload` option is used.<br/>
+  **The path, if any, as specified on the command line is used for loading**.
 - declare `cprintf_save_area`<br/>
   `var cprintf_save_area[10]; // cprintf save/restore up to 10 variables.`<br/>
   This is not present if already defined or if there are no output statements.
@@ -217,7 +220,10 @@ The `helper.castro` file may have 4 types of statements
   When something like `cprintf("FOO");"`.
 
 And note that, if not specified, a file's _layout restrictions are inherited_
-from the first file.
+from the first file on the command line. This means that the `helper.castro`
+file has the **same layout restrictions as the first file**.
+
+#### Examples/options for `helper.castro` file
 
 For example, with `foo.castro` and `bar.castro` do
 ```
@@ -229,18 +235,33 @@ The basename of the `helper.castro` file is same as the `map` file, so
 castro --mapname=test foo.castro bar.castro
 astrolog -i test.helper.as
 ```
+And there's a `--helpername=some_name` option.
 
-If the `--nostartup` option is used, and there are `macro` output statements, then
+In the previous examples there is no path associated with the files.
+If `astrolog` is executed from a different
+directory, use the `astrolog` `-Yi` option.
 ```
-castro --nostartup foo.castro bar.castro
+astrolog -Yi0 /full/path/to/compilation/directory -i test.helper.as
+```
+
+Alternatively, a path can be specified when the files are compiled
+```
+castro --mapname=test /full/path/foo.castro /full/path/bar.castro
+# then from a different directory do
+astrolog -i /full/path/test.helper.as
+```
+
+If the `--nohelperload` option is used, and there are `macro` output statements, then
+```
+castro --nohelperload foo.castro bar.castro
 astrolog -i foo.helper.as -i foo.as -i bar.as
 ```
 
 Note that when there is no `macro` output or string assignment
-and the `--nostartup` is used, then
+and the `--nohelperload` is used, then
 a `helper.castro` file is **not generated**.
 ```
-castro --nostartup foo.castro bar.castro
+castro --nohelperload foo.castro bar.castro
 astrolog -i foo.as -i bar.as
 ```
 
@@ -298,7 +319,12 @@ a layout, the layout from the first file is inherited**.
 slots.
 
 ###     macro
-The `macro` statement defines an `AstroExpression macro` using `~M`; it contains expressions with function calls. See [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); there are a wide variety of function calls. The value of `Macro(some_macro)` is the value of the last statement/expr in some_macro as defined by `Astrolog`.
+The `macro` statement defines an `AstroExpression macro` using `~M`; it contains
+expressions with function calls. See
+[AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); there are
+a wide variety of function calls. The value of `Macro(some_macro)`, or
+`some_macro()`if it is macro function, is the value of the last statement/expr
+in `some_macro` as defined by `Astrolog`.
 
 A simple macro definition looks like
 ```

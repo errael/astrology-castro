@@ -17,6 +17,7 @@ import com.raelity.astrolog.castro.antlr.AstroParser;
 import com.raelity.astrolog.castro.antlr.AstroParser.ProgramContext;
 
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
+import static com.raelity.astrolog.castro.Castro.PARSE_TREE_VERBOSE;
 import static com.raelity.astrolog.castro.Util.getLineText;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.Util.objectID;
@@ -135,7 +136,7 @@ public TreeProps<String> getCachedPrefixExprProps()
     public String removeFrom(ParseTree node)
     {
         String s = super.removeFrom(node);
-        if(Castro.getVerbose() >= 2)
+        if(Castro.getVerbose() >= PARSE_TREE_VERBOSE)
             err().printf("Remove: %s %s\n", objectID(node), s);
         return s != null ? s : reportNullProp(node, "removeFrom"+tag);
     }
@@ -143,7 +144,7 @@ public TreeProps<String> getCachedPrefixExprProps()
     @Override
     public void put(ParseTree node, String value)
     {
-        if(Castro.getVerbose() >= 2)
+        if(Castro.getVerbose() >= PARSE_TREE_VERBOSE)
             err().printf("Saving: %s %s %s'%s'\n",
                          objectID(node), value,
                          getRuleName(getParser(), node, true), node.getText());

@@ -37,7 +37,7 @@ import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Function;
 import com.raelity.astrolog.castro.tables.Ops;
 import com.raelity.astrolog.castro.tables.Ops.Flow;
-import com.raelity.astrolog.castro.visitors.BinaryOpOptim;
+import com.raelity.astrolog.castro.visitors.OperatorOptim;
 
 import static com.raelity.astrolog.castro.Castro.getAstrologVersion;
 import static com.raelity.astrolog.castro.Constants.constant;
@@ -283,6 +283,9 @@ String genFuncCallOp(ExprFuncContext ctx, String _funcName, List<String> args)
 @Override
 String genUnOp(ExprUnOpContext ctx, Token opToken, String expr)
 {
+    String s = OperatorOptim.optimize(ctx);
+    if(s != null)
+        return s;
     sb.setLength(0);
     Integer constExpr = fold2Int(ctx);
     if(constExpr != null)
@@ -335,7 +338,7 @@ private String wrapBool(ExprContext ctx, String stringExpr)
 @Override
 String genBinOp(ExprBinOpContext ctx, Token opToken, String lhs, String rhs)
 {
-    String s = BinaryOpOptim.optimize(ctx);
+    String s = OperatorOptim.optimize(ctx);
     if(s != null)
         return s;
     sb.setLength(0);

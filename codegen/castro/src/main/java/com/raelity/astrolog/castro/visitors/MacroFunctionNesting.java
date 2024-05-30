@@ -14,6 +14,7 @@ import com.raelity.astrolog.castro.Util;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 import com.raelity.astrolog.castro.tables.Functions;
 
+import static com.raelity.astrolog.castro.Castro.MACRO_FUNC_VERBOSE;
 import static com.raelity.astrolog.castro.Util.objectID;
 
 /**
@@ -54,7 +55,7 @@ public static void endExprFunc(ExprFuncContext ctx)
     nest.exitExprFunc(ctx);
 }
 
-private final boolean debugFlag = Castro.getVerbose() >= 2;
+private final boolean debugFlag = Castro.getVerbose() >= MACRO_FUNC_VERBOSE;
 
 /** Map userFunc name to first ctx. Empty when not in a function call */
 private Map<String, ExprFuncContext> rootFuncContexts= new HashMap<>();

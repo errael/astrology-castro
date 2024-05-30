@@ -8,22 +8,24 @@
  * To start mazegame using the vi bindings to move around the maze:
  *      castro mazegame.castro vi.castro
  *      astrolog -i mazegame.helper.as
+ *
+ * Tested on linux and Windows.
  */
 copy {
 ; This is a port to castro of "mazegame.as" from Astrolog:
-; https://github.com/CruiserOne/Astrolog/blob/2676d1c63d22c66513c38f032a189e990ad2011e/mazegame.as
 ; https://github.com/CruiserOne/Astrolog/blob/master/mazegame.as
 }
 
+// Astrolog 7.70, switch commands after FKeys.
+
 /*
- * Astrolog 7.70 and later, can allocate switch commands after FKeys.
+ * The maze starting memory address.
  */
-
-const MAZE_MEM {50};
+const MAZE_MEM {70};
 
 /*
- * Limit automatic variable allocation, unbounded maze starts at 50.
- * By setting this limit, there's an error if auto alloc runs out of space.
+ * Limit automatic variable allocation. By setting this limit,
+ * there's an error if auto alloc runs out of space and into the maze mem.
  */
 layout memory { limit MAZE_MEM; }
 
@@ -73,42 +75,41 @@ const SecondsPerDay { 86400 };
  * There are multiple sets of keys for navigation; data in nav_info.
  * This is the index for the current navigation macro and keys message.
  */
-var cur_nav_idx {0};
+run { ~1 { cur_nav_idx = 0; } }
 
 // Note that number/strings can occupy the same location at the same time;
 // kind of like a struct with a number and a string.
 /*
- * Initialize macro addresses for navigation.
+ * Initialize lookup tables for navigation.
+ * Both x11 and win have tables for both wasd and vi.
  */
-var nav_info[] { MacroAddress(nav_wasd), MacroAddress(nav_vi) };
+var nav_info_x11[] { &nav_wasd_keys_x11[0], &nav_vi_keys_x11[0] };
+var nav_info_win_770[] { &nav_wasd_keys_win_770[0], &nav_vi_keys_win_770[0] };
 
 /*
  * Initialize associated messages.
  */
 run {
-    SetString nav_info[0] 'w/a/s/d' 'h/j/k/l'
+    SetString nav_info_x11[0] 'w/a/s/d (x11)' 'h/j/k/l (x11)'
+    SetString nav_info_win_770[0] 'w/a/s/d (win)' 'h/j/k/l (win)'
 }
 
 switch welcome @1 {
-    // insure a valid cur_nav_idx, don't change if valid
-    ~1 { cur_nav_idx %= sizeof(nav_info); }
+    // insure a valid cur_nav_idx, won't change if valid
+    ~1 { set_cur_nav_idx(cur_nav_idx); }
 
-    cprintf 'Welcome to Astrolog Mazes! (castro):)\n'
-    cprintf 'Use %s keys to move the dot through the Maze to the finish.\n\n'
-            {~ &nav_info[cur_nav_idx]; }
-    cprintf 'Press F1 to display this help text.\n'
-    cprintf 'Press F2 to create new Maze.\n'
-    cprintf 'Press F3 to create smaller Maze.\n'
-    cprintf 'Press F4 to create larger Maze.\n'
-    cprintf 'Press F5 to restart current Maze.\n'
-    cprintf 'Press F6 to change naviation keys.\n'
-    cprintf 'Press F7 to output internal state. (debug)\n'
-}
+    cprintf 'Welcome to Astrolog Mazes! (castro):)\nUse %s keys to move the dot through the Maze to the finish.\n\nPress F1 to display this help text.\nPress F2 to create new Maze.\nPress F3 to create smaller Maze.\nPress F4 to create larger Maze.\nPress F5 to restart current Maze.\nPress F6 to change naviation keys.\n'
+        {~ nav_keys_addr(); }
 
-// UI function keys
-switch nav_keys @6 {
-    ~1 { cur_nav_idx = (cur_nav_idx + 1) % sizeof(nav_info); }
-    cprintf 'Current keys %s.\n' {~ &nav_info[cur_nav_idx]; }
+    // cprintf 'Welcome to Astrolog Mazes! (castro):)\n'
+    // cprintf 'Use %s keys to move the dot through the Maze to the finish.\n\n'
+    //         {~ nav_keys_addr(); }
+    // cprintf 'Press F1 to display this help text.\n'
+    // cprintf 'Press F2 to create new Maze.\n'
+    // cprintf 'Press F3 to create smaller Maze.\n'
+    // cprintf 'Press F4 to create larger Maze.\n'
+    // cprintf 'Press F5 to restart current Maze.\n'
+    // cprintf 'Press F6 to change naviation keys.\n'
 }
 
 switch new_maze   @2  { -n ~1 { solid_maze(); create_paths(); } }
@@ -116,16 +117,51 @@ switch smaller    @3  { ~1 { if (d > 1) d -= 1; Switch(new_maze); } }
 switch larger     @4  { ~1 { if (d < 25) d += 1; Switch(new_maze); } }
 switch restart    @5  { -n ~1 { a = 1; b = 0; k = 0; } }
 
-switch s_info    @7  { ~1 { info(); } }
+// change UI nav keys
+switch nav_keys @6 {
+    ~1 {
+        set_cur_nav_idx(cur_nav_idx + 1);
+    }
+    cprintf 'Current keys %s.\n' {~ nav_keys_addr(); }
+}
 
-switch s_cast @48 { ~1 { n = n; } }
-// switch s_cast @48 { }
+/*
+ * Set the current nav index and compute/save
+ * selected "nav_keys" for this specific system.
+ */
+macro set_cur_nav_idx(cur_nav_idx) {
+    // the index may need to be wrapped
+    cur_nav_idx %= WIN() ? sizeof(nav_info_win_770) : sizeof(nav_info_x11);
+
+    // p points to address of table of keys to use
+    p = nav_keys_addr();
+    nav_keys = *p;
+}
+macro nav_keys_addr() {
+        WIN() ? &nav_info_win_770[cur_nav_idx] : &nav_info_x11[cur_nav_idx];
+}
+
+// Needed to workaround 7.70 issue; this uses a function key slot.
+switch sw_cast_chart @48 { ~1 { n = n; } }
+
+// This is needed with 7.70 because running a function key is how to
+// signal that the chart should be cast which adjusts the current time.
+// The next release of Astrolog, according to Walter, will have a
+// specific "z" value with indicates that a chart should be cast.
+macro cast_chart() {
+    // Run a no-op macro to get the fCast.
+    if(!WIN()) {
+        z = Sw2KC(sw_cast_chart);
+    } else {
+        z = 40195; // cmdMacro48 on 770
+    }
+}
 
 // The nav keys locations are automatically allocated
-macro left()  { a -= 1; if (z_is_wall()) a += 1; cast(); }
-macro right() { a += 1; if (z_is_wall()) a -= 1; cast(); }
-macro up()    { b -= 1; if (z_is_wall()) b += 1; cast(); }
-macro down()  { b += 1; if (z_is_wall()) b -= 1; cast(); }
+macro left()  { a -= 1; if (z_is_wall()) a += 1; cast_chart(); }
+macro right() { a += 1; if (z_is_wall()) a -= 1; cast_chart(); }
+macro up()    { b -= 1; if (z_is_wall()) b += 1; cast_chart(); }
+macro down()  { b += 1; if (z_is_wall()) b -= 1; cast_chart(); }
 
 switch exit_move  { -n -n1 ~1 { l = 0; } }
 
@@ -153,10 +189,6 @@ macro solid_maze() {
     c = d * 2 + 1;
     g = d * d - 1;
     t = k ? JulianT() : Tim();
-    //cprintf("solid_maze: k %d, time %d\n", k, t);
-    cprintf("solid_maze: k %d, time<t> %d, Julian %d, Tim %d\n",
-        k, day_seconds(t), day_seconds(JulianT()), day_seconds(Tim()));
-        //k, day_seconds(t), JulianT(), Tim());
     s = RndSeed(Fract(t * 10000.0) * 10000.0);
     for (y = 0; c - 1)
         for (x = 0; c - 1)
@@ -200,7 +232,9 @@ macro create_paths_B() {
 /*
  * Check if a,b position is a wall
  *
- * SideEffect: z is set to &maze[a,b]
+ * SideEffect:
+ *      - z is set to &maze[a,b]
+ *      - if up_down_pos >= height then exit
  * Return True if z position is a wall.
  */
 macro z_is_wall() {
@@ -208,56 +242,6 @@ macro z_is_wall() {
         Switch(exit_move);
     z = &maze[b < 0 ? 0 : b * c + a];
     !*z;
-}
-
-macro info() {
-    cprintf("xpos(<a>) %d, ypos(<b>) %d, w/h(<c>) %d, (<d>) %d\n",
-            a, b, c, d);
-    cprintf("nPix(<f>) %d, nPix(<h>) %d, f*2(<e>) %d, start time(<t>) %d\n",
-            f, h, e, t);
-
-    v = h + a * e;
-    w = h + b * e;
-    cprintf("Xwx %d, Xwy %d, v %d, w %d\n", _Xwx(), _Xwy(), v, w);
-    cprintf("DDisk (%d,%d)-(%d,%d)\n", v - f, w - f, v + f - 1, w + f - 1);
-}
-
-macro day_seconds(day_time) {
-    // Set "m" to hours, only neeed for julian day.
-    m = day_time > 100 ? fract(day_time) * 24 : day_time;
-    // set to fraction of a day
-    m /= 24;
-    // seconds
-    m *= SecondsPerDay;
-    Int(m);
-    /// // First convert day_time to seconds
-    /// m = day_time % 24;
-    /// Int(Fract(day_time) * SecondsPerDay);
-}
-
-// InteractX
-//       Run macro: "fResize = fCast = fTrue;"
-//       Run ' ': "fRedraw = fTrue;"
-macro cast() {
-    // Run a no-op macro to get the fCast.
-    z = Sw2KC(s_cast);    // z = true ? Sw2KC(s_cast) : KeyCode(' ');
-    // z = 12345678;
-    // z = KeyCode(' ');
-}
-
-macro nav_wasd() {
-         if (z == KeyC('w')) {    up(); }
-    else if (z == KeyC('a')) {  left(); }
-    else if (z == KeyC('s')) {  down(); }
-    else if (z == KeyC('d')) { right(); }
-}
-
-// hjkl are the vi/vim navigation keys
-macro nav_vi() {
-         if (z == KeyC('k')) {    up(); }
-    else if (z == KeyC('h')) {  left(); }
-    else if (z == KeyC('j')) {  down(); }
-    else if (z == KeyC('l')) { right(); }
 }
 
 run {
@@ -287,32 +271,42 @@ run {
     }
 }
 
-run { ~XQ { Macro(nav_info[cur_nav_idx]); } }
-
-switch setupWinMenu760 {
-    ~WQ {
-        if (z == 40082) z = 40152;
-        if (z == 40131) z = 40150;
-        if (z == 40281) z = 40153;
-        if (z == 40086) z = 40151;
-    }
-}
-
-switch setupWinMenu770 {
-    ~WQ {
-        if (z == 40084) z = 40155;
-        if (z == 40134) z = 40153;
-        if (z == 40284) z = 40156;
-        if (z == 40089) z = 40154;
-    }
-}
-
 run {
-    ~1 {
-        if(Version() == 7.70)
-            Switch(setupWinMenu770)
-        else
-            Switch(setupWinMenu760);
+    ~XQ {
+        lookup_run_nav();
+    }
+    ~WQ {
+        //cprintf("WQ: %d", z);
+        lookup_run_nav();
+    }
+}
+
+/*
+ * Key lookup depending on wasd/vi and linux/windows.
+ */
+var nav_wasd_keys_x11[] { KeyC('w'), KeyC('a'), KeyC('s'), KeyC('d') };
+var nav_vi_keys_x11[] { KeyC('k'), KeyC('h'), KeyC('j'), KeyC('l') };
+
+var nav_wasd_keys_win_770[] { 40084, 40134, 40284, 40089 };
+var nav_vi_keys_win_770[] { 40082, 40098, 40295, 40090 };
+
+// "nav_keys" is the current set of keys to check, taken from one of the above.
+var nav_keys { &nav_vi_keys_x11[0] };
+
+// The navigation operations
+var nav_ops[] { MAddr(up), MAddr(left), MAddr(down), MAddr(right) };
+
+/*
+ * Search for "z" (the key) in "nav_keys" (the current key table).
+ * Execute the corresponding navigation operation macro.
+ */
+macro lookup_run_nav() {
+    q = nav_keys + 3;
+    for(p = nav_keys; q) {
+        if(z == *p) {
+            Macro(nav_ops[p - nav_keys]);  // run op with index for found key
+            p = q; // break
+        }
     }
 }
 
@@ -321,3 +315,4 @@ run {
     =b0 =Xe
     ~1 { Switch(new_maze); }
 }
+

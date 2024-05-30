@@ -1,0 +1,5 @@
+The castro file has comments/examples from website along with how to generate
+the examples. See astroExpressionCommandSwitches.castro initial comment.
+
+Build:  castro --Ewarn=array-oob astroExpressionDocsCommandSwitches.castro
+Clean:  rm -f *helper* *.as *.def *.map

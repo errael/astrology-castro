@@ -117,7 +117,13 @@ static final String HELPER_EXT = ".helper" + IN_EXT;
 private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 
 private static int optVerbose;
-private static Integer optOptimize = 2;
+private static final int DEFAULT_OPTIM = 3;
+private static Integer optOptimize = DEFAULT_OPTIM;
+
+public static final int BINOP_OPTIM_VERBOSE = 2;
+public static final int MACRO_FUNC_VERBOSE = 2;
+public static final int PARSE_TREE_VERBOSE = 3;
+public static final int EXIT_RULE_VERBOSE = 3;
 
 private static EnumSet<Error> defaultWarn
         = EnumSet.of(FUNC_CASTRO, VAR_RSV, INNER_QUOTE,
@@ -181,8 +187,10 @@ static void usage(String note)
                                         Default is derived from first infile.
                 --helpername=name     File name is <name>.helper.castro
                                         Default is derived from map name.
-                --nostartup     Do not put '-i file1 -i file2...' in helper.
-                -O level        Optimization leve, -O0 is no optimization.
+                --nohelperload  Do not put '-i file1 -i file2...' in helper.
+                -O level        Optimization level, default -O{defaultOptim}.
+                                -O2 constant folding, simplify boolean expr.
+                                -O0 no optimization. -O3 reorders +/- operands.
                 --astrolog version      Astrolog version to target.
                                         For example "760" or "770".
                 --addrsort      In "*.map", "*.def" sort by addr, else by name.
@@ -218,7 +226,9 @@ static void usage(String note)
                 --console       show the tokens and AST in the console
                 --test  output prefix parse data
                 -v      output debug info, each use increases the output
-            """.replace("{cmdName}", cmdName).replace("{defaultWarn}", defaultW);
+            """ .replace("{cmdName}", cmdName)
+                .replace("{defaultWarn}", defaultW)
+                .replace("{defaultOptim}", String.valueOf(DEFAULT_OPTIM));
     System.err.println(usage);
     System.err.println(listEwarnOptions());
     usageExit();
@@ -241,10 +251,10 @@ public static boolean isAddrSort()
     return isAddrSort;
 }
 
-private static boolean nostartup;
-public static boolean isNostartup()
+private static boolean nohelperload;
+public static boolean isNoHelperLoad()
 {
-    return nostartup;
+    return nohelperload;
 }
 
 private static int compileTarget = 770;
@@ -301,7 +311,7 @@ public static void main(String[] args)
         new LongOpt("astrolog", LongOpt.REQUIRED_ARGUMENT, null, 10),
         new LongOpt("addrsort", LongOpt.NO_ARGUMENT, null, 11),
         new LongOpt("helpername", LongOpt.REQUIRED_ARGUMENT, null, 12),
-        new LongOpt("nostartup", LongOpt.NO_ARGUMENT, null, 13),
+        new LongOpt("nohelperload", LongOpt.NO_ARGUMENT, null, 13),
     };
     Getopt g = new Getopt(cmdName, args, "o:O:hv", longOpts);
     
@@ -368,7 +378,7 @@ public static void main(String[] args)
         }
         case 11 -> isAddrSort = true;
         case 12 -> helperName = g.getOptarg();
-        case 13 -> nostartup = true;
+        case 13 -> nohelperload = true;
         default -> {
             usage();
         }

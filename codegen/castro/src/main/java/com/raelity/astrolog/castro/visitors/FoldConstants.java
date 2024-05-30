@@ -167,6 +167,8 @@ private static void addCache(ExprContext ctx, Folded f)
  */
 private static Integer fold2Int(ExprContext ctx, boolean report)
 {
+    if(ctx == null)
+        return null;
     Folded f = get().expr2constInt(ctx, report);
     return f.isConstant() ? f.val() : null;
 }
