@@ -14,10 +14,11 @@ import com.raelity.astrolog.castro.antlr.AstroParserBaseListener;
 import com.raelity.astrolog.castro.antlr.AstroParser.*;
 import com.raelity.astrolog.castro.tables.Functions;
 import com.raelity.astrolog.castro.tables.Function;
-import com.raelity.astrolog.castro.visitors.BinaryOpOptim;
+import com.raelity.astrolog.castro.visitors.OperatorOptim;
 
 import static com.raelity.antlr.ParseTreeUtil.getRuleName;
 import static com.raelity.antlr.ParseTreeUtil.hasErrorNode;
+import static com.raelity.astrolog.castro.Castro.EXIT_RULE_VERBOSE;
 import static com.raelity.astrolog.castro.Util.lookup;
 import static com.raelity.astrolog.castro.visitors.FoldConstants.fold2Int;
 
@@ -123,7 +124,7 @@ private String optimExprPrefixRem(ExprContext ctx, String tag)
 public void exitEveryRule(ParserRuleContext ctx)
 {
     super.exitEveryRule(ctx);
-    if(Castro.getVerbose() >= 2)
+    if(Castro.getVerbose() >= EXIT_RULE_VERBOSE)
         getOut().println("exit " + getRuleName(apr.getParser(), ctx, false));
 }
 
@@ -215,6 +216,13 @@ public void exitExprFunc(ExprFuncContext ctx)
 }
 
 @Override
+public void enterExprUnOp(ExprUnOpContext ctx)
+{
+    OperatorOptim.check(ctx);
+}
+
+
+@Override
 public void exitExprUnOp(ExprUnOpContext ctx)
 {
     String e = optimExprPrefixRem(ctx.e, "UnOp");
@@ -237,7 +245,7 @@ public void exitExprQuestOp(ExprQuestOpContext ctx)
 @Override
 public void enterExprBinOp(ExprBinOpContext ctx)
 {
-    BinaryOpOptim.check(ctx);
+    OperatorOptim.check(ctx);
 }
 
 @Override

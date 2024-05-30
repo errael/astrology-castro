@@ -236,6 +236,13 @@ run { ~v { if(z == O_Cer) z = O_Mar; } }
 //     ~v3 "=a 64735 =b 47356 =c 73564 =d 56473 =w Sub 8 @y =z Mod Div Var Inc Mod Dec @x 4 Pow 10 Sub 4 @y 10"
 run { ~v3 { a = 64735; b = 47356; c = 73564; d = 56473;
             w = 8 - y;
+            // Since "*" doesn't take expr, cheat and use "Var()".
+            z = Var((x - 1) % 4 + 1) / Pow(10, 4 - y) % 10;
+            // Using a temp could do:
+} }
+// Using a temp could do:
+run { ~v3 { a = 64735; b = 47356; c = 73564; d = 56473;
+            w = 8 - y;
             p = (x - 1) % 4 + 1;
             z = *p / Pow(10, 4 - y) % 10;
 } }
@@ -348,9 +355,8 @@ run {
 // For example, to set custom string 4 to “Apple”, 5 to “Banana”, and 6
 // to “Carrot”, do:
 //     ~20 4 ";Apple;Banana;Carrot"
-run {
-    SetString d "Apple" "Banana" "Carrot"
-}
+run { SetString d "Apple" "Banana" "Carrot" }
+var g[] { "Apple", "Banana", "Carrot" };
 
 ///////////////////////////////////////////////////////////////////////////////
 // ~0: Disable AstroExpressions.

@@ -1,0 +1,63 @@
+/*
+ * Test binary opt optimizations
+ */
+
+layout memory { base 600; limit 650; }
+layout macro { base 600; limit 650; }
+layout switch { base 600; limit 650; }
+
+switch test_bin_ops {
+    ~1 {
+        Switch(test_simple_bin_ops);
+        Switch(test_more_bin_ops);
+    }
+}
+
+switch test_simple_bin_ops {
+    SetString test_name[0] "test_simple_bin_ops"
+
+    SetString test_name[1] ": MinusAll const :A"
+    ~1 { x = 4; y = 14; result = -x + 1 - y; expect = -17; macro(check); }
+
+    SetString test_name[1] ": MinusAll const :B"
+    ~1 { x = 4; y = 14; result = -x - 1 - y; expect = -19; macro(check); }
+
+    SetString test_name[1] ": MinusAll const :C"
+    ~1 { x = 4; y = 14; result = -x + 3 - y; expect = -15; macro(check); }
+
+    SetString test_name[1] ": MinusAll const :D"
+    ~1 { x = 4; y = 14; result = -x - 3 - y; expect = -21; macro(check); }
+
+
+    SetString test_name[1] ": multi UnOp :A"
+    ~1 { x = 4; y = 14; result = -x - - + 1 - y - 4; expect = -21; macro(check); }
+
+    SetString test_name[1] ": multi UnOp :B"
+    ~1 { x = 4; y = 14; result = -x - - - 1 - y - 4; expect = -23; macro(check); }
+
+    SetString test_name[1] ": multi UnOp :C"
+    ~1 { x = 4; y = 14; result = -x - - + 3 - y - 4; expect = -19; macro(check); }
+
+    SetString test_name[1] ": multi UnOp :D"
+    ~1 { x = 4; y = 14; result = -x - - - 3 - y - 4; expect = -25; macro(check); }
+
+}
+
+switch test_more_bin_ops {
+    SetString test_name[1] ": more bin_ops :A"
+    ~1 { x = 3;  result = x - (2 - 3) + 4; expect = 8; macro(check); }
+
+    SetString test_name[1] ": more bin_ops :B"
+    ~1 { a = 8; c = 2; e = 1; j = 100; result = -j - (((a - c - e)));
+         expect = -105; macro(check); }
+
+    SetString test_name[1] ": more bin_ops :C"
+    ~1 { a = 3; b = 5; c = 3; d = 6; e = 3; f = 7; j = -100;
+         result = -j - ((((a&&b) - (c&&d) - (e&&f))));
+         expect = 101; macro(check); }
+
+    SetString test_name[1] ": more bin_ops :D"
+    ~1 { a = 3; b = 5; c = 3; d = 6; e = 3; f = 7; j = -100;
+         result = -j - ((((a&&b) - (c&&0) - (e&&f))));
+         expect = 100; macro(check); }
+}

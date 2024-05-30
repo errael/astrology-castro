@@ -1,0 +1,2 @@
+Warn: astroExpressionCommandSwitches.castro:240:16 '            z = Var((x - 1) % 4 + 1) / Pow(10, 4 - y) % 10;' using castro operator 'Var' as a function
+Warn: astroExpressionCommandSwitches.castro:358:16 'run { SetString d "Apple" "Banana" "Carrot" }' 'd' array index out of bounds

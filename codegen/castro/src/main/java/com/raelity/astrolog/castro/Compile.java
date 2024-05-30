@@ -118,7 +118,7 @@ static boolean compile(List<String> inputFiles, String outName)
     //
 
     parsePass = true;
-    startupFiles = new ArrayList<>(inputFiles);
+    loadFiles = new ArrayList<>(inputFiles);
 
     // Add a place holder for internal helpers castro file.
     if(!inputFiles.isEmpty())
@@ -134,7 +134,7 @@ static boolean compile(List<String> inputFiles, String outName)
         if(!it.hasNext()) {
             assert inputFile == null;
             createPrintSaveArea();
-            createHelperStartup();  // Must be last thing in the file
+            createHelperLoad();  // Must be last thing in the file
             if(hasHelperFile()) {
                 closeHelperFile();
                 it.set(inputFile = helperPath.toString());
@@ -641,21 +641,21 @@ static String genMacroStringAss(ExprStringAssContext ctx, String lhs, String rhs
     return "Switch " + var.getAddr() + ' ';
 }
 
-private static List<String> startupFiles;
+private static List<String> loadFiles;
 /**
- * Add startup commands to helper, "-i f1.as -i f2.as ...";
+ * Add load commands to helper, "-i f1.as -i f2.as ...";
  * this goes at the end of the helper file
  */
-private static void createHelperStartup()
+private static void createHelperLoad()
 {
 
-    if(startupFiles == null)
+    if(loadFiles == null)
         return;
-    if(Castro.isNostartup())
+    if(Castro.isNoHelperLoad())
         return;
     StringBuilder sb = new StringBuilder();
     sb.append("run {\n");
-    for(String fn : startupFiles) {
+    for(String fn : loadFiles) {
         if(fn == null)
             continue;
         if(fn.endsWith(IN_EXT))
@@ -664,7 +664,7 @@ private static void createHelperStartup()
     }
     sb.append("}\n");
     defineHelperStatement(sb.toString());
-    startupFiles = null;
+    loadFiles = null;
 }
 
 private static boolean createdCprintfSaveArea;

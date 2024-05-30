@@ -55,6 +55,7 @@ import static com.raelity.astrolog.castro.antlr.AstroParser.GreaterEqual;
 import static com.raelity.astrolog.castro.antlr.AstroParser.AndAnd;
 import static com.raelity.astrolog.castro.antlr.AstroParser.OrOr;
 import static com.raelity.astrolog.castro.antlr.AstroParser.Not;
+import static com.raelity.astrolog.castro.antlr.AstroParser.VOCABULARY;
 
 /**
  *
@@ -114,6 +115,11 @@ public static String lc(String s)
  */
 public static String sf(String fmt, Object... args) {
     return args.length == 0 ? fmt : String.format(fmt, args);
+}
+
+public static String getDisplayName(Token token)
+{
+    return token == null ? "" : VOCABULARY.getDisplayName(token.getType());
 }
 
 /**

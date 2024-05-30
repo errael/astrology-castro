@@ -2,9 +2,9 @@
  * Test macro functions
  */
 
-layout memory { base 500; limit 550; }
-layout macro { base 500; limit 550; }
-layout switch { base 500; limit 550; }
+layout memory { base 550; limit 600; }
+layout macro { base 550; limit 600; }
+layout switch { base 550; limit 600; }
 
 switch test_macro_functions {
     ~1 {

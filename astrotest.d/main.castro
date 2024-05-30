@@ -3,7 +3,6 @@ run {
     _Y8 // don't truncate lines
 
     ~1 {
-        a;
         Switch(test_case_insensitive);
         Switch(test_castro_constants);
         Switch(test_astrolog_constants);
@@ -13,5 +12,6 @@ run {
         Switch(test_macro_functions);
         Switch(test_flow_control);
         Switch(test_functions);
+        Switch(test_bin_ops);
     }
 }

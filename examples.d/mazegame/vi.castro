@@ -2,8 +2,10 @@
  * To start with the vi bindings to move around the maze:
  *      castro mazegame.castro vi.castro
  *      astrolog -i mazegame.helper.as
+ *
+ * Note this must be last, so the following is overriden.
  */
 
 run {
-    ~1 { cur_nav_idx = 1; }
+    ~1 { set_cur_nav_idx(1); }
 }

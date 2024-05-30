@@ -1,0 +1,104 @@
+/*
+ * Operator optimizations
+ *      - reorder operands, collapse interspersed constants.
+ *      - unary +/-
+ */
+
+macro m00 {
+    a = b + -11;
+    a = b + - 7 + c;
+    v = -y + 3;
+}
+
+macro m01 {
+    v = -x + 1;
+    v = +x + 3;
+    v = -x + 4;
+    v = -x -y - 4;
+    v = -(x + y) - 4;
+    v = -(x + 7 + y) - 4;
+    v = +(-x + 7 + y) - 4;
+    v = -(x * y) - 4;
+    v = -(x * y) - 4;
+    v = +(x * y) - 4;
+    v = 4 -(x + y);
+}
+
+macro m02 {
+    v = 8 - y - 11;
+    w = 8 - (a * b + c) - 3;
+    x = 8 - a * b - c - 3;
+    y = 8 - (a * b - c) - 11;
+    z = 8 - a * b + c - 3;
+
+    w = - y + 8;
+    w = - y + 8;
+}
+
+macro m03 {
+    w = 1 - y;
+    w = -x - - + 1 - y - 4;
+    w = -x - - - 1 - y - 4;
+    w = -x - - + 3 - y - 4;
+    w = -x - - - 3 - y - 4;
+    w = 8 - y + x;
+    w = y + 8 - x;
+}
+
+macro m04 {
+    z = -j - (((a - c - e)));
+    z = -j - (-(-(a - c - e)));
+
+    z = -j - ((((a&&b) - (c&&d) - (e&&f))));
+    z = -j - (-(-((a&&b) - (c&&d) - (e&&f))));
+
+    z = -j - (((a - c + e)));
+    z = -j - (-(-(a - c + e)));
+
+    z = -j - ((((a&&b) - (c&&d) + (e&&f))));
+    z = -j - (-(-((a&&b) - (c&&d) + (e&&f))));
+}
+
+macro m05 {
+    z = -j - (((  - (e))));
+    z = -j - (-(-(  - (e))));
+    z = -j - (-(    - (e))) ;
+    z = -j - (      - (e))  ;
+    z = -j          - (e)   ;
+}
+
+macro m06 {
+    v = -x*y;
+    v = -(x*y);
+
+    w = -(x * y) - 4;
+
+    v = - - -(- - -(x*y)) + 4;
+    v =  - - (- - -(x*y)) + 4;
+    v = - - -(  - -(x*y)) + 4;
+    v =  - - (  - -(x*y)) + 4;
+
+    v = - - -(- - -x*y) + 4;
+    v =  - - (- - -x*y) + 4;
+    v = - - -(  - -x*y) + 4;
+    v =  - - (  - -x*y) + 4;
+
+    // Interesting that the following are not the same;
+    // because unary '-' is higher priority than multiplication
+    v =  - -x*y;        // "- -" two unary minus in a row
+    v =  - (-x*y);      // The multiplication 
+    // But these are the same
+    v =  - -x;
+    v =  - (-x);
+}
+
+macro m07 {
+    a = k - (2 - 3) + 4;
+
+    a = k + (m &&  3) - 7 + l -6;
+    a = k - (m &&  3) - 7 + l -6;
+    a = k + (m && +n) - 7 + l -6;
+    a = k - (m && +n) - 7 + l -6;
+    a = k + (m && -n) - 7 + l -6;
+    a = k - (m && -n) - 7 + l -6;
+}

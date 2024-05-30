@@ -24,7 +24,9 @@ TESTS="
     macro_functions
     macro-ops
     const-condition
+    bin-ops
     warnings
+    astroExpressionCommandSwitches
     errors-1
     errors-2
     errors-3
