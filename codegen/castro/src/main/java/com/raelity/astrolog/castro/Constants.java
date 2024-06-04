@@ -39,7 +39,6 @@ public class Constants
 {
 
 private static final int NFK = 12;
-public static final int FK_F0_KEY_CODE = 200; 
 public static final int FK_F0_SLOT = 0;
 public static final int FK_FIRST_SLOT = FK_F0_SLOT + 1; 
 public static final int FK_LAST_SLOT = FK_F0_SLOT + 4 * NFK; 
@@ -50,11 +49,6 @@ private static final NameVal[] castroConsts = new NameVal[] {
     new NameVal("S_FK_F0", FK_F0_SLOT + 1 * NFK),
     new NameVal("C_FK_F0", FK_F0_SLOT + 2 * NFK),
     new NameVal("A_FK_F0", FK_F0_SLOT + 3 * NFK),
-
-    new NameVal(  "FK_F0_KC", FK_F0_KEY_CODE + 0 * NFK),
-    new NameVal("S_FK_F0_KC", FK_F0_KEY_CODE + 1 * NFK),
-    new NameVal("C_FK_F0_KC", FK_F0_KEY_CODE + 2 * NFK),
-    new NameVal("A_FK_F0_KC", FK_F0_KEY_CODE + 3 * NFK),
 
     new NameVal("FK_NKEY", NFK),
 };

@@ -648,7 +648,13 @@ var some_strings[] { "string1", "string2", "string3" };
 
 ### castro functions
 
-Some functions are part of the `castro` language. They are treated as constants.
+Some functions are part of the `castro` language. Except for the key code
+functions these functions are treated as constants.
+The return values for the key code functions are constant for a given
+operating system and `astrolog` version.
+
+**Warning**: in `castro` v1.0.0 `KeyCode()` returns ascii values; these work
+on X11. Looking for a solution...
 
 See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
 
@@ -657,7 +663,7 @@ See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
 | SwitchAdress  | SAddr | SAddr(switchName) | The address of a switch |
 | MacroAdress   | MAddr | MAddr(macroName) | The address of a macro |
 | KeyCode       | KeyC | KeyC("a") | "a" is ascii val 97, takes range ' ' - '~' |
-| Switch2KeyCode | Sw2KC | Sw2KC(switchName) | see ~XQ hook. arg range 1 - 48 |
+| Switch2KeyCode | Sw2KC | Sw2KC(switchName) | see ~XQ, ~WQ hook |
 | SizeOf       | ----- | SizeOf(varname) | the number of locations used by the variable |
 
 By default `Astrolog` associates switch commands at adresses 1 - 48 with function keys
@@ -668,7 +674,6 @@ run { ~XQ { if (z == KeyC("a")) z = Sw2KC(func_key_demo); } }
 ```
 
 Alternatively
-
 ```
 run { ~XQ { if (z == KeyC("a")) { Switch(func_key_demo); z = KeyCode(' '); } } }
 ```

@@ -15,3 +15,6 @@ run {
         Switch(test_bin_ops);
     }
 }
+
+// Do something to make sure there's a helper function
+macro main_insure_helper() { FK_F0_KC(); }

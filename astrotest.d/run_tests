@@ -80,7 +80,7 @@ do
     esac
 done
 
-CASTRO_FLAGS="$optim"
+CASTRO_FLAGS="$optim --nohelperload"
 
 typeset -i nErrors
 
@@ -169,7 +169,7 @@ run_infra_tests() {
 
     date > $INFRA_OUTPUT
     temp=(${infra_files[@]/%/.as})
-    run_echo astrolog ${temp[@]/#/-i } >> $INFRA_OUTPUT
+    run_echo astrolog -i $INFRA_MAP.helper.as ${temp[@]/#/-i } >> $INFRA_OUTPUT
     date >> $INFRA_OUTPUT
 
     grep -E 'PASS|FAIL' $INFRA_OUTPUT

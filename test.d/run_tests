@@ -77,7 +77,7 @@ do
     esac
 done
 
-CASTRO_FLAGS="$optim --nostartup"
+CASTRO_FLAGS="$optim --nohelperload"
 
 if ((lflag))
 then

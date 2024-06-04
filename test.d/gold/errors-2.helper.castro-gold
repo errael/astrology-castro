@@ -1,0 +1,42 @@
+/* *****************************************************************
+ *
+ * Windows/linux Function key assist
+ */
+
+/* **************
+ *
+ * [[SCA]_]FK_F0_KC
+ *
+ * Return the value for the given function key on the current system
+ * Use with the "z" value of ~XQ and ~WQ.
+ */
+macro base_function_key_code_code() {
+    if(WIN()) {
+        if(Version() == 7.70)
+            40148 - 1  //cmdMacro01 - 1
+        else
+            40145 - 1;  //cmdMacro01 - 1
+    } else {
+        201 - 1;
+    }
+}
+macro   FK_F0_KC() { base_function_key_code_code(); }
+macro S_FK_F0_KC() { base_function_key_code_code() + FK_NKEY; }
+macro C_FK_F0_KC() { base_function_key_code_code() + 2 * FK_NKEY; }
+macro A_FK_F0_KC() { base_function_key_code_code() + 3 * FK_NKEY; }
+
+/* **************
+ *
+ * Switch2KeyCode
+ * The parameter is in the range 1-48.
+ *
+ * Convert a switch address to a KeyCode; used with ~XQ and ~WQ.
+ * Set the "z" variable to the return of this function and the
+ * switch is executed by astrolog's key handler.
+ *
+ * NOTE: Garbage In, Garbage Out. (parameter checking at compile time).
+ */
+macro Switch2KeyCode_Helper(Switch2KeyCode_SwitchAddress_Parameter)
+{
+    Switch2KeyCode_SwitchAddress_Parameter + base_function_key_code_code();
+}

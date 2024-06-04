@@ -83,7 +83,7 @@ switch test_keycode {
     ~1 { result = Sw2KC(Shift_F1); expect = 213; macro(check); }
 
     SetString test_name[1] ": Sw2KC(Shift_F1)-2"
-    ~1 { result = Sw2KC(Shift_F1); expect = FK_F0_KC + 13; macro(check); }
+    ~1 { result = Sw2KC(Shift_F1); expect = FK_F0_KC() + 13; macro(check); }
 }
 
 switch test_sizeof {

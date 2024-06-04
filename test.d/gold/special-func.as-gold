@@ -19,7 +19,7 @@
 
 ; MACRO ma2
 ~M 2 ' 
-    =a 230  
+    =a Do = 29 30 Macro 8  
 '
 
 ; SWITCH sw_sw2kc @30 

@@ -26,8 +26,12 @@ macro ma01 @50 {
 
     a = maddr(ma01);
     b = maddr(ma01) + 3;
-    c = saddr(sw01) + 3;
+    b = macroAddress(ma01) + 3;
 
+    c = saddr(sw01) + 3;
+    c = SwitchAddress(sw01) + 3;
+
+    d = Switch2KeyCode(sw01) + 3;
     d = Sw2KC(sw01) + 3;
 
     e = ~23 + 1;
