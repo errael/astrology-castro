@@ -35,7 +35,7 @@ public static final String FUNC_ID_SWITCH = "switch";
 public static final String FUNC_ID_MACRO = "macro";
 
 /**
- * isConst - False means this given call is not a constant, ignore all else.<br>
+ * isConst - False means this given call is not a constant, ignore constValue.<br>
  * constVal - constant value of the specific function call<br>
  * displayVal - user specified value of the specific function call<br>
  */

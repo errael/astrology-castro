@@ -40,7 +40,7 @@ do
     esac
 done
 
-CASTRO_FLAGS="$optim --nostartup"
+CASTRO_FLAGS="$optim --nohelperload"
 
 Main() {
     run_all "$@"

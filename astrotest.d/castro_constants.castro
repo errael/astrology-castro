@@ -19,20 +19,25 @@ switch test_castro_constants {
     }
 }
 
+//
+// NOTE: these are not constant anymore. They depend on system windows/linux.
+//
+// The following test is good for linux.
+//
 switch test_castro_constants_fk__kc {
     SetString test_name[0] "test_castro_constants_fk__kc"
 
     SetString test_name[1] ": FK_F0_KC"
-    ~1 { result = FK_F0_KC; expect = 200; macro(check); }
+    ~1 { result = FK_F0_KC(); expect = 200; macro(check); }
     SetString test_name[1] ": S_FK_F0_KC"
-    ~1 { result = S_FK_F0_KC; expect = 200 + 12; macro(check); }
+    ~1 { result = S_FK_F0_KC(); expect = 200 + 12; macro(check); }
     SetString test_name[1] ": C_FK_F0_KC"
-    ~1 { result = C_FK_F0_KC; expect = 200 + 24; macro(check); }
+    ~1 { result = C_FK_F0_KC(); expect = 200 + 24; macro(check); }
     SetString test_name[1] ": A_FK_F0_KC"
-    ~1 { result = A_FK_F0_KC; expect = 200 + 36; macro(check); }
+    ~1 { result = A_FK_F0_KC(); expect = 200 + 36; macro(check); }
 
     SetString test_name[1] ": A_Fk_f0_Kc"
-    ~1 { result = A_Fk_f0_Kc; expect = 200 + 36; macro(check); }
+    ~1 { result = A_Fk_f0_Kc(); expect = 200 + 36; macro(check); }
 }
 
 switch test_castro_constants_fk {
