@@ -12,11 +12,21 @@
 // errors: 0
 
 // Space: Macros. File: log-ops.castro
-// declared [1..2) 
-// used     (-∞..2) [2147483647..+∞) 
-// free     [2..2147483647) 
+// declared [1..12) 
+// used     (-∞..12) [2147483647..+∞) 
+// free     [12..2147483647) 
 // errors: 0
-macro LogOps @1; // [ALLOC]
+macro andandops_1 @1; // [ALLOC]
+macro andandops_2 @2; // [ALLOC]
+macro andandops_3 @3; // [ALLOC]
+macro andandops_4 @4; // [ALLOC]
+macro andandops_5 @5; // [ALLOC]
+macro LogOps      @6; // [ALLOC]
+macro ororops_1   @7; // [ALLOC]
+macro ororops_2   @8; // [ALLOC]
+macro ororops_3   @9; // [ALLOC]
+macro ororops_4  @10; // [ALLOC]
+macro ororops_5  @11; // [ALLOC]
 
 // Space: Switches. File: log-ops.castro
 // used     (-∞..49) [2147483647..+∞) 

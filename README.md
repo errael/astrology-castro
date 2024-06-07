@@ -44,8 +44,15 @@ which generates
 
 This shows that `castro` is a thin layer that mirrors `Astrolog` and `AstroExpression` basics. See [discussions](https://github.com/errael/astrology-castro/discussions) for musings on possible extensions.
 
-castro 0.9.x introduces macro functions. From the previous example the macro can be defined as follows and the years are provided _when the macro is invoked_. **NOTE: There is no stack**; in the example, yearA and yearB are global variables, **beware of recusion**. Macro functions are syntactic sugar.
+`castro` 0.9.x introduces **macro functions**. From the previous example the macro
+can be defined as follows and the years are provided _when the macro is
+invoked_. **NOTE: There is no stack**; in the example, yearA and yearB are
+global variables, **beware of recusion**. Macro functions are syntactic sugar.
 ```
+switch progressedAspectsBetweenYearsAB {
+    -dpY {~ yearA < yearB ? yearA : yearB; } {~ Abs(yearA - yearB) + 1; }
+}
+
 macro progressByYears(yearA, yearB) {           // declares globals yearA/yearB
     cprintf("Progressed aspects between years %d and %d\n", yearA, yearB);
     Switch(progressedAspectsBetweenYearsAB);
@@ -53,13 +60,23 @@ macro progressByYears(yearA, yearB) {           // declares globals yearA/yearB
 
 run { ~1 { progressByYears(1973, 1975); } }
 ```
-This generates the following, use the same `switch progressedAspectsBetweenYearsAB`
+This generates the following
 ```
+; SWITCH progressedAspectsBetweenYearsAB
+-M0 49 '-dpY  "~ IfElse Lt @27 @28 @27 @28" "~ Inc Abs Sub @27 @28"'
+
 ; MACRO progressByYears
-~M 1 'Switch 1'
+~M 1 'Switch 50 Switch 49'
 
 ; RUN 
 ~1 "Do2 = 27 1973 = 28 1975 Macro 1" 
+```
+Note that the cprintf is in the generated [helper.castro](#the-helpercastro-file) file.
+```
+; SWITCH castroHelperPrint_1
+-M0 50 '~1 "= 29 @a = 30 @b
+        =a @27 =b @28"  -YYT "Progressed aspects between years \A and \B\n"
+        ~1 "=a @29 =b @30"'
 ```
 
 
