@@ -18,10 +18,23 @@ switch test_logical_ops {
         Switch(test_log_OrOr2);
         Switch(test_log_AndAnd4);
         Switch(test_log_OrOr4);
+        Switch(test_other_log_ops);
     }
 
     // Uncomment the following to see what failure output looks like
     // ~1 { Switch(test_force_fail); }
+}
+
+switch test_other_log_ops {
+    SetString test_name[0] "test_other_log_ops"
+
+    SetString test_name[1] ": a<b && 5 A"
+    ~1 { a = 10; b = 20; c = 33;
+        result = if(a<b && 5) c; expect = 33; macro(check); }
+
+    SetString test_name[1] ": a<b && 5 B"
+    ~1 { a = 10; b = 5; c = 33;
+        result = if(a<b && 5) c; expect = 0; macro(check); }
 }
 
 var zero {0};
@@ -112,6 +125,13 @@ switch test_long_constant_log_ops {
     SetString test_name[1] ": || 1..."
     ~1 { result = 1 || 1 || 1 || 1 || 1 || 1 || 1 || 1;
             expect = 1; macro(check); }
+
+    SetString test_name[1] ": && 1...0 1..."
+    ~1 { result = 1 && 1 && 1 && 0 && 1 && 1 && 1 && 1;
+            expect = 0; macro(check); }
+    SetString test_name[1] ": || 0...1 0..."
+    ~1 { result = 0 || 0 || 0 || 1 || 0 || 0 || 0 || 0;
+            expect = 1; macro(check); }
 }
 
 switch test_long_log_ops {
@@ -129,6 +149,13 @@ switch test_long_log_ops {
             expect = 0; macro(check); }
     SetString test_name[1] ": || one..."
     ~1 { result = one || one || one || one || one || one || one || one;
+            expect = 1; macro(check); }
+
+    SetString test_name[1] ": && one...zero one..."
+    ~1 { result = one && one && one && zero && one && one && one && one;
+            expect = 0; macro(check); }
+    SetString test_name[1] ": || zero...one zero..."
+    ~1 { result = zero || zero || zero || one || zero || zero || zero || zero;
             expect = 1; macro(check); }
 }
 

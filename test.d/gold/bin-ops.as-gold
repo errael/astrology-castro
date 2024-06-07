@@ -89,8 +89,8 @@
 ; MACRO m07
 ~M 8 ' 
     =a Add @k 5  
-    =a Add Add Add @k If @m 1 @l -13  
-    =a Add Add Sub @k If @m 1 @l -13  
+    =a Add Add Add @k Bool @m @l -13  
+    =a Add Add Sub @k Bool @m @l -13  
     =a Add Add Add @k If @m Bool @n @l -13  
     =a Add Add Sub @k If @m Bool @n @l -13  
     =a Add Add Add @k If @m Bool Neg @n @l -13  

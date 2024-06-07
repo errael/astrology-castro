@@ -117,7 +117,7 @@ static final String HELPER_EXT = ".helper" + IN_EXT;
 private static final Logger LOG = Logger.getLogger(Castro.class.getName());
 
 private static int optVerbose;
-private static final int DEFAULT_OPTIM = 3;
+private static final int DEFAULT_OPTIM = 4;
 private static Integer optOptimize = DEFAULT_OPTIM;
 
 public static final int BINOP_OPTIM_VERBOSE = 2;
@@ -191,6 +191,7 @@ static void usage(String note)
                 -O level        Optimization level, default -O{defaultOptim}.
                                 -O2 constant folding, simplify boolean expr.
                                 -O0 no optimization. -O3 reorders +/- operands.
+                                -O4 '&&' and '||' expressions.
                 --astrolog version      Astrolog version to target.
                                         For example "760" or "770".
                 --addrsort      In "*.map", "*.def" sort by addr, else by name.

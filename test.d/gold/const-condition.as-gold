@@ -4,7 +4,7 @@
 
 ; MACRO m00
 ~M 1 ' 
-    If If Lt @a @b 1 @c  
+    If Lt @a @b @c  
 '
 
 ; MACRO m01

@@ -5,9 +5,126 @@ macro LogOps {
     a || b;
     c || d || e || f;
 
-    // check removal of "Bool" after doing "isBoo(expr)"
     a < b || c < d && e < f;
     a < b && !c;
     a < b && c < d;
 }
 
+macro andandops_1 {
+    x = a && 5;
+    x = a && 0;
+    x = a && b && 5;
+    x = a && b && 0;
+
+    x = a && b<c && 5;
+
+    x = a<b && 5;
+    x = a<b && 0;
+}
+macro andandops_2 {
+
+    if(a<b && 5) c;
+    if(a && b && c) x;
+
+    a = b && c && d;
+
+    a = b && c && d && 0 && e;
+
+    a = 1 && 2 && 3 && 4 && b;
+    a = 1 && 2 && 0 && 4 && b;
+    a = 1 && 2 && b && 4 && 5;
+}
+macro andandops_3 {
+
+    a = 1 && 2;
+    a = 1 && 1 && 1 && 0;
+    a = 1 && 0;
+
+    a = b && -(c && + +d && e);
+
+    a = b && c;
+    a = -b && 4;
+
+    a = b && 4 && c;
+}
+macro andandops_4 {
+
+    a = - b && c;
+    a = b && - c;
+
+    a = b && c && d;
+    a = b && c && d && e && f;
+    a = 0 && c && d && e && f;
+    a = b && c && 0 && e && f;
+}
+macro andandops_5 {
+
+    a = if(b && c) x;
+    a = b && c && d;
+
+    a = a + b + c && d && e && f && g + h + i;
+    a = a + b + (c && d && e && f && g) + h + i;
+
+    a = b + c + d;
+    a = b && c && d;
+}
+
+macro ororops_1 {
+    x = a || 0;
+    x = a || 5;
+    x = a || b || 0;
+    x = a || b || 5;
+
+    x = a || b<c || 0;
+
+    x = a<b || 0;
+    x = a<b || 5;
+}
+macro ororops_2 {
+
+    if(a<b || 5) c;
+    if(a || b || c) x;
+
+    a = b || c || d;
+
+    a = b || c || d || 0 || e;
+
+    a = 0 || 0 || 0 || 0 || b;
+    a = 0 || 0 || 1 || 0 || b;
+    a = 0 || 0 || b || 0 || 0;
+}
+macro ororops_3 {
+
+    a = 0 || 0;
+    a = 0 || 0 || 0 || 1;
+    a = 1 || 2;
+
+    a = b || -(c || + +d || e);
+
+    a = b || c;
+    a = -b || 4;
+
+    a = b || 4 || c;
+}
+macro ororops_4 {
+
+    a = - b || c;
+    a = b || - c;
+
+    a = b || c || d;
+    a = b || c || d || e || f;
+    a = 1 || c || d || e || f;
+    a = b || c || 1 || e || f;
+}
+macro ororops_5 {
+
+    a = if(b || c) x;
+    a = b || c || d;
+
+
+    a = a + b + c || d || e || f || g + h + i;
+    a = a + b + (c || d || e || f || g) + h + i;
+
+    a = b + c + d;
+    a = b || c || d;
+}
