@@ -4,6 +4,7 @@ package com.raelity.astrolog.castro;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -147,11 +148,16 @@ public static String getVersionString()
     return version;
 }
 
+private static String versionString()
+{
+    return String.format("castro %s (Astrolog %s)",
+                         getVersionString(), getAstrologVersionString());
+}
+
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
 private static void version()
 {
-    System.out.printf("castro %s (Astrolog %s)\n",
-            getVersionString(), getAstrologVersionString());
+    System.out.printf("%s\n", versionString());
     System.exit(0);
 }
 
@@ -166,13 +172,23 @@ static String listEwarnOptions()
     return sb.toString();
 }
 
-private static void usageExit() { System.exit(1); }
-static void usage() { usage(null); }
+private static void usageErrorExit() { System.exit(1); }
+
 @SuppressWarnings("UseOfSystemOutOrSystemErr")
-static void usage(String note)
+static void usage() {
+    usage(null);
+}
+
+@SuppressWarnings("UseOfSystemOutOrSystemErr")
+static void usage(String note) {
+    outputHelp(System.err, note);
+    usageErrorExit();
+}
+
+static void outputHelp(PrintStream out, String note)
 {
     if(note != null)
-        System.err.printf("%s: %s\n", cmdName, note);
+        out.printf("%s: %s\n", cmdName, note);
     String defaultW = defaultWarn.stream()
             .map(e -> e.toString())
             .collect(Collectors.joining(" "));
@@ -230,9 +246,9 @@ static void usage(String note)
             """ .replace("{cmdName}", cmdName)
                 .replace("{defaultWarn}", defaultW)
                 .replace("{defaultOptim}", String.valueOf(DEFAULT_OPTIM));
-    System.err.println(usage);
-    System.err.println(listEwarnOptions());
-    usageExit();
+    out.printf("\n%s\n\n", versionString());
+    out.println(usage);
+    out.println(listEwarnOptions());
 }
 
 public static int getVerbose()
@@ -324,7 +340,10 @@ public static void main(String[] args)
         switch (c) {
         case 'o' -> outName = g.getOptarg();
         case 'O' -> optOptimize = Ints.tryParse(g.getOptarg());
-        case 'h' -> usage();
+        case 'h' -> {
+            outputHelp(System.out, null);
+            System.exit(0);
+        }
         case 'v' -> optVerbose++;
         case 2 -> {
             switch(longOpts[g.getLongind()].getName()) {
@@ -358,7 +377,7 @@ public static void main(String[] args)
             if(e == null) {
                 System.err.printf("'%s' unknown error name\n%s",
                                   g.getOptarg(), listEwarnOptions());
-                usageExit();
+                usageErrorExit();
             } else {
                 if(!e.negated())        // make the error a warning
                     warnset.add(e.error());
