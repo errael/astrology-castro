@@ -1,4 +1,4 @@
-# castro - v1 beta for 770 with macro functions
+# castro - v1.0.0 with macro functions
 `castro` compiles a simple "C" like language into [Astrolog](https://www.astrolog.org) commands and [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express); `castro` is tailored to `AstroExpression`. `castro` is a standalone tool. It outputs a `.as` file that can be used with `Astrolog`'s command switch `-i <name>.as`. `castro` easily interoperates with existing `Astrolog` command switch files.
 
 Some motivating factors for `castro`
@@ -86,9 +86,9 @@ For more examples, there is
   which describes in detail how to use an `AstroExpression` as a switch parameter
   in `castro`.
 - [astroExpressionCommandSwitches.castro](examples.d/astroExpressionCommandSwitches/astroExpressionCommandSwitches.castro)
-  has the examples from `Astrolog` website under
-  [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express) ported
-  to `castro`.
+  has the "hook" examples from `Astrolog` website ported to `castro`. See:<br/>
+  [AstroExpressions](https://www.astrolog.org/ftp/astrolog.htm#express)
+  _various command switches which allow one to define AstroExpression “hooks”_
 - [astrotest.d](astrotest.d) runs `castro` to generate `*.as` files which
   are then executed on astrolog; it has a simple expect/result infrastructure
 - [test.d](test.d) checks lowlevel `castro` functionality and has gold files.
@@ -96,7 +96,7 @@ For more examples, there is
 
 ###     Interoperability
 
-`castro` works with existing `command switch` files and their declared switch/macro/variables.
+`castro` can interoperate with existing `command switch` files and their switch/macro/variables.
 
 `castro` has a [layout directive](#layout) which constrains automatically
 allocated addresses to specified areas. In addition, it is possible to assign
@@ -109,16 +109,16 @@ var a_var @60;
 ```
 To assign `switch`/`macro` in a `castro` file to a specific adress:
 ```
-switch b_switch @44 { ... }     // from another file: '-M 44' or '~1 "Switch 44"'
-macro b_macro @55 { ... }       // from another file: '~1 "Macro 55"'
+switch b_switch @44 { ... }     // from a non-castro file: '-M 44' or '~1 "Switch 44"'
+macro b_macro @55 { ... }       // from a non-castro file: '~1 "Macro 55"'
 ```
 When the address is specified, it may be a constant expression
 ```
-const xxx_base {33};
+const my_func_keys {33};
 const yyy_base {50};
-switch sw_01 @xxx_base { ... }      // assign to switch addr 33
-switch sw_02 @xxx_base + 1 { ... }  // assign to switch addr 34
-macro ma_01 @yyy_base + 7 { ... }   // assign to macro addr 57
+switch sw_01 @my_func_keys { ... }      // assign to switch addr 33
+switch sw_02 @my_func_keys + 1 { ... }  // assign to switch addr 34
+macro ma_01 @yyy_base + 7 { ... }       // assign to macro addr 57
 ```
 
 
@@ -149,7 +149,7 @@ Macro functions use globals for function parameters. There is no stack; no recur
 - Address of and indirect, `&var_name`, `&arr_name[expr]` and `*var_name`
   supported; nothing more complex.
 - Integer constants are decimal, hex (`0x`), binary(`0b`), octal(`0o`).
-- Floating constants are decimal ###.###, exponents not supported.
+- Floating constants are decimal `###.###`, exponents not supported.
 
 ####    variable differences
 
@@ -157,11 +157,12 @@ Macro functions use globals for function parameters. There is no stack; no recur
   there are no local variables.
 - Variable names are case insensitive.
 - Single char variable names 'a' to 'z' are pre-declared.
-  AstroExpression hooks use as much as %u ... %z.
-  [castro printf](#castro-printf) uses as much as %a ... %j but there is a
-  way to have cprintf automatically preserve variables.
-- Variables are declared with `var`, for example `var foo;`
-- A variable is integer or float depending on usage. `Astrolog` truncates as needed.
+  AstroExpression hooks may use %u ... %z.
+  [castro printf](#castro-printf) may use %a ... %j but by default 
+  `cprintf` automatically preserve variables.
+- Variables are declared with `var`, for example `var foo;`; variables and const
+  are initialized like `var foo {123};` and `const bar {456};`.
+- A variable is integer or float depending on usage. `Astrolog` promotes/truncates as needed.
 - A variable declaration may assign the variable or array to a specific location; append `@integer`, for example `var foo @100;` and `var bar[10] @200;`; this assigns `foo` to location 100 and array `bar` starts at location 200.
 
 ##      Running the `castro` compiler
@@ -177,10 +178,12 @@ Do `castro -h` to see [help/usage](https://github.com/errael/astrology-castro/wi
 Running castro like `castro file_name -o -` is convenient to see the compiler output on
 the console. The `--fo=min` option might be handy.
 
-Running `castro`  on a file produces 3 output files. For example, if there's `foo.castro` then executing `castro foo.castro` creates
-- `foo.as` can be executed with `astrolog -i foo.as`
-- `foo.def` has details of allocation
-- `foo.map` has a summary of allocation;
+Running `castro`  on a file produces 3 output files.<br/>
+For example, if there's `foo.castro` then executing `castro foo.castro` creates
+- `foo.as` can be executed with `astrolog -i foo.as`<br/>
+   or maybe `astrolog -i foo.helper.as`
+- `foo.def` has details of allocation per file
+- `foo.map` has a summary of allocation for all the files;<br/>
    includes the file and line number where each item is defined
 
 Use `castro --gui ...` or `castro --console ...` to see how a file is parsed.
@@ -219,7 +222,7 @@ note that each line has the file name in which the variable is declared.
 
 ### The `helper.castro` file
 
-To support `cprintf()`, `print()` or string assignment in a `macro`, some helper
+To support `cprintf()`, `printf()` or string assignment in a `macro`, some helper
 switch statements are automatically generated and placed in a
 `helper.castro` file; the basename of the file is the same as the map file
 basename. When compilation completes there is a `basename.helper.as` file.
@@ -313,8 +316,9 @@ These are the top level statements
   not embedded in a `-M0`.
 - `copy` literally copies text to the output file with no interpretation or changes.
 
-`castro` identifiers are the same as with `"C"`, likewise operators have the
-same precedence as with `"C"`; blanks and newlines are whitespace.
+`castro` identifiers are the same as with `"C"`, but case insensitive;
+likewise operators have the same precedence as with `"C"`;
+blanks and newlines are whitespace.
 
 ###     layout
 `layout` statement specifies, on a per file basis, the addresses that automatic allocation can use for `memory`, `macro`, and `switch` addresses.
@@ -325,15 +329,17 @@ layout memory {
     reserve 104, 106:108;       // 108 inclusive
 }
 ```
-The values in layout are specified with constant expressions.
+The values in layout must be constant expressions.
 
-This directive allows allocation of addresses between 101 inclusive and 111 exclusive; but not addresses 104, 106, 107, 108. If an _out of memory_ error occurs look at the `.def` output file for more information.
+This directive allows allocation of addresses between 101 inclusive and 111
+exclusive; but not addresses 104, 106, 107, 108. If an _out of memory_ error
+occurs look at the `.def` output file for more information.
 
 The layout from the first file may be inherited. **If a file does not specify
 a layout, the layout from the first file is inherited**.
 
-**Note:** For `Astrolog` 770 the switch base is always at least 49; that's after the function key
-slots.
+**Note:** For `Astrolog` 770 the switch base is always at least 49;
+which is after the function key slots.
 
 ###     macro
 The `macro` statement defines an `AstroExpression macro` using `~M`; it contains
@@ -434,8 +440,8 @@ Both the functions `cprintf` and `printf` are available. The difference is what
 
 There are two forms of each; one for switch and one for macro.
 
-The macro form is available since `Astrolog` 770. The macro form uses helper
-switch statements to do the actual output;
+The macro form is available since `Astrolog` 770; this macro form uses
+automatically generated helper switch statements to do the actual output;
 see [helper.castro](#the-helpercastro-file) for details.
 
 #### switch printf
@@ -452,7 +458,6 @@ Example: `cprintf "v1 %d, v2 %d" {~ 3 + 4; 7 + 4; }`
 #### macro printf
 
 The macro form is like a varargs function call.
-The parameters are as described for switch form.
 ```
     cprintf("format_string", expr1, expr2, ...);
 ```
@@ -478,7 +483,10 @@ The contents of a `run` statement are parsed identically to a `switch` statement
 **Note:** A `switch` or `macro` must already be defined when invoked from a `run` statement; if not, undefined behavior.
 
 ###     copy
-The `copy{LITERALLY_COPIED_TO_OUTPUT}` statement literally copies text to the output file with no interpretation or changes; the ultimate hack/workaround. All whitespace, including newlines, is copied as is. Use '\\}' to include a '}' in the output. This is needed because some things don't parse correctly, and I can be lazy, for example
+The `copy{LITERALLY_COPIED_TO_OUTPUT}` statement literally copies text to the output file with no
+interpretation or changes; the ultimate hack/workaround. This is needed because some things don't
+parse correctly. All whitespace, including newlines, is copied as is. Use '\\}' to include a '}'
+in the output.
 
 ```
 copy { -zl 121W57'26.9 37N17'28.2 ; Default location      [longitude and latitude] }
@@ -490,9 +498,14 @@ It also provide a way to redefine a macro/switch.
 
 ###     Constants
 
-All contants are part of the global namespace. So, for example, configuration constants can be defined in one file, and used in other files. Constants can often times be used before they are defined; exceptions are for the size of an array or to specify an address assignment using `@`.
+All contants are part of the global namespace. So, for example, configuration constants can be
+defined in one file, and used from other files. Constants can sometimes be used before they are
+defined; exceptions are for the size of an array or to specify an address location using `@`.
 
-Constants are defined like `const <name> {<expr>};` where `<expr>` is an expression made up only of integer constants. Program wide constants can be defined in a single file; and putting that file first in compilation order avoids some issues. Constants take up no `AstroExpression` VM storage, they exist only in the `castro` compiler.
+Constants are defined like `const <name> {<expr>};` where `<expr>` is an expression made up only
+of integer constants. Program wide constants can be defined in a single file; and putting that
+file first in compilation order avoids some issues. Constants take up no `AstroExpression` VM
+storage, they exist only in the `castro` compiler.
 
 ```
 const const_name1 {10};
@@ -585,9 +598,11 @@ share[1]: one - 1
 ```
 
 ##     Warnings/Oddities:
-- `castro` checks for valid `AstroExpression` function names. There is no such check for valid switch commands; if that information becomes available, `castro` will use it.
-- Too long switch or macro don't fit in `Astrolog`'s parser; there is no "too large" error. There is often an apparently unrelated error message. Splitting it into two...
-- cprintf only works in a `switch`/`run`.
+- `castro` checks for valid `AstroExpression` function names. There is no such check for valid
+  switch commands; if that information becomes available, `castro` will use it.
+- Too long switch or macro don't fit in `Astrolog`'s parser; there is no "too large" error. There
+  is often an apparently unrelated error message. Splitting it into two...
+  `Astrolog` 7.80 is expected to fix this.
 - Some cases where blanks are significant
     - The functions `=Obj` and `=Hou` can cause problems, for example<br>
       `a==Obj(...)` is parsed as `a == Obj(...)`, write `a= =Obj(...)` for assignment.
