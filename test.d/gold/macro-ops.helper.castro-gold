@@ -4,7 +4,6 @@ switch castroHelperString_1 {
 switch castroHelperString_2 {
     SetString vary "vary string"
 }
-var cprintf_save_area[10];
 switch castroHelperPrint_1 {
     cprintf "x = %d, y = %d\n" {~ x; y; }
 }
@@ -26,3 +25,4 @@ switch castroHelperPrint_8 {
 switch castroHelperPrint_9 {
     printf '%s\n' {~ x; }
 }
+var cprintf_save_area[10];

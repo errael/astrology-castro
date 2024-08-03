@@ -2,8 +2,8 @@
  * For Astrolog 7.70
  *
  * Do 
- *      castro mazegame.castro  (or castro mazegame.castro vi.castro)
- *      astrolog -i mazegame.as
+ *      castro mazegame.castro
+ *      astrolog -i mazegame.helper.as
  *
  * To start mazegame using the vi bindings to move around the maze:
  *      castro mazegame.castro vi.castro
@@ -11,6 +11,7 @@
  *
  * Tested on linux and Windows.
  */
+
 copy {
 ; This is a port to castro of "mazegame.as" from Astrolog:
 ; https://github.com/CruiserOne/Astrolog/blob/master/mazegame.as
@@ -30,7 +31,7 @@ const MAZE_MEM {70};
 layout memory { limit MAZE_MEM; }
 
 /** Start macro allocation somewhere random for no reason */
-layout macro { base 55; }
+layout macro { base 23; }
 
 /*
  * maze is a giant array, far bigger than 2, goes to the end of memory
@@ -72,26 +73,26 @@ var cprintf_save_area[10]; // avoid cprintf changing variables
 const SecondsPerDay { 86400 };
 
 /*
- * There are multiple sets of keys for navigation; data in nav_info.
- * This is the index for the current navigation macro and keys message.
+ * The maze is navigated by pressing keys for up/left/down/right.
+ * There are multiple sets of keys for navigation, e.g. wasd and hjkl.
+ * "cur_nav_idx" indicates which set of keys to use; it is an index
+ * into the nav_info array.
  */
 run { ~1 { cur_nav_idx = 0; } }
 
-// Note that number/strings can occupy the same location at the same time;
-// kind of like a struct with a number and a string.
 /*
- * Initialize lookup tables for navigation.
- * Both x11 and win have tables for both wasd and vi.
+ * Initialize lookup tables for navigation, both wasd and vi.
  */
-var nav_info_x11[] { &nav_wasd_keys_x11[0], &nav_vi_keys_x11[0] };
-var nav_info_win_770[] { &nav_wasd_keys_win_770[0], &nav_vi_keys_win_770[0] };
+var nav_info[] { &nav_wasd_keys[0], &nav_vi_keys[0] };
+
 
 /*
  * Initialize associated messages.
+ * Note that number/strings can occupy the same location at the same time;
  */
 run {
-    SetString nav_info_x11[0] 'w/a/s/d (x11)' 'h/j/k/l (x11)'
-    SetString nav_info_win_770[0] 'w/a/s/d (win)' 'h/j/k/l (win)'
+    SetString nav_wasd_keys[0] 'w/a/s/d'
+    SetString nav_vi_keys[0]   'h/j/k/l'
 }
 
 switch welcome @1 {
@@ -126,19 +127,17 @@ switch nav_keys @6 {
 }
 
 /*
- * Set the current nav index and compute/save
- * selected "nav_keys" for this specific system.
+ * Set the current nav index. For example, might change between "wasd"/"hjkl".
  */
 macro set_cur_nav_idx(cur_nav_idx) {
     // the index may need to be wrapped
-    cur_nav_idx %= WIN() ? sizeof(nav_info_win_770) : sizeof(nav_info_x11);
-
-    // p points to address of table of keys to use
-    p = nav_keys_addr();
-    nav_keys = *p;
+    cur_nav_idx %= sizeof(nav_info);
 }
+/*
+ * Return the address of the current navigation keys.
+ */
 macro nav_keys_addr() {
-        WIN() ? &nav_info_win_770[cur_nav_idx] : &nav_info_x11[cur_nav_idx];
+        nav_info[cur_nav_idx];
 }
 
 // Needed to workaround 7.70 issue; this uses a function key slot.
@@ -147,7 +146,7 @@ switch sw_cast_chart @48 { ~1 { n = n; } }
 // This is needed with 7.70 because running a function key is how to
 // signal that the chart should be cast which adjusts the current time.
 // The next release of Astrolog, according to Walter, will have a
-// specific "z" value with indicates that a chart should be cast.
+// specific "z" value which indicates that a chart should be cast.
 macro cast_chart() {
     // Run a no-op macro to get the fCast.
     if(!WIN()) {
@@ -276,35 +275,32 @@ run {
         lookup_run_nav();
     }
     ~WQ {
-        //cprintf("WQ: %d", z);
         lookup_run_nav();
     }
 }
 
 /*
- * Key lookup depending on wasd/vi and linux/windows.
+ * Key press lookup tables for wasd or vi.
+ * Note: linux/windows is embedded in KeyC.
  */
-var nav_wasd_keys_x11[] { KeyC('w'), KeyC('a'), KeyC('s'), KeyC('d') };
-var nav_vi_keys_x11[] { KeyC('k'), KeyC('h'), KeyC('j'), KeyC('l') };
+var nav_wasd_keys[] { KeyC('w'), KeyC('a'), KeyC('s'), KeyC('d') };
+var nav_vi_keys[]   { KeyC('k'), KeyC('h'), KeyC('j'), KeyC('l') };
 
-var nav_wasd_keys_win_770[] { 40084, 40134, 40284, 40089 };
-var nav_vi_keys_win_770[] { 40082, 40098, 40295, 40090 };
-
-// "nav_keys" is the current set of keys to check, taken from one of the above.
-var nav_keys { &nav_vi_keys_x11[0] };
-
-// The navigation operations
+/*
+ * The navigation operations. Correspond 1-1 with nav_*_keys.
+ */
 var nav_ops[] { MAddr(up), MAddr(left), MAddr(down), MAddr(right) };
 
 /*
- * Search for "z" (the key) in "nav_keys" (the current key table).
+ * Search for "z" (the key) in "nav_info[cur_nav_idx]" (the current key table).
  * Execute the corresponding navigation operation macro.
  */
 macro lookup_run_nav() {
-    q = nav_keys + 3;
-    for(p = nav_keys; q) {
+    o = nav_keys_addr();
+    q = o + 3;
+    for(p = o; q) {
         if(z == *p) {
-            Macro(nav_ops[p - nav_keys]);  // run op with index for found key
+            Macro(nav_ops[p - o]);  // run op with index for found key
             p = q; // break
         }
     }

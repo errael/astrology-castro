@@ -1,4 +1,5 @@
 To compile and run mazegame see first part of mazegame.castro; to summarize.
 Build:  castro mazegame.castro vi.castro
+   or:  castro $(pwd)/mazegame.castro $(pwd)/vi.castro
 Run:    astrolog -i mazegame.helper.as
 Clean:  rm -f *helper* *.as *.def *.map

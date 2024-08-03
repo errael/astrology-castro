@@ -24,8 +24,6 @@ if [[ $? -ne 0 ]]; then usage > /dev/stderr; fi
 eval set -- "$TEMP"
 unset TEMP
 
-typeset -i cleanflag
-typeset -i lflag
 typeset optim
 
 while true

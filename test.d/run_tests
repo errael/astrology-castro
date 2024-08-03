@@ -21,6 +21,7 @@ TESTS="
     switch
     unary-ops
     log-ops
+    key-code
     macro_functions
     macro-ops
     const-condition
@@ -29,6 +30,7 @@ TESTS="
     astroExpressionCommandSwitches
     errors-1
     errors-2
+    errors-2b
     errors-3
     errors-4
     errors-5
@@ -116,6 +118,12 @@ run_all() {
         current_test=${t%.castro}
         run_test
     done
+
+    # some stragglers
+    if ((cleanflag))
+    then
+        rm -f null.def null.map
+    fi
 
     if ((${#error_tests[@]} != 0))
     then

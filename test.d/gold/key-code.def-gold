@@ -6,19 +6,19 @@
 // Space: Macros layout: null
 // Space: Switches layout: Layout{base=49, limit=-1, reserve=[]}
 
-// Space: Registers. File: errors-2.castro
+// Space: Registers. File: key-code.castro
 // used     (-∞..27) [2147483647..+∞) 
 // free     [27..2147483647) 
 // errors: 0
 
-// Space: Macros. File: errors-2.castro
+// Space: Macros. File: key-code.castro
 // declared [1..2) 
 // used     (-∞..2) [2147483647..+∞) 
 // free     [2..2147483647) 
 // errors: 0
-macro constant_errors @1; // [ALLOC]
+macro key_code_helpers @1; // [ALLOC]
 
-// Space: Switches. File: errors-2.castro
+// Space: Switches. File: key-code.castro
 // used     (-∞..49) [2147483647..+∞) 
 // free     [49..2147483647) 
 // errors: 0

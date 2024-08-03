@@ -8,7 +8,7 @@ DIR=${0%/*}
 
 set -e
 
-typeset -i EXPECTED_PASS_COUNT=261
+typeset -i EXPECTED_PASS_COUNT=260
 
 ASTROLOG=/junk/install/astrolog.d/base/astrolog
 

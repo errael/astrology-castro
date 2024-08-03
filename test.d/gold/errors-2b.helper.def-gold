@@ -6,14 +6,14 @@
 // Space: Macros layout: null
 // Space: Switches layout: Layout{base=49, limit=-1, reserve=[]}
 
-// Space: Registers. File: errors-2.helper.castro
+// Space: Registers. File: errors-2b.helper.castro
 // declared [33..34) 
 // used     (-∞..34) [2147483647..+∞) 
 // free     [34..2147483647) 
 // errors: 0
 var Switch2KeyCode_SwitchAddress_Parameter @33; // [ALLOC]
 
-// Space: Macros. File: errors-2.helper.castro
+// Space: Macros. File: errors-2b.helper.castro
 // declared [3..9) 
 // used     (-∞..9) [2147483647..+∞) 
 // free     [9..2147483647) 
@@ -25,7 +25,7 @@ macro FK_F0_KC                    @6; // [ALLOC]
 macro S_FK_F0_KC                  @7; // [ALLOC]
 macro Switch2KeyCode_Helper       @8; // [ALLOC]
 
-// Space: Switches. File: errors-2.helper.castro
+// Space: Switches. File: errors-2b.helper.castro
 // used     (-∞..49) [50..51) [2147483647..+∞) 
 // free     [49..50) [51..2147483647) 
 // errors: 0

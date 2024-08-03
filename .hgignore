@@ -25,6 +25,17 @@ astrotest.d/printf_results-3
 
 examples.d/junk
 
+
+examples.d/mazegame/mazegame.as
+examples.d/mazegame/mazegame.def
+examples.d/mazegame/mazegame.helper.as
+examples.d/mazegame/mazegame.helper.castro
+examples.d/mazegame/mazegame.helper.def
+examples.d/mazegame/mazegame.map
+examples.d/mazegame/vi.as
+examples.d/mazegame/vi.def
+
+
 syntax: glob
 
 *.class

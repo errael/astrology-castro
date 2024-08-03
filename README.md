@@ -222,15 +222,17 @@ note that each line has the file name in which the variable is declared.
 
 ### The `helper.castro` file
 
-To support `cprintf()`, `printf()` or string assignment in a `macro`, some helper
-switch statements are automatically generated and placed in a
+To support `cprintf()`, `printf()` or string assignment in a `macro` and other
+features, some helper
+statements are automatically generated and placed in a
 `helper.castro` file; the basename of the file is the same as the map file
 basename. When compilation completes there is a `basename.helper.as` file.
 
 The `helper.castro` file may have 4 types of statements
 - load compiled files in order, e.g. `-i file1 -i file2`<br/>
   This is not present if the `--nohelperload` option is used.<br/>
-  **The path, if any, as specified on the command line is used for loading**.
+  **The path, if any, as specified on the command line is used for loading**.<br/>
+  Note that this may be a full path.
 - declare `cprintf_save_area`<br/>
   `var cprintf_save_area[10]; // cprintf save/restore up to 10 variables.`<br/>
   This is not present if already defined or if there are no output statements.
@@ -238,6 +240,7 @@ The `helper.castro` file may have 4 types of statements
   When something like `some_var = "string value;"`.
 - print switch statements for macros<br/>
   When something like `cprintf("FOO");"`.
+- `KeyCode()` macro implmentations that return values according to running platform.
 
 And note that, if not specified, a file's _layout restrictions are inherited_
 from the first file on the command line. This means that the `helper.castro`
@@ -428,7 +431,7 @@ If a switch address is not assigned, it will be allocated; use [layout](layout)
 to specify the allocation range. `Astrolog` versions _after_ 760 support
 `command switch macro` numbers outside of the function key range.
 
-###    castro printf
+###    cprintf/printf
 
 Both the functions `cprintf` and `printf` are available. The difference is what
 `Astrolog` switch command is used.
@@ -444,38 +447,33 @@ The macro form is available since `Astrolog` 770; this macro form uses
 automatically generated helper switch statements to do the actual output;
 see [helper.castro](#the-helpercastro-file) for details.
 
-#### switch printf
-```
-    cprintf "format_string" {~ expr1; expr2; ... }
 
+#### format strings and arguments
+```
     format_string - %d, %i, %f, %g to print a number (they are equivelent).
-                    %s to print a string, use its address as the arg.
+                    %s to print a string, **use its address** as the arg.
     arguments     - One AstroExpression per format specifier.
-                    Arguments, {~ ... }, are optional.
 ```
-Example: `cprintf "v1 %d, v2 %d" {~ 3 + 4; 7 + 4; }`
 
-#### macro printf
+#### different switch and macro forms
 
-The macro form is like a varargs function call.
-```
-    cprintf("format_string", expr1, expr2, ...);
-```
-Example: `cprintf("v1 %d, v2 %d", 3 + 4, 7 + 4)`
+- switch
+  `cprintf "v1 %d, v2 %d, string %s\n" {~ 3 + 4; 7 + 4; &str_var; }`
+- macro
+  `cprintf("v1 %d, v2 %d, string %s\n", 3 + 4, 7 + 4, &str_var)`
 
-#### printf variable usage
+#### temporary variable usage
 
-`cprintf` optionally does a **save/restore of the variables** it uses. It does
-this by looking for an array variable named `cprintf_save_area` and using it if
-found. It is automatically defined, if needed, in the
-[helper.castro](#the-helpercastro-file) file.
+`cprintf`/`printf` use the lower memory locations for the arguments;
+there are up to 10 arguments they are put into: `%a`, `%b`, `%c`, ..., `%i`, `%j`
+for output.
+The program values, before the `cprintf`, are **optionally saved and restored**.
+If there is an array variable named `cprintf_save_area` it is used as the save
+area. `cprintf_save_area` is automatically defined in
+[helper.castro](#the-helpercastro-file) if there are any `cprintf`/`printf`
+statements in the program.
 
  _Nested use of cprintf will not restore reliably_.
-
-**Warning**: cprintf uses the lower memory locations for the cprintf arguments,
-up to 10: `%a`, `%b`, `%c`, ..., `%i`, `%j`, by default these are changed.
-Use the `helper.file` or declare `cprintf_save_area` to avoid them
-getting trashed.
 
 ###     run
 The contents of a `run` statement are parsed identically to a `switch` statement. The difference is that the `run`'s switch commands are at the top level of the `.as` file and not embedded in a `-M0`; they are executed when the file is sourced as in `-i file`.
@@ -685,11 +683,6 @@ functions these functions are treated as constants.
 The return values for the key code functions are constant for a given
 operating system and `astrolog` version.
 
-**Warning**: in `castro` v1.0.0 `KeyCode()` returns ascii values; these work
-on X11. Looking for a solution...
-
-See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
-
 | Function Name | Alias | usage ex | note |
 | ------------- | ----- | ---- | -- |
 | SwitchAdress  | SAddr | SAddr(switchName) | The address of a switch |
@@ -697,6 +690,17 @@ See [mazegame ported to castro](examples.d/mazegame.castro) for example usage.
 | KeyCode       | KeyC | KeyC("a") | "a" is ascii val 97, takes range ' ' - '~' |
 | Switch2KeyCode | Sw2KC | Sw2KC(switchName) | see ~XQ, ~WQ hook |
 | SizeOf       | ----- | SizeOf(varname) | the number of locations used by the variable |
+
+**Note**: `KeyCode()` in `castro` v1.1.0 is implemented as a helper macro; it
+dynamically takes into account the running OS, `linux-X11` or `windows`, and astrolog version.
+https://github.com/errael/astrology-castro/blob/7c2b649628c6c58cfe76ad207d50c111ef2069dc/examples.d/mazegame/mazegame.castro#L286
+The `nav_wasd_keys` array values are determined dynamically when the program runs.
+| platform | KeyC('w') | KeyC('a') | KeyC('s') | KeyC('d') |
+| :--------: | :---: | :---: | :---: | :---: |
+| linux-X11 | 119 | 97 | 115 | 100 |
+|Windows Astrolog 7.70 | 40084 | 40134 | 40284 | 40089 |
+
+These are values that may be in the `castro` variable `z` in `~XQ` or `~XW`.
 
 By default `Astrolog` associates switch commands at adresses 1 - 48 with function keys
 ```

@@ -1,0 +1,16 @@
+macro KeyCode_dynamically_generate_space() {
+    if(WIN()) { if(Version() == 7.70) 40302 else 40299; }
+    else 0x20;
+}
+macro KeyCode_dynamically_generate_x() {
+    if(WIN()) { if(Version() == 7.70) 40093 else 40090; }
+    else 0x78;
+}
+macro KeyCode_dynamically_generate_s_x() {
+    if(WIN()) { if(Version() == 7.70) 40052 else 40051; }
+    else 0x58;
+}
+macro KeyCode_dynamically_generate_dollar() {
+    if(WIN()) { if(Version() == 7.70) 40014 else 40014; }
+    else 0x24;
+}
