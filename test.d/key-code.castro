@@ -1,0 +1,10 @@
+/*
+ * Check out KeyCode helper macros.
+ */
+
+macro key_code_helpers {
+    e = KeyCode(" ");
+    e = KeyCode("x");
+    e = KeyCode("X");
+    e = KeyCode("$");
+}

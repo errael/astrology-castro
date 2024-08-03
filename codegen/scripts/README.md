@@ -31,3 +31,9 @@ about `Astrolog` constants from the source.
 diff xxx <target>   # see what changed
 cp xxx <target>
 ```
+
+### EXTRACT WINDOWS KEYCODES
+
+Extract a mapping of character&modifiers to windows key code.
+
+./extract_windows_keycodes

@@ -1,0 +1,5 @@
+Error: errors-2b.castro:14:10 '    sw2kc(sw1);' Switch 'sw1' @50 is not a function key address
+Error: errors-2b.castro:18:14 '    SetString arr[*p] "foo"' 'arr[*p]' must be a fixed location
+Error: errors-2b.castro:19:14 '    SetString arr[pp] "foo"' 'arr[pp]' must be a fixed location
+Error: errors-2b.castro:23:4 '    o_sun += 3;' 'o_sun' is a constant name, can't write
+Code generation: 4 errors

@@ -26,8 +26,10 @@ import com.raelity.astrolog.castro.antlr.AstroParser.LvalIndirectContext;
 import com.raelity.astrolog.castro.antlr.AstroParser.Str_exprContext;
 import com.raelity.astrolog.castro.mems.AstroMem;
 import com.raelity.astrolog.castro.mems.AstroMem.Var;
+import com.raelity.astrolog.castro.mems.Macros;
 import com.raelity.astrolog.castro.mems.Registers;
 import com.raelity.astrolog.castro.mems.Switches;
+import com.raelity.astrolog.castro.tables.AstrologKeyCodes;
 import com.raelity.astrolog.castro.tables.Function;
 import com.raelity.astrolog.castro.tables.Function.StringArgsFunction;
 import com.raelity.astrolog.castro.tables.Functions;
@@ -78,7 +80,6 @@ static void defineHelperStatement(String statement)
         || statement.isEmpty()
         || !createHelperFile())
         return;
-    createPrintSaveArea();
     try {
         helperWriter.append(statement);
     } catch(Exception ex00) {
@@ -306,12 +307,18 @@ static void addHelperFileFunctions()
     }
 
     @Override
-    public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
-                                     List<String> args)
+    public AstroMem targetMemSpace() {
+        return lookup(Macros.class);
+    }
+
+    @Override
+    public boolean checkReportArgs(Func_callContext ctx)
     {
-        boolean isError = true;
-        // There's one arg, should have three characters like "a"
-        Token charCodeToken = ctx.fc.sargs.get(0).s;
+        boolean ok = super.checkReportArgs(ctx);
+        if (!ok)
+            return ok;
+
+        Token charCodeToken = ctx.sargs.get(0).s;
         String charCodeString = charCodeToken.getText();
         if(charCodeString.length() < 3)
             reportError(charCodeToken, "empty string");
@@ -321,14 +328,27 @@ static void addHelperFileFunctions()
         else {
             char charCode = charCodeString.charAt(1);
             if(charCode < ' ' || charCode > '~')
-                reportError(ctx.fc, "'%c' not in range ' ' to '~'", charCode);
+                reportError(ctx, "'%c' not in range ' ' to '~'", charCode);
             else {
-                sb.append((int)charCode).append(' ');
-                isError = false;
+                ok = AstrologKeyCodes.useChar(charCode, (code) -> {
+                    defineHelperStatement(code);
+                });
+                if(!ok)
+                    reportError(charCodeToken, "'%c' not available on Windows", charCode);
             }
         }
-        if(isError)
-            sb.append("#CHARCODE# ");
+        return ok;
+    }
+
+    @Override
+    public StringBuilder genFuncCall(StringBuilder sb, ExprFuncContext ctx,
+                                     List<String> args)
+    {
+        Token charCodeToken = ctx.fc.sargs.get(0).s;
+        char charCode = charCodeToken.getText().charAt(1);
+        String macroName = AstrologKeyCodes.keyCodeMacroName(charCode);
+        Var var = targetMemSpace().getVar(macroName);
+        sb.append("Macro ").append(var.getAddr()).append(' ');
         return sb;
     }
     

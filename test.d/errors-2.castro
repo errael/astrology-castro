@@ -1,28 +1,13 @@
 /*
- * Check out some errors: pass3.
+ * Check out some errors: pass1.
+ * Split after KeyCode changes.
  */
 
 // TODO: there are a variety of Func gen errors, should all be checked
-
-var arr[5];
-var pp;
-
-switch sw1 @50;
-
 
 macro constant_errors {
     e = KeyCode("");
     e = KeyCode("aa");
     e = KeyCode("λ");
-    sw2kc(sw1);
-}
-
-run {
-    SetString arr[*p] "foo"
-    SetString arr[pp] "foo"
-}
-
-macro ma1 {
-    o_sun += 3;
 }
 
