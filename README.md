@@ -691,6 +691,8 @@ operating system and `astrolog` version.
 | Switch2KeyCode | Sw2KC | Sw2KC(switchName) | see ~XQ, ~WQ hook |
 | SizeOf       | ----- | SizeOf(varname) | the number of locations used by the variable |
 
+For function keys see [system key codes](https://github.com/errael/astrology-castro/wiki/castro-constants#system-key-codes).
+
 **Note**: `KeyCode()` in `castro` v1.1.0 is implemented as a helper macro; it
 dynamically takes into account the running OS, `linux-X11` or `windows`, and astrolog version.
 https://github.com/errael/astrology-castro/blob/7c2b649628c6c58cfe76ad207d50c111ef2069dc/examples.d/mazegame/mazegame.castro#L286
