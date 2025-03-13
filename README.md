@@ -231,7 +231,7 @@ statements are automatically generated and placed in a
 `helper.castro` file; the basename of the file is the same as the map file
 basename. When compilation completes there is a `basename.helper.as` file.
 
-The `helper.castro` file may have 4 types of statements
+The `helper.castro` file may have several types of statements
 - load compiled files in order, e.g. `-i file1 -i file2`<br/>
   This is not present if the `--nohelperload` option is used.<br/>
   **The path, if any, as specified on the command line is used for loading**.<br/>
@@ -239,10 +239,10 @@ The `helper.castro` file may have 4 types of statements
 - declare `cprintf_save_area`<br/>
   `var cprintf_save_area[10]; // cprintf save/restore up to 10 variables.`<br/>
   This is not present if already defined or if there are no output statements.
-- string assignment switch statements for macros<br/>
-  When something like `some_var = "string value;"`.
-- print switch statements for macros<br/>
-  When something like `cprintf("FOO");"`.
+- string assignment switch statements to support string assignment in a marco<br/>
+  When something like `some_var = "string value;"` is in a marco.
+- print switch statements to support print statements in a macro<br/>
+  When something like `cprintf("FOO");"` is in a macro.
 - `KeyCode()` macro implmentations that return values according to running platform.
 
 And note that, if not specified, a file's _layout restrictions are inherited_
@@ -370,9 +370,9 @@ macro macFun1(macFun1_arg) { ... }
 macro macFun2(macFun2_arg1, macFun2_arg2) { ... }
 macro macFun2B(macFun2B_arg1, macFun2B_arg2) { ... }
 run { ~1 {
-    macFun1(manFun1(x)); // OK - can nest if only one parameter
-    macFun2(manFun2(x, y), x); // ERROR - macros with two parameters can not nest
-    macFun2(manFun2B(x, y), manFun2B(u, v)); // OK - different macros
+    macFun1(macFun1(x)); // OK - can nest if only one parameter
+    macFun2(macFun2(x, y), x); // ERROR - macros with two parameters can not nest
+    macFun2(macFun2B(x, y), macFun2B(u, v)); // OK - different macros
 } }
 ```
 
